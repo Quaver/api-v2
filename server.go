@@ -37,6 +37,7 @@ func initializeRoutes(engine *gin.Engine) {
 	logrus.Info("Initialized router")
 }
 
+// Creates a route with /v2. Example usage: createV2Route("/foo/:id)
 func createV2Route(route string) string {
 	return fmt.Sprintf("/v2%v", route)
 }
