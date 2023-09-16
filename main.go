@@ -10,5 +10,5 @@ func main() {
 		logrus.Panic(err)
 	}
 
-	initializeServer(8080)
+	initializeServer(config.Instance.Server.Port)
 }
