@@ -23,12 +23,12 @@ func initializeServer(port int) {
 
 // Initializes all the routes for the server.
 func initializeRoutes(engine *gin.Engine) {
-	//engine.GET(createRoute("/clans"))
-	//
-	//engine.POST(createRoute("/clan"))
-	//engine.GET(createRoute("/clan/:id"))
-	//engine.PATCH(createRoute("/clan/:id"))
-	//engine.DELETE(createRoute("/clan/:id"))
+	engine.GET(createRoute("/clans"), handlers.GetClans)
+
+	engine.POST(createRoute("/clan"), handlers.CreateClan)
+	engine.GET(createRoute("/clan/:id"), handlers.GetClan)
+	engine.PATCH(createRoute("/clan/:id"), handlers.UpdateClan)
+	engine.DELETE(createRoute("/clan/:id"), handlers.DeleteClan)
 
 	engine.NoRoute(func(c *gin.Context) {
 		handlers.ReturnError(c, http.StatusNotFound, "Not Found")
