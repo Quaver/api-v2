@@ -23,12 +23,12 @@ func initializeServer(port int) {
 
 // Initializes all the routes for the server.
 func initializeRoutes(engine *gin.Engine) {
-	//engine.GET(createV2Route("/clans"))
+	//engine.GET(createRoute("/clans"))
 	//
-	//engine.POST(createV2Route("/clan"))
-	//engine.GET(createV2Route("/clan/:id"))
-	//engine.PATCH(createV2Route("/clan/:id"))
-	//engine.DELETE(createV2Route("/clan/:id"))
+	//engine.POST(createRoute("/clan"))
+	//engine.GET(createRoute("/clan/:id"))
+	//engine.PATCH(createRoute("/clan/:id"))
+	//engine.DELETE(createRoute("/clan/:id"))
 
 	engine.NoRoute(func(c *gin.Context) {
 		handlers.ReturnError(c, http.StatusNotFound, "Not Found")
@@ -37,7 +37,7 @@ func initializeRoutes(engine *gin.Engine) {
 	logrus.Info("Initialized router")
 }
 
-// Creates a route with /v2. Example usage: createV2Route("/foo/:id)
-func createV2Route(route string) string {
+// Creates a route with /v2. Example usage: createRoute("/foo/:id)
+func createRoute(route string) string {
 	return fmt.Sprintf("/v2%v", route)
 }
