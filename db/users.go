@@ -1,0 +1,29 @@
+package db
+
+type User struct {
+	Id                          int     `gorm:"column:id"`
+	SteamId                     string  `gorm:"column:steam_id"`
+	Username                    string  `gorm:"column:username"`
+	TimeRegistered              int64   `gorm:"column:time_registered"`
+	Allowed                     bool    `gorm:"column:allowed"`
+	Privileges                  int64   `gorm:"column:privileges"`
+	UserGroups                  int64   `gorm:"column:usergroups"`
+	MuteEndTime                 int64   `gorm:"column:mute_endtime"`
+	LatestActivity              int64   `gorm:"column:latest_activity"`
+	Country                     string  `gorm:"column:country"`
+	IP                          string  `gorm:"column:ip"`
+	AvatarUrl                   *string `gorm:"column:avatar_url"`
+	Twitter                     *string `gorm:"column:twitter"`
+	Title                       *string `gorm:"column:title"`
+	CheckedPreviousAchievements bool    `gorm:"column:checked_previous_achievements"`
+	UserPage                    *string `gorm:"column:userpage"`
+	TwitchUsername              *string `gorm:"column:twitch_username"`
+	DonatorEndTime              int64   `gorm:"column:donator_end_time"`
+	Notes                       *string `gorm:"column:notes"`
+	DiscordId                   *string `gorm:"column:discord_id"`
+	Information                 *string `gorm:"column:information"`
+	UserPageDisabled            bool    `gorm:"column:userpage_disabled"`
+	ClanId                      *int    `gorm:"column:clan_id"`
+	ClanLeaveTime               int64   `gorm:"column:clan_leave_time"`
+	ShadowBanned                bool    `gorm:"column:shadow_banned"`
+}
