@@ -3,6 +3,8 @@ package handlers
 import (
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -12,13 +14,20 @@ func AuthenticateUser(c *gin.Context) *db.User {
 	inGameToken := c.GetHeader("auth")
 
 	var user *db.User
+	var err error
 
 	if jwt != "" {
-		user = authenticateJWT(jwt)
+		user, err = authenticateJWT(jwt)
 	} else if inGameToken != "" {
-		user = authenticateInGame(inGameToken)
+		user, err = authenticateInGame(inGameToken)
 	} else {
 		ReturnError(c, http.StatusUnauthorized, "You must provide an `Authorization` or `auth` header to access this resource.")
+		return nil
+	}
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		logrus.Errorf("Error while authenticating user: %v", err)
+		Return500(c)
 		return nil
 	}
 
@@ -32,12 +41,21 @@ func AuthenticateUser(c *gin.Context) *db.User {
 
 // Authenticates a user by their JWT token.
 // Header - {Authorization: 'Bearer Token`}
-func authenticateJWT(token string) *db.User {
-	return nil
+// TODO: IMPLEMENT!
+func authenticateJWT(token string) (*db.User, error) {
+	logrus.Warn("Please implement db.authenticateJWT().")
+	user, err := db.GetUserById(1)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 // Authenticates a user by their in-game token.
 // Header - {Auth:Token}
-func authenticateInGame(token string) *db.User {
-	return nil
+// TODO: IMPLEMENT!
+func authenticateInGame(token string) (*db.User, error) {
+	return nil, nil
 }
