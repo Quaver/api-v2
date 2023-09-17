@@ -41,9 +41,9 @@ func AuthenticateUser(c *gin.Context) *db.User {
 
 // Authenticates a user by their JWT token.
 // Header - {Authorization: 'Bearer Token`}
-// TODO: IMPLEMENT!
 func authenticateJWT(token string) (*db.User, error) {
 	logrus.Warn("Please implement db.authenticateJWT().")
+
 	user, err := db.GetUserById(1)
 
 	if err != nil {
@@ -55,7 +55,7 @@ func authenticateJWT(token string) (*db.User, error) {
 
 // Authenticates a user by their in-game token.
 // Header - {Auth:Token}
-// TODO: IMPLEMENT!
 func authenticateInGame(token string) (*db.User, error) {
+	logrus.Warn("Please implement db.authenticateInGame().")
 	return nil, nil
 }
