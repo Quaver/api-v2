@@ -1,5 +1,7 @@
 package db
 
+import "time"
+
 type User struct {
 	Id                          int     `gorm:"column:id"`
 	SteamId                     string  `gorm:"column:steam_id"`
@@ -26,6 +28,11 @@ type User struct {
 	ClanId                      *int    `gorm:"column:clan_id"`
 	ClanLeaveTime               int64   `gorm:"column:clan_leave_time"`
 	ShadowBanned                bool    `gorm:"column:shadow_banned"`
+}
+
+// CanJoinNewClan Returns if the user is eligible to join a new clan
+func (u *User) CanJoinNewClan() bool {
+	return time.Now().Sub(time.UnixMilli(u.ClanLeaveTime)) >= (time.Hour * 24 * 7)
 }
 
 // GetUserById Retrieves a user from the database by their Steam Id
