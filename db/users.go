@@ -32,7 +32,7 @@ type User struct {
 
 // CanJoinNewClan Returns if the user is eligible to join a new clan
 func (u *User) CanJoinNewClan() bool {
-	return time.Now().Sub(time.UnixMilli(u.ClanLeaveTime)) >= (time.Hour * 24 * 7)
+	return time.Now().Sub(time.UnixMilli(u.ClanLeaveTime)) >= (time.Hour * 24)
 }
 
 // GetUserById Retrieves a user from the database by their Steam Id
