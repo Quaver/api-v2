@@ -26,7 +26,7 @@ func AuthenticateUser(c *gin.Context) *db.User {
 	}
 
 	if err != nil && err != gorm.ErrRecordNotFound {
-		logrus.Errorf("Error while authenticating user: %v", err)
+		logrus.Errorf("An error occurred while authenticating user: %v", err)
 		Return500(c)
 		return nil
 	}
