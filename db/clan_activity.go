@@ -1,11 +1,11 @@
 package db
 
 type ClanActivity struct {
-	Id        int    `db:"id"`
-	ClanId    int    `db:"clan_id"`
-	Type      uint8  `db:"type"`
-	UserId    int    `db:"user_id"`
-	MapId     int    `db:"map_id"`
-	Message   string `db:"message"`
-	Timestamp int64  `db:"timestamp"`
+	Id        int    `gorm:"column:id"`
+	ClanId    int    `gorm:"column:clan_id"`
+	Type      uint8  `gorm:"column:type"`
+	UserId    int    `gorm:"column:user_id"`
+	MapId     int    `gorm:"column:map_id"`
+	Message   string `gorm:"column:message"`
+	Timestamp int64  `gorm:"column:timestamp"`
 }

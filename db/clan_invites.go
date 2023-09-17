@@ -1,8 +1,8 @@
 package db
 
 type ClanInvite struct {
-	Id        int   `db:"id"`
-	ClanId    int   `db:"clan_id"`
-	UserId    int   `db:"user_id"`
-	CreatedAt int64 `db:"created_at"`
+	Id        int   `gorm:"column:id"`
+	ClanId    int   `gorm:"column:clan_id"`
+	UserId    int   `gorm:"column:user_id"`
+	CreatedAt int64 `gorm:"column:created_at"`
 }
