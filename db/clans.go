@@ -10,3 +10,16 @@ type Clan struct {
 	FavoriteMode       uint8  `gorm:"column:favorite_mode"`
 	LastNameChangeTime int64  `gorm:"column:last_name_change_time"`
 }
+
+// GetClanByName Gets a clan from the database by its name
+func GetClanByName(name string) (*Clan, error) {
+	var clan *Clan
+
+	result := SQL.Where("name = ?", name).First(&clan)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return clan, nil
+}
