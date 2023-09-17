@@ -53,7 +53,7 @@ func CreateClan(c *gin.Context) {
 		return
 	}
 
-	clan, err := db.GetClanByName(body.Name)
+	existingClan, err := db.GetClanByName(body.Name)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.Errorf("Error retrieving clan by name `%v`: %v", body.Name, err)
@@ -61,8 +61,20 @@ func CreateClan(c *gin.Context) {
 		return
 	}
 
-	if clan != nil {
+	if existingClan != nil {
 		ReturnError(c, http.StatusBadRequest, "A clan with that name already exists. Please choose a different name.")
+		return
+	}
+
+	clan := db.Clan{
+		OwnerId: user.Id,
+		Name:    body.Name,
+		Tag:     body.Tag,
+	}
+
+	if err := clan.Insert(); err != nil {
+		logrus.Error("Error inserting clan into database: ", err)
+		Return500(c)
 		return
 	}
 
