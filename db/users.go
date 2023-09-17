@@ -27,3 +27,15 @@ type User struct {
 	ClanLeaveTime               int64   `gorm:"column:clan_leave_time"`
 	ShadowBanned                bool    `gorm:"column:shadow_banned"`
 }
+
+// GetUserById Retrieves a user from the database by their Steam Id
+func GetUserById(id int) (*User, error) {
+	var user *User
+	result := SQL.Where("id = ?", id).First(&user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return user, nil
+}
