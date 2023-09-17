@@ -36,6 +36,11 @@ func AuthenticateUser(c *gin.Context) *db.User {
 		return nil
 	}
 
+	if !user.Allowed {
+		ReturnError(c, http.StatusForbidden, "You are banned.")
+		return nil
+	}
+
 	return user
 }
 
