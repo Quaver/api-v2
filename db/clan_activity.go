@@ -1,7 +1,7 @@
 package db
 
 type ClanActivity struct {
-	Id        int    `gorm:"column:id"`
+	Id        int    `gorm:"column:id; PRIMARY_KEY"`
 	ClanId    int    `gorm:"column:clan_id"`
 	Type      uint8  `gorm:"column:type"`
 	UserId    int    `gorm:"column:user_id"`

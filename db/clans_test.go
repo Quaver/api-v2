@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/Quaver/api2/config"
+	"github.com/sirupsen/logrus"
 	"testing"
 )
 
@@ -15,5 +16,25 @@ func TestGetClanByName(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	CloseMySQL()
+}
+
+func TestInsertClan(t *testing.T) {
+	_ = config.Load(testConfigPath)
+	ConnectMySQL()
+
+	clan := Clan{
+		OwnerId: 1,
+		Name:    "Test",
+		Tag:     "TEST",
+	}
+
+	err := clan.Insert()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	logrus.Info(clan)
 	CloseMySQL()
 }

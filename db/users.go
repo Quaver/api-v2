@@ -1,9 +1,11 @@
 package db
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
-	Id                          int     `gorm:"column:id"`
+	Id                          int     `gorm:"column:id; PRIMARY_KEY"`
 	SteamId                     string  `gorm:"column:steam_id"`
 	Username                    string  `gorm:"column:username"`
 	TimeRegistered              int64   `gorm:"column:time_registered"`
