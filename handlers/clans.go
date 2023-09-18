@@ -6,7 +6,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
-	"regexp"
 )
 
 // GetClans Retrieves basic info / leaderboard data about clans
@@ -23,13 +22,8 @@ func CreateClan(c *gin.Context) {
 		return
 	}
 
-	if user.ClanId != nil {
-		ReturnError(c, http.StatusBadRequest, "You must leave your current clan in order to create a new one.")
-		return
-	}
-
-	if !user.CanJoinNewClan() {
-		ReturnError(c, http.StatusBadRequest, "You must wait 1 day after leaving your previous clan to create a new one.")
+	if !user.CanJoinClan() {
+		ReturnError(c, http.StatusBadRequest, "You must not be in clan, and wait at least 1 day after leaving your previous clan to create a new one.")
 		return
 	}
 
@@ -43,12 +37,12 @@ func CreateClan(c *gin.Context) {
 		return
 	}
 
-	if result, _ := regexp.MatchString("^[a-zA-Z0-9][a-zA-Z0-9 ]{2,29}$", body.Name); !result {
+	if !db.IsValidClanName(body.Name) {
 		ReturnError(c, http.StatusBadRequest, "Your clan `name` must be between 3 and 30 characters and must start with a number or letter.")
 		return
 	}
 
-	if result, _ := regexp.MatchString("^[a-zA-Z0-9]{1,4}$", body.Tag); !result {
+	if !db.IsValidClanTag(body.Tag) {
 		ReturnError(c, http.StatusBadRequest, "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers.")
 		return
 	}

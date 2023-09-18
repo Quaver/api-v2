@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"regexp"
 	"time"
 )
 
@@ -50,4 +51,16 @@ func (clan *Clan) Insert() error {
 	}
 
 	return nil
+}
+
+// IsValidClanName Checks a string to see if it is a valid clan name
+func IsValidClanName(name string) bool {
+	result, _ := regexp.MatchString("^[a-zA-Z0-9][a-zA-Z0-9 ]{2,29}$", name)
+	return result
+}
+
+// IsValidClanTag Checks a string to see if it is a valid clan tag
+func IsValidClanTag(tag string) bool {
+	result, _ := regexp.MatchString("^[a-zA-Z0-9]{1,4}$", tag)
+	return result
 }
