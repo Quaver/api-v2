@@ -50,8 +50,15 @@ func GetUserById(id int) (*User, error) {
 }
 
 // UpdateUserClan Updates a given user's clan in the database.
-func UpdateUserClan(userId int, clanId int) error {
-	result := SQL.Model(&User{}).Where("id = ?", userId).Update("clan_id", clanId)
+// Not passing in any clan id will set it to NULL.
+func UpdateUserClan(userId int, clanId ...int) error {
+	var clanIdVal *int = nil
+
+	if len(clanId) > 0 {
+		clanIdVal = &clanId[0]
+	}
+
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("clan_id", clanIdVal)
 
 	if result.Error != nil {
 		return result.Error
