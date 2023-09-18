@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"gorm.io/gorm"
 	"regexp"
 	"time"
 )
@@ -12,10 +13,10 @@ type Clan struct {
 	Name                   string    `gorm:"column:name" json:"name"`
 	Tag                    string    `gorm:"column:tag" json:"tag"`
 	CreatedAt              int64     `gorm:"column:created_at" json:"-"`
-	CreatedAtJSON          time.Time `gorm:"-:all" json:"created_at"`
 	AboutMe                *string   `gorm:"column:about_me" json:"about_me"`
 	FavoriteMode           uint8     `gorm:"column:favorite_mode" json:"favorite_mode"`
 	LastNameChangeTime     int64     `gorm:"column:last_name_change_time" json:"-"`
+	CreatedAtJSON          time.Time `gorm:"-:all" json:"created_at"`
 	LastNameChangeTimeJSON time.Time `gorm:"-:all" json:"last_name_change_time"`
 }
 
@@ -32,8 +33,6 @@ func (clan *Clan) Insert() error {
 	clan.FavoriteMode = 1
 	clan.CreatedAt = time.Now().UnixMilli()
 	clan.LastNameChangeTime = time.Now().UnixMilli()
-	clan.CreatedAtJSON = time.Now()
-	clan.LastNameChangeTimeJSON = time.Now()
 
 	result := SQL.Create(&clan)
 
@@ -41,6 +40,20 @@ func (clan *Clan) Insert() error {
 		return result.Error
 	}
 
+	return nil
+}
+
+// BeforeCreate Updates clan timestamps before inserting into the db
+func (clan *Clan) BeforeCreate(tx *gorm.DB) (err error) {
+	clan.CreatedAtJSON = time.Now()
+	clan.LastNameChangeTimeJSON = time.Now()
+	return nil
+}
+
+// AfterFind Updates clan timestamps after selecting in the db
+func (clan *Clan) AfterFind(tx *gorm.DB) (err error) {
+	clan.CreatedAtJSON = time.UnixMilli(clan.CreatedAt)
+	clan.LastNameChangeTimeJSON = time.UnixMilli(clan.LastNameChangeTime)
 	return nil
 }
 
@@ -54,8 +67,6 @@ func GetClanByName(name string) (*Clan, error) {
 		return nil, result.Error
 	}
 
-	clan.CreatedAtJSON = time.UnixMilli(clan.CreatedAt)
-	clan.LastNameChangeTimeJSON = time.UnixMilli(clan.LastNameChangeTime)
 	return clan, nil
 }
 
