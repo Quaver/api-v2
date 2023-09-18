@@ -7,15 +7,13 @@ import (
 
 func ReturnMessage(c *gin.Context, status int, message string) {
 	c.JSON(status, gin.H{
-		"status":  status,
 		"message": message,
 	})
 }
 
 func ReturnError(c *gin.Context, status int, message string) {
 	c.JSON(status, gin.H{
-		"status": status,
-		"error":  message,
+		"error": message,
 	})
 }
 
