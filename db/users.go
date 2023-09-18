@@ -50,6 +50,12 @@ func GetUserById(id int) (*User, error) {
 }
 
 // UpdateUserClan Updates a given user's clan in the database.
-func UpdateUserClan(userId int, clanId int) error { //	SQL.Update("clan_id = ?", clanId).Where()
+func UpdateUserClan(userId int, clanId int) error {
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("clan_id", clanId)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
 	return nil
 }
