@@ -10,7 +10,7 @@ import (
 
 const (
 	errClanUserCantJoin string = "You must not be in clan, and wait at least 1 day after leaving your previous clan to create a new one."
-	errClanNameInvalid  string = "Your clan `name` must be between 3 and 30 characters and must start with a number or letters."
+	errClanNameInvalid  string = "Your clan `name` must be between 3 and 30 characters and must contain only letters or numbers.."
 	errClanTagInvalid   string = "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers."
 	errClanNameExists   string = "A clan with that name already exists. Please choose a different name."
 )
