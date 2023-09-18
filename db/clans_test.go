@@ -2,7 +2,6 @@ package db
 
 import (
 	"github.com/Quaver/api2/config"
-	"github.com/sirupsen/logrus"
 	"testing"
 )
 
@@ -35,6 +34,5 @@ func TestInsertClan(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	logrus.Info(clan)
 	CloseMySQL()
 }
