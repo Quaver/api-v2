@@ -17,19 +17,6 @@ type Clan struct {
 	LastNameChangeTime int64   `gorm:"column:last_name_change_time"`
 }
 
-// GetClanByName Gets a clan from the database by its name
-func GetClanByName(name string) (*Clan, error) {
-	var clan *Clan
-
-	result := SQL.Where("name = ?", name).First(&clan)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return clan, nil
-}
-
 // Insert Inserts the clan into the database
 func (clan *Clan) Insert() error {
 	if clan.Id != 0 {
@@ -51,6 +38,19 @@ func (clan *Clan) Insert() error {
 	}
 
 	return nil
+}
+
+// GetClanByName Gets a clan from the database by its name
+func GetClanByName(name string) (*Clan, error) {
+	var clan *Clan
+
+	result := SQL.Where("name = ?", name).First(&clan)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return clan, nil
 }
 
 // IsValidClanName Checks a string to see if it is a valid clan name
