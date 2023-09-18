@@ -85,8 +85,8 @@ func CreateClan(c *gin.Context) {
 		Message string   `json:"message"`
 		Clan    *db.Clan `json:"clan"`
 	}{
-		Message: "Your clan has been successfully created.",
 		Status:  http.StatusOK,
+		Message: "Your clan has been successfully created.",
 		Clan:    &clan,
 	})
 }
