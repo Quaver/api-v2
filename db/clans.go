@@ -44,14 +44,14 @@ func (clan *Clan) Insert() error {
 }
 
 // BeforeCreate Updates clan timestamps before inserting into the db
-func (clan *Clan) BeforeCreate(tx *gorm.DB) (err error) {
+func (clan *Clan) BeforeCreate(*gorm.DB) (err error) {
 	clan.CreatedAtJSON = time.Now()
 	clan.LastNameChangeTimeJSON = time.Now()
 	return nil
 }
 
 // AfterFind Updates clan timestamps after selecting in the db
-func (clan *Clan) AfterFind(tx *gorm.DB) (err error) {
+func (clan *Clan) AfterFind(*gorm.DB) (err error) {
 	clan.CreatedAtJSON = time.UnixMilli(clan.CreatedAt)
 	clan.LastNameChangeTimeJSON = time.UnixMilli(clan.LastNameChangeTime)
 	return nil
