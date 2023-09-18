@@ -8,6 +8,13 @@ import (
 	"net/http"
 )
 
+const (
+	errClanUserCantJoin string = "You must not be in clan, and wait at least 1 day after leaving your previous clan to create a new one."
+	errClanNameInvalid  string = "Your clan `name` must be between 3 and 30 characters and must start with a number or letters."
+	errClanTagInvalid   string = "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers."
+	errClanNameExists   string = "A clan with that name already exists. Please choose a different name."
+)
+
 // GetClans Retrieves basic info / leaderboard data about clans
 // Endpoint: GET /v2/clans?page=1
 func GetClans(c *gin.Context) {
@@ -23,7 +30,7 @@ func CreateClan(c *gin.Context) {
 	}
 
 	if !user.CanJoinClan() {
-		ReturnError(c, http.StatusBadRequest, "You must not be in clan, and wait at least 1 day after leaving your previous clan to create a new one.")
+		ReturnError(c, http.StatusBadRequest, errClanUserCantJoin)
 		return
 	}
 
@@ -38,12 +45,12 @@ func CreateClan(c *gin.Context) {
 	}
 
 	if !db.IsValidClanName(body.Name) {
-		ReturnError(c, http.StatusBadRequest, "Your clan `name` must be between 3 and 30 characters and must start with a number or letters.")
+		ReturnError(c, http.StatusBadRequest, errClanNameInvalid)
 		return
 	}
 
 	if !db.IsValidClanTag(body.Tag) {
-		ReturnError(c, http.StatusBadRequest, "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers.")
+		ReturnError(c, http.StatusBadRequest, errClanTagInvalid)
 		return
 	}
 
@@ -56,7 +63,7 @@ func CreateClan(c *gin.Context) {
 	}
 
 	if existingClan != nil {
-		ReturnError(c, http.StatusBadRequest, "A clan with that name already exists. Please choose a different name.")
+		ReturnError(c, http.StatusBadRequest, errClanNameExists)
 		return
 	}
 
