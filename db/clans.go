@@ -7,14 +7,16 @@ import (
 )
 
 type Clan struct {
-	Id                 uint    `gorm:"column:id; PRIMARY_KEY"`
-	OwnerId            int     `gorm:"column:owner_id"`
-	Name               string  `gorm:"column:name"`
-	Tag                string  `gorm:"column:tag"`
-	CreatedAt          int64   `gorm:"column:created_at"`
-	AboutMe            *string `gorm:"column:about_me"`
-	FavoriteMode       uint8   `gorm:"column:favorite_mode"`
-	LastNameChangeTime int64   `gorm:"column:last_name_change_time"`
+	Id                      int       `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	OwnerId                 int       `gorm:"column:owner_id" json:"owner_id"`
+	Name                    string    `gorm:"column:name" json:"name"`
+	Tag                     string    `gorm:"column:tag" json:"tag"`
+	CreatedAt               int64     `gorm:"column:created_at" json:"-"`
+	CreatedAtTimestamp      time.Time `gorm:"-:all" json:"created_at"`
+	AboutMe                 *string   `gorm:"column:about_me" json:"about_me"`
+	FavoriteMode            uint8     `gorm:"column:favorite_mode" json:"favorite_mode"`
+	LastNameChangeTime      int64     `gorm:"column:last_name_change_time" json:"-"`
+	LastNameChangeTimestamp time.Time `gorm:"-:all" json:"last_name_change_time"`
 }
 
 // Insert Inserts the clan into the database
@@ -28,6 +30,8 @@ func (clan *Clan) Insert() error {
 	}
 
 	clan.FavoriteMode = 1
+	clan.CreatedAtTimestamp = time.Now()
+	clan.LastNameChangeTimestamp = time.Now()
 	clan.CreatedAt = time.Now().UnixMilli()
 	clan.LastNameChangeTime = time.Now().UnixMilli()
 

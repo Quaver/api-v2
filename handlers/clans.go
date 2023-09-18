@@ -38,7 +38,7 @@ func CreateClan(c *gin.Context) {
 	}
 
 	if !db.IsValidClanName(body.Name) {
-		ReturnError(c, http.StatusBadRequest, "Your clan `name` must be between 3 and 30 characters and must start with a number or letter.")
+		ReturnError(c, http.StatusBadRequest, "Your clan `name` must be between 3 and 30 characters and must start with a number or letters.")
 		return
 	}
 
@@ -72,7 +72,23 @@ func CreateClan(c *gin.Context) {
 		return
 	}
 
-	ReturnMessage(c, http.StatusCreated, "Your clan has been successfully created.")
+	err = db.UpdateUserClan(user.Id, clan.Id)
+
+	if err != nil {
+		logrus.Error("Error while updating user clan: ", err)
+		Return500(c)
+		return
+	}
+
+	c.JSON(http.StatusOK, struct {
+		Status  int      `json:"status"`
+		Message string   `json:"message"`
+		Clan    *db.Clan `json:"clan"`
+	}{
+		Message: "Your clan has been successfully created.",
+		Status:  http.StatusOK,
+		Clan:    &clan,
+	})
 }
 
 // GetClan Retrieves data about an individual clan

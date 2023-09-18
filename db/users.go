@@ -48,3 +48,8 @@ func GetUserById(id int) (*User, error) {
 
 	return user, nil
 }
+
+// UpdateUserClan Updates a given user's clan in the database.
+func UpdateUserClan(userId int, clanId int) error {
+	return nil
+}
