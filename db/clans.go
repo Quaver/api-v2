@@ -40,6 +40,12 @@ func (clan *Clan) Insert() error {
 		return result.Error
 	}
 
+	err := InsertClanStats(clan.Id)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
