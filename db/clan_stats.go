@@ -1,6 +1,6 @@
 package db
 
-type ClanStat struct {
+type ClanStats struct {
 	ClanId                   int     `gorm:"column:clan_id" json:"clan_id"`
 	Mode                     int     `gorm:"column:mode" json:"mode"`
 	OverallAccuracy          float64 `gorm:"column:overall_accuracy" json:"overall_accuracy"`
@@ -13,10 +13,14 @@ type ClanStat struct {
 	TotalMiss                int     `gorm:"column:total_miss" json:"total_miss"`
 }
 
+func (*ClanStats) TableName() string {
+	return "clan_stats"
+}
+
 // InsertClanStats Inserts new clan stats in the database
 func InsertClanStats(clanId int) error {
 	for i := 1; i <= 2; i++ {
-		modeStat := ClanStat{
+		modeStat := ClanStats{
 			ClanId: clanId,
 			Mode:   i,
 		}
