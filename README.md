@@ -4,7 +4,7 @@
 
 **api2** is the most up-to-date (v2) and open source version of the Quaver web API.
 
-As endpoints are made available in v2, it is recommended to use it instead of its v1 counterpart, as v1 will be made obsolete as we begin to update usage in-game and on our website.
+As endpoints are made available in v2, it is recommended to use them instead of its v1 counterpart, as v1 will be made obsolete as we begin to update usage in-game and on our website.
 
 **This application is being developed for internal network use. As such, no support will be provided for the usage of this software.**
 
