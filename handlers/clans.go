@@ -94,6 +94,8 @@ func CreateClan(c *gin.Context) {
 		Message: "Your clan has been successfully created.",
 		Clan:    &clan,
 	})
+
+	logrus.Debugf("%v (#%v) has created the clan `%v` (#%v).", user.Username, user.Id, clan.Name, clan.Id)
 }
 
 // GetClan Retrieves data about an individual clan
