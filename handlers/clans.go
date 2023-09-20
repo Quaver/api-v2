@@ -242,6 +242,7 @@ func UpdateClan(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully updated."})
+	logrus.Debugf("%v (#%v) has updated the clan: `%v` (#%v).", user.Username, user.Id, clan.Name, clan.Id)
 }
 
 // DeleteClan Deletes an individual clan
