@@ -15,6 +15,7 @@ const (
 	errClanUserCantJoin        string = "You must not be in clan, and wait at least 1 day after leaving your previous clan to create a new one."
 	errClanNameInvalid         string = "Your clan `name` must be between 3 and 30 characters and must contain only letters or numbers."
 	errClanTagInvalid          string = "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers."
+	errClanAboutMeInvalid      string = "Your clan `about_me` must be between 0 and 2000 characters."
 	errClanFavoriteModeInvalid string = "Your clan `favorite_mode` must be a valid mode id."
 	errClanNameExists          string = "A clan with that name already exists. Please choose a different name."
 )
@@ -172,6 +173,7 @@ func UpdateClan(c *gin.Context) {
 		Name         *string `form:"name" json:"name"`
 		Tag          *string `form:"tag" json:"tag"`
 		FavoriteMode *uint8  `form:"favorite_mode" json:"favorite_mode"`
+		AboutMe      *string `form:"about_me" json:"about_me"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -224,6 +226,14 @@ func UpdateClan(c *gin.Context) {
 	}
 
 	// Update About Me
+	if body.AboutMe != nil {
+		if len(*body.AboutMe) > 2000 {
+			ReturnError(c, http.StatusBadRequest, errClanAboutMeInvalid)
+			return
+		}
+
+		clan.AboutMe = body.AboutMe
+	}
 
 	result := db.SQL.Save(clan)
 
