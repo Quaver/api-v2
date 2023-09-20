@@ -89,6 +89,17 @@ func GetClanByName(name string) (*Clan, error) {
 	return clan, nil
 }
 
+// DoesClanExistByName Returns if a clan exists by its name
+func DoesClanExistByName(name string) (bool, error) {
+	clan, err := GetClanByName(name)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return false, err
+	}
+
+	return clan != nil, nil
+}
+
 // IsValidClanName Checks a string to see if it is a valid clan name
 func IsValidClanName(name string) bool {
 	result, _ := regexp.MatchString("^[a-zA-Z0-9][a-zA-Z0-9 ]{2,29}$", name)
