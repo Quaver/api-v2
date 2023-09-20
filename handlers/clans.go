@@ -28,7 +28,7 @@ func GetClans(c *gin.Context) {
 // CreateClan Creates a new clan if the user is eligible to.
 // Endpoint: POST /v2/clan
 func CreateClan(c *gin.Context) {
-	user := AuthenticateUser(c)
+	user := authenticateUser(c)
 
 	if user == nil {
 		return
@@ -137,7 +137,7 @@ func GetClan(c *gin.Context) {
 // UpdateClan Updates data about a clan
 // Endpoint: PATCH /v2/clan/:id
 func UpdateClan(c *gin.Context) {
-	user := AuthenticateUser(c)
+	user := authenticateUser(c)
 
 	if user == nil {
 		return

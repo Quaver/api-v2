@@ -8,8 +8,8 @@ import (
 	"net/http"
 )
 
-// AuthenticateUser Authenticates a user from an incoming HTTP request
-func AuthenticateUser(c *gin.Context) *db.User {
+// authenticateUser Authenticates a user from an incoming HTTP request
+func authenticateUser(c *gin.Context) *db.User {
 	jwt := c.GetHeader("Authorization")
 	inGameToken := c.GetHeader("auth")
 
