@@ -11,6 +11,12 @@ func main() {
 		logrus.Panic(err)
 	}
 
+	if !config.Instance.IsProduction {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+
+	logrus.Infof("Log level set to: `%v`", logrus.GetLevel())
+
 	db.ConnectMySQL()
 	initializeServer(config.Instance.Server.Port)
 }

@@ -8,6 +8,8 @@ import (
 )
 
 type Config struct {
+	IsProduction bool `json:"is_production"`
+
 	Server struct {
 		Port int `json:"port"`
 	} `json:"server"`

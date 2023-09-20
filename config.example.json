@@ -1,4 +1,5 @@
 {
+  "is_production": false,
   "server": {
     "port": 8080
   },
