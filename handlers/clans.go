@@ -235,9 +235,7 @@ func UpdateClan(c *gin.Context) {
 		clan.AboutMe = body.AboutMe
 	}
 
-	result := db.SQL.Save(clan)
-
-	if result.Error != nil {
+	if result := db.SQL.Save(clan); result.Error != nil {
 		logrus.Errorf("Error updating clan: %v (#%v) in the database - %v", clan.Name, clan.Id, result.Error)
 		Return500(c)
 		return
