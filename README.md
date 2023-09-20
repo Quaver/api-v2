@@ -36,7 +36,9 @@ Built in go tests are used for any unit testing. Simply run `go test` with the a
 
 ### Integration Tests
 
-We test all request handlers through a [Postman collection]().
+Request handlers can be tested through [Postman](https://www.postman.com/00swan/workspace/quaver/collection/29785543-d09535f0-68bc-461d-920e-9d388c67f11b).
+
+Some endpoints **require authentication.** To access them, you must generate a JWT and set it in the `variables` section of the Postman collection.
 
 ## LICENSE
 
