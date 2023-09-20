@@ -7,14 +7,16 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
 const (
-	errClanUserCantJoin string = "You must not be in clan, and wait at least 1 day after leaving your previous clan to create a new one."
-	errClanNameInvalid  string = "Your clan `name` must be between 3 and 30 characters and must contain only letters or numbers."
-	errClanTagInvalid   string = "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers."
-	errClanNameExists   string = "A clan with that name already exists. Please choose a different name."
+	errClanUserCantJoin        string = "You must not be in clan, and wait at least 1 day after leaving your previous clan to create a new one."
+	errClanNameInvalid         string = "Your clan `name` must be between 3 and 30 characters and must contain only letters or numbers."
+	errClanTagInvalid          string = "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers."
+	errClanFavoriteModeInvalid string = "Your clan `favorite_mode` must be a valid mode id."
+	errClanNameExists          string = "A clan with that name already exists. Please choose a different name."
 )
 
 // GetClans Retrieves basic info / leaderboard data about clans
@@ -167,8 +169,9 @@ func UpdateClan(c *gin.Context) {
 	}
 
 	body := struct {
-		Name *string `form:"name" json:"name"`
-		Tag  *string `form:"tag" json:"tag"`
+		Name         *string `form:"name" json:"name"`
+		Tag          *string `form:"tag" json:"tag"`
+		FavoriteMode *uint8  `form:"favorite_mode" json:"favorite_mode"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -176,6 +179,7 @@ func UpdateClan(c *gin.Context) {
 		return
 	}
 
+	// Update Name
 	if body.Name != nil {
 		if !db.IsValidClanName(*body.Name) {
 			ReturnError(c, http.StatusBadRequest, errClanNameInvalid)
@@ -190,7 +194,7 @@ func UpdateClan(c *gin.Context) {
 			return
 		}
 
-		if exists {
+		if exists && strings.ToLower(clan.Name) != strings.ToLower(*body.Name) {
 			ReturnError(c, http.StatusBadRequest, errClanNameExists)
 			return
 		}
@@ -199,6 +203,7 @@ func UpdateClan(c *gin.Context) {
 		clan.LastNameChangeTime = time.Now().UnixMilli()
 	}
 
+	// Update Tag
 	if body.Tag != nil {
 		if !db.IsValidClanTag(*body.Tag) {
 			ReturnError(c, http.StatusBadRequest, errClanTagInvalid)
@@ -207,6 +212,18 @@ func UpdateClan(c *gin.Context) {
 
 		clan.Tag = *body.Tag
 	}
+
+	// Update Favorite Mode
+	if body.FavoriteMode != nil {
+		if *body.FavoriteMode < 1 || *body.FavoriteMode > 2 {
+			ReturnError(c, http.StatusBadRequest, errClanFavoriteModeInvalid)
+			return
+		}
+
+		clan.FavoriteMode = *body.FavoriteMode
+	}
+
+	// Update About Me
 
 	result := db.SQL.Save(clan)
 
