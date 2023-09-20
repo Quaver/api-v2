@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
 const (
@@ -101,6 +102,32 @@ func CreateClan(c *gin.Context) {
 // GetClan Retrieves data about an individual clan
 // GET /v2/clan/:id
 func GetClan(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		Return400(c)
+		return
+	}
+
+	clan, err := db.GetClanById(id)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		c.JSON(http.StatusNotFound, gin.H{"error": "Clan not found"})
+		return
+	default:
+		logrus.Errorf("Error while fetching clan: `%v` - %v", id, err)
+		Return500(c)
+		return
+	}
+
+	c.JSON(http.StatusOK, struct {
+		Clan *db.Clan `json:"clan"`
+	}{
+		Clan: clan,
+	})
 }
 
 // UpdateClan Updates data about a clan

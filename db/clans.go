@@ -63,6 +63,19 @@ func (clan *Clan) AfterFind(*gorm.DB) (err error) {
 	return nil
 }
 
+// GetClanById Gets a clan from the database by its id
+func GetClanById(id int) (*Clan, error) {
+	var clan *Clan
+
+	result := SQL.Where("id = ?", id).First(&clan)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return clan, nil
+}
+
 // GetClanByName Gets a clan from the database by its name
 func GetClanByName(name string) (*Clan, error) {
 	var clan *Clan
