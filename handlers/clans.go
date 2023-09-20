@@ -7,11 +7,12 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 const (
 	errClanUserCantJoin string = "You must not be in clan, and wait at least 1 day after leaving your previous clan to create a new one."
-	errClanNameInvalid  string = "Your clan `name` must be between 3 and 30 characters and must contain only letters or numbers.."
+	errClanNameInvalid  string = "Your clan `name` must be between 3 and 30 characters and must contain only letters or numbers."
 	errClanTagInvalid   string = "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers."
 	errClanNameExists   string = "A clan with that name already exists. Please choose a different name."
 )
@@ -55,15 +56,15 @@ func CreateClan(c *gin.Context) {
 		return
 	}
 
-	existingClan, err := db.GetClanByName(body.Name)
+	exists, err := db.DoesClanExistByName(body.Name)
 
-	if err != nil && err != gorm.ErrRecordNotFound {
-		logrus.Errorf("Error retrieving clan by name `%v`: %v", body.Name, err)
+	if err != nil {
+		logrus.Errorf("Error checking if clan exists by name - %v", err)
 		Return500(c)
 		return
 	}
 
-	if existingClan != nil {
+	if exists {
 		ReturnError(c, http.StatusBadRequest, errClanNameExists)
 		return
 	}
@@ -133,6 +134,89 @@ func GetClan(c *gin.Context) {
 // UpdateClan Updates data about a clan
 // Endpoint: PATCH /v2/clan/:id
 func UpdateClan(c *gin.Context) {
+	user := AuthenticateUser(c)
+
+	if user == nil {
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		Return400(c)
+		return
+	}
+
+	clan, err := db.GetClanById(id)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		c.JSON(http.StatusNotFound, gin.H{"error": "Clan not found"})
+		return
+	default:
+		logrus.Errorf("Erorr while retrieving clan from db - %v", err)
+		Return500(c)
+		return
+	}
+
+	if clan.OwnerId != user.Id || clan.Id != *user.ClanId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of the clan."})
+		return
+	}
+
+	body := struct {
+		Name *string `form:"name" json:"name"`
+		Tag  *string `form:"tag" json:"tag"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		Return400(c)
+		return
+	}
+
+	if body.Name != nil {
+		if !db.IsValidClanName(*body.Name) {
+			ReturnError(c, http.StatusBadRequest, errClanNameInvalid)
+			return
+		}
+
+		exists, err := db.DoesClanExistByName(*body.Name)
+
+		if err != nil {
+			logrus.Errorf("Error checking if clan exists by name - %v", err)
+			Return500(c)
+			return
+		}
+
+		if exists {
+			ReturnError(c, http.StatusBadRequest, errClanNameExists)
+			return
+		}
+
+		clan.Name = *body.Name
+		clan.LastNameChangeTime = time.Now().UnixMilli()
+	}
+
+	if body.Tag != nil {
+		if !db.IsValidClanTag(*body.Tag) {
+			ReturnError(c, http.StatusBadRequest, errClanTagInvalid)
+			return
+		}
+
+		clan.Tag = *body.Tag
+	}
+
+	result := db.SQL.Save(clan)
+
+	if result.Error != nil {
+		logrus.Errorf("Error updating clan: %v (#%v) in the database - %v", clan.Name, clan.Id, result.Error)
+		Return500(c)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully updated."})
 }
 
 // DeleteClan Deletes an individual clan
