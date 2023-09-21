@@ -16,21 +16,3 @@ type ClanStats struct {
 func (*ClanStats) TableName() string {
 	return "clan_stats"
 }
-
-// InsertClanStats Inserts new clan stats in the database
-func InsertClanStats(clanId int) error {
-	for i := 1; i <= 2; i++ {
-		modeStat := ClanStats{
-			ClanId: clanId,
-			Mode:   i,
-		}
-
-		result := SQL.Create(modeStat)
-
-		if result.Error != nil {
-			return result.Error
-		}
-	}
-
-	return nil
-}

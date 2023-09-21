@@ -34,13 +34,21 @@ func (clan *Clan) Insert() error {
 	clan.CreatedAt = time.Now().UnixMilli()
 	clan.LastNameChangeTime = time.Now().UnixMilli()
 
-	result := SQL.Create(&clan)
+	err := SQL.Transaction(func(tx *gorm.DB) error {
+		// Insert Clan
+		if err := tx.Create(&clan).Error; err != nil {
+			return err
+		}
 
-	if result.Error != nil {
-		return result.Error
-	}
+		// Insert Clan Stats
+		for i := 1; i <= 2; i++ {
+			if err := tx.Create(&ClanStats{ClanId: clan.Id, Mode: i}).Error; err != nil {
+				return err
+			}
+		}
 
-	err := InsertClanStats(clan.Id)
+		return nil
+	})
 
 	if err != nil {
 		return err
