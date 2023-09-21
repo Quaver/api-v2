@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -150,22 +151,9 @@ func UpdateClan(c *gin.Context) {
 		return
 	}
 
-	clan, err := db.GetClanById(id)
+	clan, err := getClanAndCheckOwnership(c, user, id)
 
-	switch err {
-	case nil:
-		break
-	case gorm.ErrRecordNotFound:
-		c.JSON(http.StatusNotFound, gin.H{"error": "Clan not found"})
-		return
-	default:
-		logrus.Errorf("Erorr while retrieving clan from db - %v", err)
-		Return500(c)
-		return
-	}
-
-	if clan.OwnerId != user.Id || clan.Id != *user.ClanId {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of the clan."})
+	if err != nil {
 		return
 	}
 
@@ -248,4 +236,49 @@ func UpdateClan(c *gin.Context) {
 // DeleteClan Deletes an individual clan
 // Endpoint: DELETE /v2/clan/:id
 func DeleteClan(c *gin.Context) {
+	user := authenticateUser(c)
+
+	if user == nil {
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		Return400(c)
+		return
+	}
+
+	clan, err := getClanAndCheckOwnership(c, user, id)
+
+	if err != nil {
+		return
+	}
+
+	c.JSON(http.StatusOK, clan)
+	logrus.Debugf("%v (#%v) has deleted the clan: `%v` (#%v).", user.Username, user.Id, clan.Name, clan.Id)
+}
+
+// Selects a clan from the database with clanId and checks if the user is the owner.
+func getClanAndCheckOwnership(c *gin.Context, user *db.User, clanId int) (*db.Clan, error) {
+	clan, err := db.GetClanById(clanId)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		c.JSON(http.StatusNotFound, gin.H{"error": "Clan not found"})
+		return nil, err
+	default:
+		logrus.Errorf("Erorr while retrieving clan from db - %v", err)
+		Return500(c)
+		return nil, err
+	}
+
+	if clan.OwnerId != user.Id || clan.Id != *user.ClanId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of the clan."})
+		return nil, errors.New("user is not clan owner")
+	}
+
+	return clan, nil
 }
