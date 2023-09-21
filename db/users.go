@@ -1,9 +1,5 @@
 package db
 
-import (
-	"time"
-)
-
 type User struct {
 	Id                          int     `gorm:"column:id; PRIMARY_KEY"`
 	SteamId                     string  `gorm:"column:steam_id"`
@@ -34,7 +30,7 @@ type User struct {
 
 // CanJoinClan Returns if the user is eligible to join a new clan
 func (u *User) CanJoinClan() bool {
-	return u.ClanId == nil && time.Now().Sub(time.UnixMilli(u.ClanLeaveTime)) >= (time.Hour*24)
+	return u.ClanId == nil
 }
 
 // GetUserById Retrieves a user from the database by their Steam Id

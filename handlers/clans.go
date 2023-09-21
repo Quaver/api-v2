@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	errClanUserCantJoin        string = "You must not be in clan, and wait at least 1 day after leaving your previous clan to create a new one."
+	errClanUserCantJoin        string = "You must not already be in a clan to perform this action."
 	errClanNameInvalid         string = "Your clan `name` must be between 3 and 30 characters and must contain only letters or numbers."
 	errClanTagInvalid          string = "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers."
 	errClanAboutMeInvalid      string = "Your clan `about_me` must be between 0 and 2000 characters."
@@ -255,7 +255,15 @@ func DeleteClan(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, clan)
+	err = db.DeleteClan(clan.Id)
+
+	if err != nil {
+		logrus.Errorf("Error while deleting clan - %v", err)
+		Return500(c)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully deleted."})
 	logrus.Debugf("%v (#%v) has deleted the clan: `%v` (#%v).", user.Username, user.Id, clan.Name, clan.Id)
 }
 

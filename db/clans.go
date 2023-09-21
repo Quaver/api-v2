@@ -89,6 +89,43 @@ func GetClanByName(name string) (*Clan, error) {
 	return clan, nil
 }
 
+// DeleteClan Fully deletes a clan with a given id
+func DeleteClan(id int) error {
+	err := SQL.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&Clan{}, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&ClanStats{}, "clan_id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&ClanActivity{}, "clan_id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&ClanInvite{}, "clan_id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&ClanScore{}, "clan_id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Model(&User{}).Where("clan_id = ?", id).Update("clan_id", nil).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DoesClanExistByName Returns if a clan exists by its name
 func DoesClanExistByName(name string) (bool, error) {
 	clan, err := GetClanByName(name)

@@ -6,3 +6,7 @@ type ClanInvite struct {
 	UserId    int   `gorm:"column:user_id"`
 	CreatedAt int64 `gorm:"column:created_at"`
 }
+
+func (*ClanInvite) TableName() string {
+	return "clan_invites"
+}

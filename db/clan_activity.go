@@ -9,3 +9,7 @@ type ClanActivity struct {
 	Message   string `gorm:"column:message"`
 	Timestamp int64  `gorm:"column:timestamp"`
 }
+
+func (*ClanActivity) TableName() string {
+	return "clan_activity"
+}
