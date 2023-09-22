@@ -21,7 +21,7 @@ func authenticateUser(c *gin.Context) *db.User {
 	} else if inGameToken != "" {
 		user, err = authenticateInGame(inGameToken)
 	} else {
-		ReturnError(c, http.StatusUnauthorized, "You must provide an `Authorization` or `auth` header to access this resource.")
+		ReturnError(c, http.StatusUnauthorized, "You must provide a valid `Authorization` or `auth` header.")
 		return nil
 	}
 
