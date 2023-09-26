@@ -33,7 +33,7 @@ func authenticateUser(c *gin.Context) (*db.User, *APIError) {
 	}
 
 	if !user.Allowed {
-		return nil, &APIError{Status: http.StatusForbidden, Message: "You are banned"}
+		return nil, APIErrorForbidden("You are banned")
 	}
 
 	return user, nil

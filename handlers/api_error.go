@@ -15,10 +15,14 @@ func APIErrorBadRequest(message string) *APIError {
 	return &APIError{Status: http.StatusBadRequest, Message: message}
 }
 
-func APIErrorServerError(message string, err error) *APIError {
-	return &APIError{Status: http.StatusInternalServerError, Message: message, Error: err}
+func APIErrorForbidden(message string) *APIError {
+	return &APIError{Status: http.StatusForbidden, Message: message}
 }
 
 func APIErrorNotFound(message string) *APIError {
 	return &APIError{Status: http.StatusNotFound, Message: fmt.Sprintf("%v not found", message)}
+}
+
+func APIErrorServerError(message string, err error) *APIError {
+	return &APIError{Status: http.StatusInternalServerError, Message: message, Error: err}
 }
