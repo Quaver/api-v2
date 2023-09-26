@@ -20,6 +20,8 @@ const (
 	errClanNameExists          string = "A clan with that name already exists. Please choose a different name."
 )
 
+// CreateClan Creates a new clan if the user is eligible to.
+// Endpoint: POST /v2/clan
 func CreateClan(c *gin.Context) *APIError {
 	user, apiErr := authenticateUser(c)
 
@@ -86,6 +88,8 @@ func CreateClan(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetClan Retrieves data about an individual clan
+// GET /v2/clan/:id
 func GetClan(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
@@ -113,6 +117,8 @@ func GetClan(c *gin.Context) *APIError {
 	return nil
 }
 
+// UpdateClan Updates data about a clan
+// Endpoint: PATCH /v2/clan/:id
 func UpdateClan(c *gin.Context) *APIError {
 	user, apiErr := authenticateUser(c)
 
@@ -196,6 +202,8 @@ func UpdateClan(c *gin.Context) *APIError {
 	return nil
 }
 
+// DeleteClan Deletes an individual clan
+// Endpoint: DELETE /v2/clan/:id
 func DeleteClan(c *gin.Context) *APIError {
 	user, apiErr := authenticateUser(c)
 
