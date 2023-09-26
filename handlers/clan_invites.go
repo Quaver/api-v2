@@ -4,16 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// HandleInviteUserToClan InviteUserToClan Invites a user to their clan
-// POST /clan/invite
-func HandleInviteUserToClan(c *gin.Context) {
-	if err := inviteUserToClan(c); err != nil {
-		handleAPIError(c, err)
-		return
-	}
-}
-
-func inviteUserToClan(c *gin.Context) *APIError {
+func InviteUserToClan(c *gin.Context) *APIError {
 	return nil
 	/*	user, apiErr := authenticateUser(c)
 

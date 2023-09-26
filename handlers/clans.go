@@ -20,43 +20,7 @@ const (
 	errClanNameExists          string = "A clan with that name already exists. Please choose a different name."
 )
 
-// HandleCreateClan CreateClan Creates a new clan if the user is eligible to.
-// Endpoint: POST /v2/clan
-func HandleCreateClan(c *gin.Context) {
-	if err := createClan(c); err != nil {
-		handleAPIError(c, err)
-		return
-	}
-}
-
-// HandleGetClan GetClan Retrieves data about an individual clan
-// GET /v2/clan/:id
-func HandleGetClan(c *gin.Context) {
-	if err := getClan(c); err != nil {
-		handleAPIError(c, err)
-		return
-	}
-}
-
-// HandleUpdateClan UpdateClan Updates data about a clan
-// Endpoint: PATCH /v2/clan/:id
-func HandleUpdateClan(c *gin.Context) {
-	if err := updateClan(c); err != nil {
-		handleAPIError(c, err)
-		return
-	}
-}
-
-// HandleDeleteClan DeleteClan Deletes an individual clan
-// Endpoint: DELETE /v2/clan/:id
-func HandleDeleteClan(c *gin.Context) {
-	if err := deleteClan(c); err != nil {
-		handleAPIError(c, err)
-		return
-	}
-}
-
-func createClan(c *gin.Context) *APIError {
+func CreateClan(c *gin.Context) *APIError {
 	user, apiErr := authenticateUser(c)
 
 	if apiErr != nil {
@@ -122,7 +86,7 @@ func createClan(c *gin.Context) *APIError {
 	return nil
 }
 
-func getClan(c *gin.Context) *APIError {
+func GetClan(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -149,7 +113,7 @@ func getClan(c *gin.Context) *APIError {
 	return nil
 }
 
-func updateClan(c *gin.Context) *APIError {
+func UpdateClan(c *gin.Context) *APIError {
 	user, apiErr := authenticateUser(c)
 
 	if apiErr != nil {
@@ -232,7 +196,7 @@ func updateClan(c *gin.Context) *APIError {
 	return nil
 }
 
-func deleteClan(c *gin.Context) *APIError {
+func DeleteClan(c *gin.Context) *APIError {
 	user, apiErr := authenticateUser(c)
 
 	if apiErr != nil {

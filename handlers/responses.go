@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -22,25 +20,5 @@ func APIErrorServerError(message string, err error) *APIError {
 }
 
 func APIErrorNotFound(message string) *APIError {
-	return &APIError{Status: http.StatusNotFound, Message: fmt.Sprintf("`%v` not found", message)}
-}
-
-// Handles logging and responding to the user
-func handleAPIError(c *gin.Context, err *APIError) {
-	if err.Error != nil {
-		logrus.Errorf("%v - %v", err.Message, err.Error)
-	}
-
-	if err.Status == http.StatusInternalServerError {
-		ReturnError(c, err.Status, "Internal Server Error")
-		return
-	}
-
-	ReturnError(c, err.Status, err.Message)
-}
-
-func ReturnError(c *gin.Context, status int, message string) {
-	c.JSON(status, gin.H{
-		"error": message,
-	})
+	return &APIError{Status: http.StatusNotFound, Message: fmt.Sprintf("%v not found", message)}
 }
