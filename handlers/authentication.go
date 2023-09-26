@@ -9,7 +9,7 @@ import (
 )
 
 // authenticateUser Authenticates a user from an incoming HTTP request
-func authenticateUser(c *gin.Context) *db.User {
+func authenticateUser(c *gin.Context) (*db.User, *APIError) {
 	jwt := c.GetHeader("Authorization")
 	inGameToken := c.GetHeader("auth")
 
@@ -21,27 +21,22 @@ func authenticateUser(c *gin.Context) *db.User {
 	} else if inGameToken != "" {
 		user, err = authenticateInGame(inGameToken)
 	} else {
-		ReturnError(c, http.StatusUnauthorized, "You must provide a valid `Authorization` or `auth` header.")
-		return nil
+		return nil, &APIError{Status: http.StatusUnauthorized, Message: "You must provide a valid `Authorization` or `auth` header."}
 	}
 
 	if err != nil && err != gorm.ErrRecordNotFound {
-		logrus.Errorf("An error occurred while authenticating user: %v", err)
-		Return500(c)
-		return nil
+		return nil, APIErrorServerError("Error occurred while authenticating user", err)
 	}
 
 	if user == nil {
-		ReturnError(c, http.StatusUnauthorized, "The authentication token you have provided was not valid.")
-		return nil
+		return nil, &APIError{Status: http.StatusUnauthorized, Message: "The authentication token you have provided was not valid"}
 	}
 
 	if !user.Allowed {
-		ReturnError(c, http.StatusForbidden, "You are banned.")
-		return nil
+		return nil, &APIError{Status: http.StatusForbidden, Message: "You are banned"}
 	}
 
-	return user
+	return user, nil
 }
 
 // Authenticates a user by their JWT token.

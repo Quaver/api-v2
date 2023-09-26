@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -21,23 +20,51 @@ const (
 	errClanNameExists          string = "A clan with that name already exists. Please choose a different name."
 )
 
-// GetClans Retrieves basic info / leaderboard data about clans
-// Endpoint: GET /v2/clans?page=1
-func GetClans(c *gin.Context) {
+// HandleCreateClan CreateClan Creates a new clan if the user is eligible to.
+// Endpoint: POST /v2/clan
+func HandleCreateClan(c *gin.Context) {
+	if err := createClan(c); err != nil {
+		handleAPIError(c, err)
+		return
+	}
 }
 
-// CreateClan Creates a new clan if the user is eligible to.
-// Endpoint: POST /v2/clan
-func CreateClan(c *gin.Context) {
-	user := authenticateUser(c)
-
-	if user == nil {
+// HandleGetClan GetClan Retrieves data about an individual clan
+// GET /v2/clan/:id
+func HandleGetClan(c *gin.Context) {
+	if err := getClan(c); err != nil {
+		handleAPIError(c, err)
 		return
+	}
+}
+
+// HandleUpdateClan UpdateClan Updates data about a clan
+// Endpoint: PATCH /v2/clan/:id
+func HandleUpdateClan(c *gin.Context) {
+	if err := updateClan(c); err != nil {
+		handleAPIError(c, err)
+		return
+	}
+}
+
+// HandleDeleteClan DeleteClan Deletes an individual clan
+// Endpoint: DELETE /v2/clan/:id
+func HandleDeleteClan(c *gin.Context) {
+	if err := deleteClan(c); err != nil {
+		handleAPIError(c, err)
+		return
+	}
+}
+
+func createClan(c *gin.Context) *APIError {
+	user, apiErr := authenticateUser(c)
+
+	if apiErr != nil {
+		return apiErr
 	}
 
 	if !user.CanJoinClan() {
-		ReturnError(c, http.StatusBadRequest, errClanUserCantJoin)
-		return
+		return APIErrorBadRequest(errClanUserCantJoin)
 	}
 
 	body := struct {
@@ -46,31 +73,25 @@ func CreateClan(c *gin.Context) {
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
-		Return400(c)
-		return
+		return APIErrorBadRequest("Invalid request body")
 	}
 
 	if !db.IsValidClanName(body.Name) {
-		ReturnError(c, http.StatusBadRequest, errClanNameInvalid)
-		return
+		return APIErrorBadRequest(errClanNameInvalid)
 	}
 
 	if !db.IsValidClanTag(body.Tag) {
-		ReturnError(c, http.StatusBadRequest, errClanTagInvalid)
-		return
+		return APIErrorBadRequest(errClanTagInvalid)
 	}
 
 	exists, err := db.DoesClanExistByName(body.Name)
 
 	if err != nil {
-		logrus.Errorf("Error checking if clan exists by name - %v", err)
-		Return500(c)
-		return
+		return APIErrorServerError("Error checking if clan exists by name", err)
 	}
 
 	if exists {
-		ReturnError(c, http.StatusBadRequest, errClanNameExists)
-		return
+		return APIErrorBadRequest(errClanNameExists)
 	}
 
 	clan := db.Clan{
@@ -80,17 +101,13 @@ func CreateClan(c *gin.Context) {
 	}
 
 	if err := clan.Insert(); err != nil {
-		logrus.Error("Error inserting clan into database: ", err)
-		Return500(c)
-		return
+		return APIErrorServerError("Error inserting clan into database", err)
 	}
 
 	err = db.UpdateUserClan(user.Id, clan.Id)
 
 	if err != nil {
-		logrus.Error("Error while updating user clan: ", err)
-		Return500(c)
-		return
+		return APIErrorServerError("Error updating clan", err)
 	}
 
 	c.JSON(http.StatusOK, struct {
@@ -102,16 +119,14 @@ func CreateClan(c *gin.Context) {
 	})
 
 	logrus.Debugf("%v (#%v) has created the clan `%v` (#%v).", user.Username, user.Id, clan.Name, clan.Id)
+	return nil
 }
 
-// GetClan Retrieves data about an individual clan
-// GET /v2/clan/:id
-func GetClan(c *gin.Context) {
+func getClan(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		Return400(c)
-		return
+		return APIErrorBadRequest("Invalid id")
 	}
 
 	clan, err := db.GetClanById(id)
@@ -120,12 +135,9 @@ func GetClan(c *gin.Context) {
 	case nil:
 		break
 	case gorm.ErrRecordNotFound:
-		c.JSON(http.StatusNotFound, gin.H{"error": "Clan not found"})
-		return
+		return APIErrorNotFound("Clan")
 	default:
-		logrus.Errorf("Error while fetching clan: `%v` - %v", id, err)
-		Return500(c)
-		return
+		return APIErrorServerError("Error while fetching clan", err)
 	}
 
 	c.JSON(http.StatusOK, struct {
@@ -133,28 +145,27 @@ func GetClan(c *gin.Context) {
 	}{
 		Clan: clan,
 	})
+
+	return nil
 }
 
-// UpdateClan Updates data about a clan
-// Endpoint: PATCH /v2/clan/:id
-func UpdateClan(c *gin.Context) {
-	user := authenticateUser(c)
+func updateClan(c *gin.Context) *APIError {
+	user, apiErr := authenticateUser(c)
 
-	if user == nil {
-		return
+	if apiErr != nil {
+		return apiErr
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		Return400(c)
-		return
+		return APIErrorBadRequest("Invalid id")
 	}
 
-	clan, err := getClanAndCheckOwnership(c, user, id)
+	clan, apiErr := getClanAndCheckOwnership(user, id)
 
-	if err != nil {
-		return
+	if apiErr != nil {
+		return apiErr
 	}
 
 	body := struct {
@@ -165,127 +176,107 @@ func UpdateClan(c *gin.Context) {
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
-		Return400(c)
-		return
+		return APIErrorBadRequest("Invalid request body")
 	}
 
 	// Update Name
 	if body.Name != nil {
 		if !db.IsValidClanName(*body.Name) {
-			ReturnError(c, http.StatusBadRequest, errClanNameInvalid)
-			return
+			return APIErrorBadRequest(errClanNameInvalid)
 		}
 
 		exists, err := db.DoesClanExistByName(*body.Name)
 
 		if err != nil {
-			logrus.Errorf("Error checking if clan exists by name - %v", err)
-			Return500(c)
-			return
+			return APIErrorServerError("Error checking if clan exists by name", err)
 		}
 
 		if exists && strings.ToLower(clan.Name) != strings.ToLower(*body.Name) {
-			ReturnError(c, http.StatusBadRequest, errClanNameExists)
-			return
+			return APIErrorBadRequest(errClanNameExists)
 		}
 
 		clan.Name = *body.Name
 		clan.LastNameChangeTime = time.Now().UnixMilli()
 	}
 
-	// Update Tag
 	if body.Tag != nil {
 		if !db.IsValidClanTag(*body.Tag) {
-			ReturnError(c, http.StatusBadRequest, errClanTagInvalid)
-			return
+			return APIErrorBadRequest(errClanTagInvalid)
 		}
 
 		clan.Tag = *body.Tag
 	}
 
-	// Update Favorite Mode
 	if body.FavoriteMode != nil {
 		if *body.FavoriteMode < 1 || *body.FavoriteMode > 2 {
-			ReturnError(c, http.StatusBadRequest, errClanFavoriteModeInvalid)
-			return
+			return APIErrorBadRequest(errClanFavoriteModeInvalid)
 		}
 
 		clan.FavoriteMode = *body.FavoriteMode
 	}
 
-	// Update About Me
 	if body.AboutMe != nil {
 		if len(*body.AboutMe) > 2000 {
-			ReturnError(c, http.StatusBadRequest, errClanAboutMeInvalid)
-			return
+			return APIErrorBadRequest(errClanAboutMeInvalid)
 		}
 
 		clan.AboutMe = body.AboutMe
 	}
 
 	if result := db.SQL.Save(clan); result.Error != nil {
-		logrus.Errorf("Error updating clan: %v (#%v) in the database - %v", clan.Name, clan.Id, result.Error)
-		Return500(c)
-		return
+		return APIErrorServerError("Error updating clan in the database", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully updated."})
 	logrus.Debugf("%v (#%v) has updated the clan: `%v` (#%v).", user.Username, user.Id, clan.Name, clan.Id)
+	return nil
 }
 
-// DeleteClan Deletes an individual clan
-// Endpoint: DELETE /v2/clan/:id
-func DeleteClan(c *gin.Context) {
-	user := authenticateUser(c)
+func deleteClan(c *gin.Context) *APIError {
+	user, apiErr := authenticateUser(c)
 
-	if user == nil {
-		return
+	if apiErr != nil {
+		return apiErr
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		Return400(c)
-		return
+		return APIErrorBadRequest("Invalid id")
 	}
 
-	clan, err := getClanAndCheckOwnership(c, user, id)
+	clan, apiErr := getClanAndCheckOwnership(user, id)
 
-	if err != nil {
-		return
+	if apiErr != nil {
+		return apiErr
 	}
 
 	err = db.DeleteClan(clan.Id)
 
 	if err != nil {
-		logrus.Errorf("Error while deleting clan - %v", err)
-		Return500(c)
-		return
+		return APIErrorServerError("Error while deleting clan", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully deleted."})
 	logrus.Debugf("%v (#%v) has deleted the clan: `%v` (#%v).", user.Username, user.Id, clan.Name, clan.Id)
+	return nil
 }
 
 // Selects a clan from the database with clanId and checks if the user is the owner.
-func getClanAndCheckOwnership(c *gin.Context, user *db.User, clanId int) (*db.Clan, error) {
+func getClanAndCheckOwnership(user *db.User, clanId int) (*db.Clan, *APIError) {
 	clan, err := db.GetClanById(clanId)
 
 	switch err {
 	case nil:
 		break
 	case gorm.ErrRecordNotFound:
-		c.JSON(http.StatusNotFound, gin.H{"error": "Clan not found"})
-		return nil, err
+		return nil, APIErrorNotFound("Clan")
 	default:
-		logrus.Errorf("Erorr while retrieving clan from db - %v", err)
-		Return500(c)
-		return nil, err
+		return nil, APIErrorServerError("Erorr while retrieving clan from db", err)
 	}
 
 	if clan.OwnerId != user.Id || clan.Id != *user.ClanId {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of the clan."})
-		return nil, errors.New("user is not clan owner")
+		return nil, &APIError{Status: http.StatusForbidden, Message: "You are not the owner of the clan."}
 	}
 
 	return clan, nil
