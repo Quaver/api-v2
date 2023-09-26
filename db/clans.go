@@ -20,6 +20,18 @@ type Clan struct {
 	LastNameChangeTimeJSON time.Time `gorm:"-:all" json:"last_name_change_time"`
 }
 
+func (clan *Clan) BeforeCreate(*gorm.DB) (err error) {
+	clan.CreatedAtJSON = time.Now()
+	clan.LastNameChangeTimeJSON = time.Now()
+	return nil
+}
+
+func (clan *Clan) AfterFind(*gorm.DB) (err error) {
+	clan.CreatedAtJSON = time.UnixMilli(clan.CreatedAt)
+	clan.LastNameChangeTimeJSON = time.UnixMilli(clan.LastNameChangeTime)
+	return nil
+}
+
 // Insert Inserts the clan into the database
 func (clan *Clan) Insert() error {
 	if clan.Id != 0 {
@@ -52,20 +64,6 @@ func (clan *Clan) Insert() error {
 		return err
 	}
 
-	return nil
-}
-
-// BeforeCreate Updates clan timestamps before inserting into the db
-func (clan *Clan) BeforeCreate(*gorm.DB) (err error) {
-	clan.CreatedAtJSON = time.Now()
-	clan.LastNameChangeTimeJSON = time.Now()
-	return nil
-}
-
-// AfterFind Updates clan timestamps after selecting in the db
-func (clan *Clan) AfterFind(*gorm.DB) (err error) {
-	clan.CreatedAtJSON = time.UnixMilli(clan.CreatedAt)
-	clan.LastNameChangeTimeJSON = time.UnixMilli(clan.LastNameChangeTime)
 	return nil
 }
 

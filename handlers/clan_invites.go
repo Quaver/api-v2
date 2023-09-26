@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
 )
@@ -18,7 +19,7 @@ func InviteUserToClan(c *gin.Context) *APIError {
 		return APIErrorForbidden("You are not currently in a clan.")
 	}
 
-	_, apiErr = getClanAndCheckOwnership(user, *user.ClanId)
+	clan, apiErr := getClanAndCheckOwnership(user, *user.ClanId)
 
 	if apiErr != nil {
 		return apiErr
@@ -51,8 +52,27 @@ func InviteUserToClan(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You cannot invite that user because they are already in a clan.")
 	}
 
-	// TODO: Check for pending invitation
-	// TODO: Invite the user
-	c.JSON(http.StatusOK, "INVITED USER TO CLAN")
+	pendingInvite, err := db.GetPendingClanInvite(clan.Id, invitee.Id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error while retrieving pending clan invite", err)
+	}
+
+	if pendingInvite != nil {
+		return APIErrorBadRequest("That user already has a pending invite to the clan.")
+	}
+
+	clanInvite, err := db.InviteUserToClan(clan.Id, invitee.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error inserting invite into database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "You have successfully invited the user to the clan.",
+		"invite":  clanInvite,
+	})
+
+	logrus.Debugf("%v (#%v) has invited %v (#%v) to clan: %v (#%v)", user.Username, user.Id, invitee.Username, invitee.Id, clan.Name, clan.Id)
 	return nil
 }
