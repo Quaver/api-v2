@@ -236,7 +236,7 @@ func getClanAndCheckOwnership(user *db.User, clanId int) (*db.Clan, *APIError) {
 	case gorm.ErrRecordNotFound:
 		return nil, APIErrorNotFound("Clan")
 	default:
-		return nil, APIErrorServerError("Erorr while retrieving clan from db", err)
+		return nil, APIErrorServerError("Error while retrieving clan from db", err)
 	}
 
 	if clan.OwnerId != user.Id || clan.Id != *user.ClanId {
