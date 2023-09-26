@@ -149,7 +149,6 @@ func UpdateClan(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	// Update Name
 	if body.Name != nil {
 		if !db.IsValidClanName(*body.Name) {
 			return APIErrorBadRequest(errClanNameInvalid)
