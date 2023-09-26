@@ -8,6 +8,8 @@ import (
 	"net/http"
 )
 
+// InviteUserToClan Invites a user to the clan
+// Endpoint: POST /v2/clan/invite
 func InviteUserToClan(c *gin.Context) *APIError {
 	user, apiErr := authenticateUser(c)
 
