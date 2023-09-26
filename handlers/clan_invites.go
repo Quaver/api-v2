@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
 // InviteUserToClan Invites a user to the clan
@@ -76,5 +77,29 @@ func InviteUserToClan(c *gin.Context) *APIError {
 	})
 
 	logrus.Debugf("%v (#%v) has invited %v (#%v) to clan: %v (#%v)", user.Username, user.Id, invitee.Username, invitee.Id, clan.Name, clan.Id)
+	return nil
+}
+
+// GetClanInvite Retrieves a clan invite by id
+// Endpoint: GET /v2/clan/invite/:id
+func GetClanInvite(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	invite, err := db.GetClanInviteById(id)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		return APIErrorNotFound("Clan invite")
+	default:
+		return APIErrorServerError("Error retrieving clan invite from the database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"clan_invite": invite})
 	return nil
 }

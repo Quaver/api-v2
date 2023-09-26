@@ -50,3 +50,16 @@ func InviteUserToClan(clanId int, userId int) (*ClanInvite, error) {
 
 	return invite, nil
 }
+
+// GetClanInviteById GetClanInvite Retrieves a clan invite at a specific id
+func GetClanInviteById(id int) (*ClanInvite, error) {
+	var invite *ClanInvite
+
+	result := SQL.Where("id = ?", id).First(&invite)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return invite, nil
+}
