@@ -8,8 +8,8 @@ import (
 	"net/http"
 )
 
-// AuthenticateUser Middleware authentication function
-func AuthenticateUser(c *gin.Context) {
+// RequireAuth Middleware authentication function
+func RequireAuth(c *gin.Context) {
 	user, apiErr := authenticateUser(c)
 
 	if apiErr != nil {
