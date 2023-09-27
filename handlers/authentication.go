@@ -8,6 +8,34 @@ import (
 	"net/http"
 )
 
+// AuthenticateUser Middleware authentication function
+func AuthenticateUser(c *gin.Context) {
+	user, apiErr := authenticateUser(c)
+
+	if apiErr != nil {
+		CreateHandler(func(ctx *gin.Context) *APIError {
+			return apiErr
+		})(c)
+
+		c.Abort()
+		return
+	}
+
+	c.Set("user", user)
+	c.Next()
+}
+
+// Returns an authenticated user from a context
+func getAuthedUser(c *gin.Context) *db.User {
+	user, exists := c.Get("user")
+
+	if !exists {
+		return nil
+	}
+
+	return user.(*db.User)
+}
+
 // authenticateUser Authenticates a user from an incoming HTTP request
 func authenticateUser(c *gin.Context) (*db.User, *APIError) {
 	jwt := c.GetHeader("Authorization")

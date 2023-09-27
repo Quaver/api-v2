@@ -23,10 +23,10 @@ const (
 // CreateClan Creates a new clan if the user is eligible to.
 // Endpoint: POST /v2/clan
 func CreateClan(c *gin.Context) *APIError {
-	user, apiErr := authenticateUser(c)
+	user := getAuthedUser(c)
 
-	if apiErr != nil {
-		return apiErr
+	if user == nil {
+		return nil
 	}
 
 	if !user.CanJoinClan() {
@@ -120,10 +120,10 @@ func GetClan(c *gin.Context) *APIError {
 // UpdateClan Updates data about a clan
 // Endpoint: PATCH /v2/clan/:id
 func UpdateClan(c *gin.Context) *APIError {
-	user, apiErr := authenticateUser(c)
+	user := getAuthedUser(c)
 
-	if apiErr != nil {
-		return apiErr
+	if user == nil {
+		return nil
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
@@ -204,10 +204,10 @@ func UpdateClan(c *gin.Context) *APIError {
 // DeleteClan Deletes an individual clan
 // Endpoint: DELETE /v2/clan/:id
 func DeleteClan(c *gin.Context) *APIError {
-	user, apiErr := authenticateUser(c)
+	user := getAuthedUser(c)
 
-	if apiErr != nil {
-		return apiErr
+	if user == nil {
+		return nil
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))

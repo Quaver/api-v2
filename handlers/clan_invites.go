@@ -12,10 +12,10 @@ import (
 // InviteUserToClan Invites a user to the clan
 // Endpoint: POST /v2/clan/invite
 func InviteUserToClan(c *gin.Context) *APIError {
-	user, apiErr := authenticateUser(c)
+	user := getAuthedUser(c)
 
-	if apiErr != nil {
-		return apiErr
+	if user == nil {
+		return nil
 	}
 
 	if user.ClanId == nil {
@@ -83,10 +83,10 @@ func InviteUserToClan(c *gin.Context) *APIError {
 // GetClanInvite Retrieves a clan invite by id
 // Endpoint: GET /v2/clan/invite/:id
 func GetClanInvite(c *gin.Context) *APIError {
-	user, apiErr := authenticateUser(c)
+	user := getAuthedUser(c)
 
-	if apiErr != nil {
-		return apiErr
+	if user == nil {
+		return nil
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
@@ -114,13 +114,37 @@ func GetClanInvite(c *gin.Context) *APIError {
 	return nil
 }
 
+// AcceptClanInvite Accepts a clan invitation and joins the clan
+// Endpoint: POST /v2/clan/invite/:id/accept
+func AcceptClanInvite(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+	
+	return nil
+}
+
+// DeclineClanInvite Declines a clan invite and deletes it
+// Endpoint: POST /v2/clan/invite/:id/decline
+func DeclineClanInvite(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	return nil
+}
+
 // GetPendingClanInvites Retrieves all pending clan invites for the user
 // Endpoint: GET /v2/clan/invites
 func GetPendingClanInvites(c *gin.Context) *APIError {
-	user, apiErr := authenticateUser(c)
+	user := getAuthedUser(c)
 
-	if apiErr != nil {
-		return apiErr
+	if user == nil {
+		return nil
 	}
 
 	invites, err := db.GetUserClanInvites(user.Id)

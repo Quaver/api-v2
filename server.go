@@ -24,15 +24,17 @@ func initializeServer(port int) {
 // Initializes all the routes for the server.
 func initializeRoutes(engine *gin.Engine) {
 	// Clan Invites
-	engine.POST(createRoute("/clan/invite"), createHandler(handlers.InviteUserToClan))
-	engine.GET(createRoute("/clan/invite/:id"), createHandler(handlers.GetClanInvite))
-	engine.GET(createRoute("/clan/invites"), createHandler(handlers.GetPendingClanInvites))
+	engine.POST("/v2/clan/invite", handlers.AuthenticateUser, handlers.CreateHandler(handlers.InviteUserToClan))
+	engine.GET("/v2/clan/invite/:id", handlers.AuthenticateUser, handlers.CreateHandler(handlers.GetClanInvite))
+	engine.GET("/v2/clan/invites", handlers.AuthenticateUser, handlers.CreateHandler(handlers.GetPendingClanInvites))
+	engine.POST("/v2/clan/invite/:id/accept", handlers.AuthenticateUser, handlers.CreateHandler(handlers.AcceptClanInvite))
+	engine.POST("/v2/clan/invite/:id/decline", handlers.AuthenticateUser, handlers.CreateHandler(handlers.DeclineClanInvite))
 
 	// Clans
-	engine.POST(createRoute("/clan"), createHandler(handlers.CreateClan))
-	engine.GET(createRoute("/clan/:id"), createHandler(handlers.GetClan))
-	engine.PATCH(createRoute("/clan/:id"), createHandler(handlers.UpdateClan))
-	engine.DELETE(createRoute("/clan/:id"), createHandler(handlers.DeleteClan))
+	engine.POST("/v2/clan", handlers.AuthenticateUser, handlers.CreateHandler(handlers.CreateClan))
+	engine.GET("/v2/clan/:id", handlers.CreateHandler(handlers.GetClan))
+	engine.PATCH("/v2/clan/:id", handlers.AuthenticateUser, handlers.CreateHandler(handlers.UpdateClan))
+	engine.DELETE("/v2/clan/:id", handlers.AuthenticateUser, handlers.CreateHandler(handlers.DeleteClan))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
@@ -40,31 +42,4 @@ func initializeRoutes(engine *gin.Engine) {
 	})
 
 	logrus.Info("Initialized router")
-}
-
-// Creates a route with /v2. Example usage: createRoute("/foo/:id)
-func createRoute(route string) string {
-	return fmt.Sprintf("/v2%v", route)
-}
-
-// Creates a handler with automatic error handling
-func createHandler(fn func(*gin.Context) *handlers.APIError) func(*gin.Context) {
-	return func(c *gin.Context) {
-		err := fn(c)
-
-		if err == nil {
-			return
-		}
-
-		if err.Error != nil {
-			logrus.Errorf("%v - %v", err.Message, err.Error)
-		}
-
-		if err.Status == http.StatusInternalServerError {
-			c.JSON(err.Status, gin.H{"error": "Internal Server Error"})
-			return
-		}
-
-		c.JSON(err.Status, gin.H{"error": err.Message})
-	}
 }
