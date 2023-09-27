@@ -1,7 +1,8 @@
-package handlers
+package middleware
 
 import (
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/handlers"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -13,7 +14,7 @@ func RequireAuth(c *gin.Context) {
 	user, apiErr := authenticateUser(c)
 
 	if apiErr != nil {
-		CreateHandler(func(ctx *gin.Context) *APIError {
+		handlers.CreateHandler(func(ctx *gin.Context) *handlers.APIError {
 			return apiErr
 		})(c)
 
@@ -25,19 +26,8 @@ func RequireAuth(c *gin.Context) {
 	c.Next()
 }
 
-// Returns an authenticated user from a context
-func getAuthedUser(c *gin.Context) *db.User {
-	user, exists := c.Get("user")
-
-	if !exists {
-		return nil
-	}
-
-	return user.(*db.User)
-}
-
 // authenticateUser Authenticates a user from an incoming HTTP request
-func authenticateUser(c *gin.Context) (*db.User, *APIError) {
+func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 	jwt := c.GetHeader("Authorization")
 	inGameToken := c.GetHeader("auth")
 
@@ -49,19 +39,19 @@ func authenticateUser(c *gin.Context) (*db.User, *APIError) {
 	} else if inGameToken != "" {
 		user, err = authenticateInGame(inGameToken)
 	} else {
-		return nil, &APIError{Status: http.StatusUnauthorized, Message: "You must provide a valid `Authorization` or `auth` header."}
+		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: "You must provide a valid `Authorization` or `auth` header."}
 	}
 
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, APIErrorServerError("Error occurred while authenticating user", err)
+		return nil, handlers.APIErrorServerError("Error occurred while authenticating user", err)
 	}
 
 	if user == nil {
-		return nil, &APIError{Status: http.StatusUnauthorized, Message: "The authentication token you have provided was not valid"}
+		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: "The authentication token you have provided was not valid"}
 	}
 
 	if !user.Allowed {
-		return nil, APIErrorForbidden("You are banned")
+		return nil, handlers.APIErrorForbidden("You are banned")
 	}
 
 	return user, nil

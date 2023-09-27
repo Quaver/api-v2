@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -26,4 +27,15 @@ func CreateHandler(fn func(*gin.Context) *APIError) func(*gin.Context) {
 
 		c.JSON(err.Status, gin.H{"error": err.Message})
 	}
+}
+
+// Returns an authenticated user from a context
+func getAuthedUser(c *gin.Context) *db.User {
+	user, exists := c.Get("user")
+
+	if !exists {
+		return nil
+	}
+
+	return user.(*db.User)
 }
