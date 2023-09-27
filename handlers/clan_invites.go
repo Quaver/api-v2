@@ -83,6 +83,12 @@ func InviteUserToClan(c *gin.Context) *APIError {
 // GetClanInvite Retrieves a clan invite by id
 // Endpoint: GET /v2/clan/invite/:id
 func GetClanInvite(c *gin.Context) *APIError {
+	user, apiErr := authenticateUser(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -98,6 +104,10 @@ func GetClanInvite(c *gin.Context) *APIError {
 		return APIErrorNotFound("Clan invite")
 	default:
 		return APIErrorServerError("Error retrieving clan invite from the database", err)
+	}
+
+	if user.Id != invite.UserId {
+		return APIErrorForbidden("This clan invite does not belong to you.")
 	}
 
 	c.JSON(http.StatusOK, gin.H{"clan_invite": invite})
