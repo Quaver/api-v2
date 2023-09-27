@@ -63,3 +63,16 @@ func GetClanInviteById(id int) (*ClanInvite, error) {
 
 	return invite, nil
 }
+
+// GetUserClanInvites Retrieves a list of pending clan invites for the user
+func GetUserClanInvites(userId int) ([]*ClanInvite, error) {
+	var invites []*ClanInvite
+
+	result := SQL.Where("user_id = ?", userId).Find(&invites)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return invites, nil
+}

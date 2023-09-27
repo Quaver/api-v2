@@ -26,6 +26,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Clan Invites
 	engine.POST(createRoute("/clan/invite"), createHandler(handlers.InviteUserToClan))
 	engine.GET(createRoute("/clan/invite/:id"), createHandler(handlers.GetClanInvite))
+	engine.GET(createRoute("/clan/invites"), createHandler(handlers.GetPendingClanInvites))
 
 	// Clans
 	engine.POST(createRoute("/clan"), createHandler(handlers.CreateClan))

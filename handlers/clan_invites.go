@@ -113,3 +113,22 @@ func GetClanInvite(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"clan_invite": invite})
 	return nil
 }
+
+// GetPendingClanInvites Retrieves all pending clan invites for the user
+// Endpoint: GET /v2/clan/invites
+func GetPendingClanInvites(c *gin.Context) *APIError {
+	user, apiErr := authenticateUser(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	invites, err := db.GetUserClanInvites(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving user clan invites", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"clan_invites": invites})
+	return nil
+}
