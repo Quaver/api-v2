@@ -40,6 +40,4 @@ func initializeRoutes(engine *gin.Engine) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
 	})
-
-	logrus.Info("Initialized router")
 }
