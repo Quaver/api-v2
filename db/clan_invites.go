@@ -6,7 +6,7 @@ import (
 )
 
 type ClanInvite struct {
-	Id            uint      `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	Id            int       `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	ClanId        int       `gorm:"column:clan_id" json:"clan_id"`
 	UserId        int       `gorm:"column:user_id" json:"user_id"`
 	CreatedAt     int64     `gorm:"column:created_at" json:"-"`
@@ -75,4 +75,13 @@ func GetUserClanInvites(userId int) ([]*ClanInvite, error) {
 	}
 
 	return invites, nil
+}
+
+// DeleteClanInviteById Deletes an individual clan invite
+func DeleteClanInviteById(id int) error {
+	if err := SQL.Delete(&ClanInvite{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

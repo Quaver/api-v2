@@ -122,7 +122,7 @@ func AcceptClanInvite(c *gin.Context) *APIError {
 	if user == nil {
 		return nil
 	}
-	
+
 	return nil
 }
 
@@ -135,6 +135,35 @@ func DeclineClanInvite(c *gin.Context) *APIError {
 		return nil
 	}
 
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	invite, err := db.GetClanInviteById(id)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		return APIErrorNotFound("Clan invite")
+	default:
+		return APIErrorServerError("Error retrieving clan invite from the database", err)
+	}
+
+	if invite.UserId != user.Id {
+		return APIErrorForbidden("This clan invite does not belong to you.")
+	}
+
+	err = db.DeleteClanInviteById(invite.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error deleting clan invite", err)
+	}
+
+	logrus.Debugf("%v (#%v) has declined clan invite #%v", user.Username, user.Id, invite.Id)
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully declined the clan invite."})
 	return nil
 }
 
