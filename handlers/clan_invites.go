@@ -9,6 +9,10 @@ import (
 	"strconv"
 )
 
+const (
+	errClanInviteDoesntBelong string = "This clan invite does not belong to you."
+)
+
 // InviteUserToClan Invites a user to the clan
 // Endpoint: POST /v2/clan/invite
 func InviteUserToClan(c *gin.Context) *APIError {
@@ -107,7 +111,7 @@ func GetClanInvite(c *gin.Context) *APIError {
 	}
 
 	if user.Id != invite.UserId {
-		return APIErrorForbidden("This clan invite does not belong to you.")
+		return APIErrorForbidden(errClanInviteDoesntBelong)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"clan_invite": invite})
@@ -123,6 +127,39 @@ func AcceptClanInvite(c *gin.Context) *APIError {
 		return nil
 	}
 
+	if !user.CanJoinClan() {
+		return APIErrorBadRequest(errClanUserCantJoin)
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	invite, err := db.GetClanInviteById(id)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		return APIErrorNotFound("Clan invite")
+	default:
+		return APIErrorServerError("Error retrieving clan invite from the database", err)
+	}
+
+	if invite.UserId != user.Id {
+		return APIErrorForbidden(errClanInviteDoesntBelong)
+	}
+
+	err = db.UpdateUserClan(user.Id, invite.ClanId)
+
+	if err != nil {
+		return APIErrorServerError("Error updating user clan", err)
+	}
+
+	logrus.Debugf("%v (#%v) has joined the clan #%v", user.Username, user.Id, invite.ClanId)
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully joined the clan."})
 	return nil
 }
 
@@ -153,7 +190,7 @@ func DeclineClanInvite(c *gin.Context) *APIError {
 	}
 
 	if invite.UserId != user.Id {
-		return APIErrorForbidden("This clan invite does not belong to you.")
+		return APIErrorForbidden(errClanInviteDoesntBelong)
 	}
 
 	err = db.DeleteClanInviteById(invite.Id)
