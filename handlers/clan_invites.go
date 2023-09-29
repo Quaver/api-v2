@@ -93,25 +93,10 @@ func GetClanInvite(c *gin.Context) *APIError {
 		return nil
 	}
 
-	id, err := strconv.Atoi(c.Param("id"))
+	invite, apiErr := parseAndGetClanInvite(c, user)
 
-	if err != nil {
-		return APIErrorBadRequest("Invalid id")
-	}
-
-	invite, err := db.GetClanInviteById(id)
-
-	switch err {
-	case nil:
-		break
-	case gorm.ErrRecordNotFound:
-		return APIErrorNotFound("Clan invite")
-	default:
-		return APIErrorServerError("Error retrieving clan invite from the database", err)
-	}
-
-	if user.Id != invite.UserId {
-		return APIErrorForbidden(errClanInviteDoesntBelong)
+	if apiErr != nil {
+		return apiErr
 	}
 
 	c.JSON(http.StatusOK, gin.H{"clan_invite": invite})
@@ -131,28 +116,13 @@ func AcceptClanInvite(c *gin.Context) *APIError {
 		return APIErrorBadRequest(errClanUserCantJoin)
 	}
 
-	id, err := strconv.Atoi(c.Param("id"))
+	invite, apiErr := parseAndGetClanInvite(c, user)
 
-	if err != nil {
-		return APIErrorBadRequest("Invalid id")
+	if apiErr != nil {
+		return apiErr
 	}
 
-	invite, err := db.GetClanInviteById(id)
-
-	switch err {
-	case nil:
-		break
-	case gorm.ErrRecordNotFound:
-		return APIErrorNotFound("Clan invite")
-	default:
-		return APIErrorServerError("Error retrieving clan invite from the database", err)
-	}
-
-	if invite.UserId != user.Id {
-		return APIErrorForbidden(errClanInviteDoesntBelong)
-	}
-
-	err = db.UpdateUserClan(user.Id, invite.ClanId)
+	err := db.UpdateUserClan(user.Id, invite.ClanId)
 
 	if err != nil {
 		return APIErrorServerError("Error updating user clan", err)
@@ -172,28 +142,13 @@ func DeclineClanInvite(c *gin.Context) *APIError {
 		return nil
 	}
 
-	id, err := strconv.Atoi(c.Param("id"))
+	invite, apiErr := parseAndGetClanInvite(c, user)
 
-	if err != nil {
-		return APIErrorBadRequest("Invalid id")
+	if apiErr != nil {
+		return apiErr
 	}
 
-	invite, err := db.GetClanInviteById(id)
-
-	switch err {
-	case nil:
-		break
-	case gorm.ErrRecordNotFound:
-		return APIErrorNotFound("Clan invite")
-	default:
-		return APIErrorServerError("Error retrieving clan invite from the database", err)
-	}
-
-	if invite.UserId != user.Id {
-		return APIErrorForbidden(errClanInviteDoesntBelong)
-	}
-
-	err = db.DeleteClanInviteById(invite.Id)
+	err := db.DeleteClanInviteById(invite.Id)
 
 	if err != nil {
 		return APIErrorServerError("Error deleting clan invite", err)
@@ -221,4 +176,31 @@ func GetPendingClanInvites(c *gin.Context) *APIError {
 
 	c.JSON(http.StatusOK, gin.H{"clan_invites": invites})
 	return nil
+}
+
+// Expects an id param on gin.Context for a clan invitation. Then parses it,
+// and checks if the invite belongs to the user
+func parseAndGetClanInvite(c *gin.Context, user *db.User) (*db.ClanInvite, *APIError) {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return nil, APIErrorBadRequest("Invalid id")
+	}
+
+	invite, err := db.GetClanInviteById(id)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		return nil, APIErrorNotFound("Clan invite")
+	default:
+		return nil, APIErrorServerError("Error retrieving clan invite from the database", err)
+	}
+
+	if invite.UserId != user.Id {
+		return nil, APIErrorForbidden(errClanInviteDoesntBelong)
+	}
+
+	return invite, nil
 }
