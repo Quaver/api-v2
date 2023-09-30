@@ -272,6 +272,60 @@ func LeaveClan(c *gin.Context) *APIError {
 	return nil
 }
 
+// TransferClanOwnership Transfers ownership of the clan to another member.
+// Endpoint: POST /v2/clan/transfer/:user_id
+func TransferClanOwnership(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if user.ClanId == nil {
+		return APIErrorBadRequest("You are currently not in a clan")
+	}
+
+	clan, apiErr := getClanAndCheckOwnership(user, *user.ClanId)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	newOwnerId, err := strconv.Atoi(c.Param("user_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid user_id")
+	}
+
+	if newOwnerId == user.Id {
+		return APIErrorBadRequest("You cannot transfer ownership to yourself.")
+	}
+
+	newOwner, err := db.GetUserById(newOwnerId)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		return APIErrorBadRequest("That user does not exist!")
+	default:
+		return APIErrorServerError("Error getting user by id", err)
+	}
+
+	if newOwner.ClanId == nil || *newOwner.ClanId != clan.Id {
+		return APIErrorBadRequest("The user must be in your clan in order to transfer ownership to them.")
+	}
+
+	clan.OwnerId = newOwner.Id
+
+	if result := db.SQL.Save(clan); result.Error != nil {
+		return APIErrorServerError("Error updating clan in the database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully transferred ownership of the clan."})
+	return nil
+}
+
 // Selects a clan from the database with clanId and checks if the user is the owner.
 func getClanAndCheckOwnership(user *db.User, clanId int) (*db.Clan, *APIError) {
 	clan, err := db.GetClanById(clanId)
