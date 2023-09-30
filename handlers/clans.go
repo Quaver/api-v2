@@ -233,6 +233,45 @@ func DeleteClan(c *gin.Context) *APIError {
 	return nil
 }
 
+// LeaveClan Leaves the user's current clan
+// Endpoint: POST /v2/clan/leave
+func LeaveClan(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if user.ClanId == nil {
+		return APIErrorBadRequest("You are currently not in a clan.")
+	}
+
+	clan, err := db.GetClanById(*user.ClanId)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		return APIErrorNotFound("Clan does not exist. Please report this to a developer.")
+	default:
+		return APIErrorServerError("Error retrieving clan from db", err)
+	}
+
+	if clan.OwnerId == user.Id {
+		return APIErrorBadRequest("You cannot leave the clan while you are the owner.")
+	}
+
+	err = db.UpdateUserClan(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error updating user clan", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully left the clan."})
+	logrus.Debugf("%v (#%v) has left the clan: %v (#%v)", user.Username, user.Id, clan.Name, clan.Id)
+	return nil
+}
+
 // Selects a clan from the database with clanId and checks if the user is the owner.
 func getClanAndCheckOwnership(user *db.User, clanId int) (*db.Clan, *APIError) {
 	clan, err := db.GetClanById(clanId)
