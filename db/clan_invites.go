@@ -11,6 +11,7 @@ type ClanInvite struct {
 	UserId        int       `gorm:"column:user_id" json:"user_id"`
 	CreatedAt     int64     `gorm:"column:created_at" json:"-"`
 	CreatedAtJSON time.Time `gorm:"-:all" json:"created_at"`
+	Clan          *Clan     `gorm:"foreignKey:ClanId"`
 }
 
 func (*ClanInvite) TableName() string {
@@ -31,7 +32,10 @@ func (invite *ClanInvite) AfterFind(*gorm.DB) (err error) {
 func GetPendingClanInvite(clanId int, userId int) (*ClanInvite, error) {
 	var invite *ClanInvite
 
-	result := SQL.Where("clan_id = ? AND user_id = ?", clanId, userId).First(&invite)
+	result := SQL.
+		Joins("Clan").
+		Where("clan_invites.clan_id = ? AND clan_invites.user_id = ?", clanId, userId).
+		First(&invite)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -55,7 +59,10 @@ func InviteUserToClan(clanId int, userId int) (*ClanInvite, error) {
 func GetClanInviteById(id int) (*ClanInvite, error) {
 	var invite *ClanInvite
 
-	result := SQL.Where("id = ?", id).First(&invite)
+	result := SQL.
+		Joins("Clan").
+		Where("clan_invites.id = ?", id).
+		First(&invite)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -68,7 +75,10 @@ func GetClanInviteById(id int) (*ClanInvite, error) {
 func GetUserClanInvites(userId int) ([]*ClanInvite, error) {
 	var invites []*ClanInvite
 
-	result := SQL.Where("user_id = ?", userId).Find(&invites)
+	result := SQL.
+		Joins("Clan").
+		Where("clan_invites.user_id = ?", userId).
+		Find(&invites)
 
 	if result.Error != nil {
 		return nil, result.Error
