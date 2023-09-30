@@ -128,6 +128,12 @@ func AcceptClanInvite(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating user clan", err)
 	}
 
+	err = db.DeleteClanInviteById(invite.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error deleting clan invite", err)
+	}
+
 	logrus.Debugf("%v (#%v) has joined the clan #%v", user.Username, user.Id, invite.ClanId)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully joined the clan."})
 	return nil
