@@ -11,7 +11,7 @@ type ClanInvite struct {
 	UserId        int       `gorm:"column:user_id" json:"user_id"`
 	CreatedAt     int64     `gorm:"column:created_at" json:"-"`
 	CreatedAtJSON time.Time `gorm:"-:all" json:"created_at"`
-	Clan          *Clan     `gorm:"foreignKey:ClanId"`
+	Clan          *Clan     `gorm:"foreignKey:ClanId" json:"clan"`
 }
 
 func (*ClanInvite) TableName() string {
