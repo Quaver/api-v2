@@ -44,7 +44,7 @@ func InviteUserToClan(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You cannot invite yourself to the clan.")
 	}
 
-	invitee, err := db.GetUserById(body.UserId)
+	invitingUser, err := db.GetUserById(body.UserId)
 
 	switch err {
 	case nil:
@@ -55,11 +55,11 @@ func InviteUserToClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving user in db", err)
 	}
 
-	if invitee.ClanId != nil {
+	if invitingUser.ClanId != nil {
 		return APIErrorBadRequest("You cannot invite that user because they are already in a clan.")
 	}
 
-	pendingInvite, err := db.GetPendingClanInvite(clan.Id, invitee.Id)
+	pendingInvite, err := db.GetPendingClanInvite(clan.Id, invitingUser.Id)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return APIErrorServerError("Error while retrieving pending clan invite", err)
@@ -69,7 +69,7 @@ func InviteUserToClan(c *gin.Context) *APIError {
 		return APIErrorBadRequest("That user already has a pending invite to the clan.")
 	}
 
-	clanInvite, err := db.InviteUserToClan(clan.Id, invitee.Id)
+	clanInvite, err := db.InviteUserToClan(clan.Id, invitingUser.Id)
 
 	if err != nil {
 		return APIErrorServerError("Error inserting invite into database", err)
@@ -80,7 +80,7 @@ func InviteUserToClan(c *gin.Context) *APIError {
 		"invite":  clanInvite,
 	})
 
-	logrus.Debugf("%v (#%v) has invited %v (#%v) to clan: %v (#%v)", user.Username, user.Id, invitee.Username, invitee.Id, clan.Name, clan.Id)
+	logrus.Debugf("%v (#%v) has invited %v (#%v) to clan: %v (#%v)", user.Username, user.Id, invitingUser.Username, invitingUser.Id, clan.Name, clan.Id)
 	return nil
 }
 
