@@ -88,8 +88,8 @@ func GetUserClanInvites(userId int) ([]*ClanInvite, error) {
 }
 
 // DeleteUserClanInvites Deletes all of a user's clan invites
-func zDeleteUserClanInvites(userId int) error {
-	if err := SQL.Delete(&ClanInvite{}, "user_id = ?").Error; err != nil {
+func DeleteUserClanInvites(userId int) error {
+	if err := SQL.Delete(&ClanInvite{}, "user_id = ?", userId).Error; err != nil {
 		return err
 	}
 
