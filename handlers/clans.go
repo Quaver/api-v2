@@ -76,6 +76,12 @@ func CreateClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating clan", err)
 	}
 
+	err = db.DeleteUserClanInvites(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error deleting user clan invites", err)
+	}
+
 	c.JSON(http.StatusOK, struct {
 		Message string   `json:"message"`
 		Clan    *db.Clan `json:"clan"`
