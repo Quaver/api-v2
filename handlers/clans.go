@@ -70,16 +70,16 @@ func CreateClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting clan into database", err)
 	}
 
-	err = db.UpdateUserClan(user.Id, clan.Id)
-
-	if err != nil {
+	if err := db.UpdateUserClan(user.Id, clan.Id); err != nil {
 		return APIErrorServerError("Error updating clan", err)
 	}
 
-	err = db.DeleteUserClanInvites(user.Id)
-
-	if err != nil {
+	if err := db.DeleteUserClanInvites(user.Id); err != nil {
 		return APIErrorServerError("Error deleting user clan invites", err)
+	}
+
+	if err := db.NewClanActivity(clan.Id, db.ClanActivityCreated, user.Id).InsertClanActivity(); err != nil {
+		return APIErrorServerError("Error inserting clan activity", err)
 	}
 
 	c.JSON(http.StatusOK, struct {
