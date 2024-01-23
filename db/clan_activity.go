@@ -41,7 +41,7 @@ func (a *ClanActivity) AfterFind(*gorm.DB) (err error) {
 
 // NewClanActivity Creates a new clan activity
 func NewClanActivity(clanId int, activityType ClanActivityType, userId int) *ClanActivity {
-	return &ClanActivity{ClanId: clanId, Type: activityType, UserId: userId}
+	return &ClanActivity{ClanId: clanId, Type: activityType, UserId: userId, Timestamp: time.Now().UnixMilli()}
 }
 
 // InsertClanActivity Inserts a clan activity into the database
