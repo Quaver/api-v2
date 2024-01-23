@@ -9,6 +9,15 @@ import (
 	"strconv"
 )
 
+// Struct that is returned from checkClanOwnerAndGetTargetUser.
+// This is used for any endpoints where the clan owner needs to perform an action on a target user.
+type targetClanMember struct {
+	ClanOwner  *db.User
+	TargetUser *db.User
+	Clan       *db.Clan
+	Error      *APIError
+}
+
 // GetClanMembers Retrieves a list of members in the clan
 // GET /v2/clan/:id/members
 func GetClanMembers(c *gin.Context) *APIError {
@@ -29,7 +38,6 @@ func GetClanMembers(c *gin.Context) *APIError {
 		return APIErrorServerError("Error while fetching clan", err)
 	}
 
-	// TODO: GET & RETURN CLAN MEMBERS
 	members, err := db.GetUsersInClan(id)
 
 	if err != nil {
@@ -87,6 +95,43 @@ func LeaveClan(c *gin.Context) *APIError {
 // TransferClanOwnership Transfers ownership of the clan to another member.
 // Endpoint: POST /v2/clan/transfer/:user_id
 func TransferClanOwnership(c *gin.Context) *APIError {
+	target := checkClanOwnerAndGetTargetUser(c)
+
+	if target.Error != nil {
+		return target.Error
+	}
+
+	target.Clan.OwnerId = target.TargetUser.Id
+
+	if result := db.SQL.Save(target.Clan); result.Error != nil {
+		return APIErrorServerError("Error updating clan in the database", result.Error)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully transferred ownership of the clan."})
+	return nil
+}
+
+// KickClanMember Kicks a member from the clan
+// POST /v2/clan/kick/:user_id
+func KickClanMember(c *gin.Context) *APIError {
+	target := checkClanOwnerAndGetTargetUser(c)
+
+	if target.Error != nil {
+		return target.Error
+	}
+
+	if err := db.UpdateUserClan(target.TargetUser.Id); err != nil {
+		return APIErrorServerError("Error updating user clan", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully kicked that user from the clan."})
+	return nil
+}
+
+// Helper function which checks clan ownership and a target user to perform an action on.
+// This is useful for things like kicking a user, checking ownership, or where the clan owner needs to perform an action on a member.
+// This will return (the clan owner, the target user, the clan, and any api error)
+func checkClanOwnerAndGetTargetUser(c *gin.Context) *targetClanMember {
 	user := getAuthedUser(c)
 
 	if user == nil {
@@ -94,46 +139,44 @@ func TransferClanOwnership(c *gin.Context) *APIError {
 	}
 
 	if user.ClanId == nil {
-		return APIErrorBadRequest("You are currently not in a clan")
+		return &targetClanMember{Error: APIErrorBadRequest("You are currently not in a clan")}
 	}
 
 	clan, apiErr := getClanAndCheckOwnership(user, *user.ClanId)
 
 	if apiErr != nil {
-		return apiErr
+		return &targetClanMember{Error: apiErr}
 	}
 
 	newOwnerId, err := strconv.Atoi(c.Param("user_id"))
 
 	if err != nil {
-		return APIErrorBadRequest("Invalid user_id")
+		return &targetClanMember{Error: APIErrorBadRequest("Invalid user_id")}
 	}
 
 	if newOwnerId == user.Id {
-		return APIErrorBadRequest("You cannot transfer ownership to yourself.")
+		return &targetClanMember{Error: APIErrorBadRequest("You cannot perform this action on yourself")}
 	}
 
-	newOwner, err := db.GetUserById(newOwnerId)
+	targetUser, err := db.GetUserById(newOwnerId)
 
 	switch err {
 	case nil:
 		break
 	case gorm.ErrRecordNotFound:
-		return APIErrorBadRequest("That user does not exist!")
+		return &targetClanMember{Error: APIErrorBadRequest("That user does not exist")}
 	default:
-		return APIErrorServerError("Error getting user by id", err)
+		return &targetClanMember{Error: APIErrorServerError("Error getting user by id", err)}
 	}
 
-	if newOwner.ClanId == nil || *newOwner.ClanId != clan.Id {
-		return APIErrorBadRequest("The user must be in your clan in order to transfer ownership to them.")
+	if targetUser.ClanId == nil || *targetUser.ClanId != clan.Id {
+		return &targetClanMember{Error: APIErrorBadRequest("That user must be in your clan to perform an action on them.")}
 	}
 
-	clan.OwnerId = newOwner.Id
-
-	if result := db.SQL.Save(clan); result.Error != nil {
-		return APIErrorServerError("Error updating clan in the database", err)
+	return &targetClanMember{
+		ClanOwner:  user,
+		TargetUser: targetUser,
+		Clan:       clan,
+		Error:      nil,
 	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "You have successfully transferred ownership of the clan."})
-	return nil
 }
