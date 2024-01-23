@@ -33,13 +33,18 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Clans
 	engine.POST("/v2/clan", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateClan))
+	engine.GET("/v2/clan/:id", handlers.CreateHandler(handlers.GetClan))
+	engine.PATCH("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateClan))
+	engine.DELETE("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteClan))
+
+	// Clan Members
+	engine.GET("/v2/clan/:id/members", handlers.CreateHandler(handlers.GetClanMembers))
 	engine.POST("/v2/clan/leave", middleware.RequireAuth, handlers.CreateHandler(handlers.LeaveClan))
 	engine.POST("/v2/clan/transfer/:user_id", middleware.RequireAuth, handlers.CreateHandler(handlers.TransferClanOwnership))
 	engine.POST("/v2/clan/kick/:user_id", middleware.RequireAuth, handlers.CreateHandler(handlers.KickClanMember))
-	engine.GET("/v2/clan/:id", handlers.CreateHandler(handlers.GetClan))
-	engine.GET("/v2/clan/:id/members", handlers.CreateHandler(handlers.GetClanMembers))
-	engine.PATCH("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateClan))
-	engine.DELETE("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteClan))
+
+	// Clan Activity
+	engine.GET("/v2/clan/:id/activity", handlers.CreateHandler(handlers.GetClanActivity))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})

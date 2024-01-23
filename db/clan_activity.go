@@ -15,6 +15,7 @@ type ClanActivity struct {
 	Message       string           `gorm:"column:message" json:"message"`
 	Timestamp     int64            `gorm:"column:timestamp" json:"-"`
 	TimestampJSON time.Time        `gorm:"-:all" json:"timestamp"`
+	User          *User            `gorm:"foreignKey:UserId" json:"user"`
 }
 
 type ClanActivityType int8
@@ -27,6 +28,10 @@ const (
 	ClanActivityUserKicked
 	ClanActivityOwnershipTransferred
 )
+
+func (*ClanActivity) TableName() string {
+	return "clan_activity"
+}
 
 func (a *ClanActivity) BeforeCreate(*gorm.DB) (err error) {
 	t := time.Now()
@@ -61,6 +66,20 @@ func (a *ClanActivity) Insert() error {
 	return nil
 }
 
-func (*ClanActivity) TableName() string {
-	return "clan_activity"
+// GetClanActivity Retrieves clan activity from the database
+func GetClanActivity(clanId int, limit int, page int) ([]*ClanActivity, error) {
+	var activities []*ClanActivity
+
+	result := SQL.
+		Joins("User").
+		Where("clan_activity.clan_id = ?", clanId).
+		Limit(limit).
+		Offset(page * limit).
+		Find(&activities)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return activities, nil
 }
