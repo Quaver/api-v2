@@ -44,8 +44,8 @@ func NewClanActivity(clanId int, activityType ClanActivityType, userId int) *Cla
 	return &ClanActivity{ClanId: clanId, Type: activityType, UserId: userId, Timestamp: time.Now().UnixMilli()}
 }
 
-// InsertClanActivity Inserts a clan activity into the database
-func (a *ClanActivity) InsertClanActivity() error {
+// Insert Inserts a clan activity into the database
+func (a *ClanActivity) Insert() error {
 	if a.ClanId == 0 {
 		return errors.New("cannot insert clan a with no clan id set")
 	}

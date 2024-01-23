@@ -122,16 +122,16 @@ func AcceptClanInvite(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	err := db.UpdateUserClan(user.Id, invite.ClanId)
-
-	if err != nil {
+	if err := db.UpdateUserClan(user.Id, invite.ClanId); err != nil {
 		return APIErrorServerError("Error updating user clan", err)
 	}
 
-	err = db.DeleteUserClanInvites(user.Id)
-
-	if err != nil {
+	if err := db.DeleteUserClanInvites(user.Id); err != nil {
 		return APIErrorServerError("Error deleting user clan invites", err)
+	}
+
+	if err := db.NewClanActivity(invite.ClanId, db.ClanActivityUserJoined, user.Id).Insert(); err != nil {
+		return APIErrorServerError("Error inserting clan activity", err)
 	}
 
 	logrus.Debugf("%v (#%v) has joined the clan #%v", user.Username, user.Id, invite.ClanId)

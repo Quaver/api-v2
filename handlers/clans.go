@@ -78,7 +78,7 @@ func CreateClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error deleting user clan invites", err)
 	}
 
-	if err := db.NewClanActivity(clan.Id, db.ClanActivityCreated, user.Id).InsertClanActivity(); err != nil {
+	if err := db.NewClanActivity(clan.Id, db.ClanActivityCreated, user.Id).Insert(); err != nil {
 		return APIErrorServerError("Error inserting clan activity", err)
 	}
 
