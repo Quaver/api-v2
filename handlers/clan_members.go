@@ -109,6 +109,10 @@ func TransferClanOwnership(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating clan in the database", result.Error)
 	}
 
+	if err := db.NewClanActivity(target.Clan.Id, db.ClanActivityOwnershipTransferred, target.TargetUser.Id).Insert(); err != nil {
+		return APIErrorServerError("Error inserting clan activity", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully transferred ownership of the clan."})
 	return nil
 }
