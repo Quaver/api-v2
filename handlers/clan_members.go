@@ -9,6 +9,42 @@ import (
 	"strconv"
 )
 
+// GetClanMembers Retrieves a list of members in the clan
+// GET /v2/clan/:id/members
+func GetClanMembers(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	_, err = db.GetClanById(id)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		return APIErrorNotFound("Clan")
+	default:
+		return APIErrorServerError("Error while fetching clan", err)
+	}
+
+	// TODO: GET & RETURN CLAN MEMBERS
+	members, err := db.GetUsersInClan(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving users in clan", err)
+	}
+
+	c.JSON(http.StatusOK, struct {
+		ClanMembers []*db.User `json:"clan_members"`
+	}{
+		ClanMembers: members,
+	})
+
+	return nil
+}
+
 // LeaveClan Leaves the user's current clan
 // Endpoint: POST /v2/clan/leave
 func LeaveClan(c *gin.Context) *APIError {

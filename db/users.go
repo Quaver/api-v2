@@ -45,6 +45,19 @@ func GetUserById(id int) (*User, error) {
 	return user, nil
 }
 
+// GetUsersInClan Retrieves all of the users that are in a given clan
+func GetUsersInClan(clanId int) ([]*User, error) {
+	var users []*User
+
+	result := SQL.Where("clan_id = ?", clanId).Find(&users)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return users, nil
+}
+
 // UpdateUserClan Updates a given user's clan in the database.
 // Not passing in any clan id will set it to NULL.
 func UpdateUserClan(userId int, clanId ...int) error {

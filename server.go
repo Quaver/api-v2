@@ -36,6 +36,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/clan/leave", middleware.RequireAuth, handlers.CreateHandler(handlers.LeaveClan))
 	engine.POST("/v2/clan/transfer/:user_id", middleware.RequireAuth, handlers.CreateHandler(handlers.TransferClanOwnership))
 	engine.GET("/v2/clan/:id", handlers.CreateHandler(handlers.GetClan))
+	engine.GET("/v2/clan/:id/members", handlers.CreateHandler(handlers.GetClanMembers))
 	engine.PATCH("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateClan))
 	engine.DELETE("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteClan))
 
