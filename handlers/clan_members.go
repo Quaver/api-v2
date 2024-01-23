@@ -81,10 +81,12 @@ func LeaveClan(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You cannot leave the clan while you are the owner.")
 	}
 
-	err = db.UpdateUserClan(user.Id)
-
-	if err != nil {
+	if err := db.UpdateUserClan(user.Id); err != nil {
 		return APIErrorServerError("Error updating user clan", err)
+	}
+
+	if err := db.NewClanActivity(clan.Id, db.ClanActivityUserLeft, user.Id).Insert(); err != nil {
+		return APIErrorServerError("Error inserting clan activity", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully left the clan."})
