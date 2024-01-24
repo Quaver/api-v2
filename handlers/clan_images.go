@@ -11,38 +11,27 @@ import (
 	"net/http"
 )
 
+type ClanImage int8
+
+const (
+	ClanImageAvatar ClanImage = iota
+	ClanImageBanner
+)
+
 // UploadClanAvatar Handles the uploading of a clan avatar
 // Endpoint: /v2/clan/avatar
 func UploadClanAvatar(c *gin.Context) *APIError {
-	user := getAuthedUser(c)
-
-	if user == nil {
-		return nil
-	}
-
-	clan, apiErr := getClanAndCheckOwnership(user, *user.ClanId)
-
-	if apiErr != nil {
-		return apiErr
-	}
-
-	fileBytes, apiErr := validateUploadedClanImage(c)
-
-	if apiErr != nil {
-		return apiErr
-	}
-
-	if err := azure.Client.UploadFile("clan-avatars", fmt.Sprintf("%v.jpg", clan.Id), fileBytes); err != nil {
-		return APIErrorServerError("Failed to upload clan avatar", err)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Your clan avatar has been successfully uploaded."})
-	return nil
+	return uploadClanImage(c, ClanImageAvatar)
 }
 
 // UploadClanBanner Handles the uploading of a clan banner
 // Endpoint: /v2/clan/banner
 func UploadClanBanner(c *gin.Context) *APIError {
+	return uploadClanImage(c, ClanImageBanner)
+}
+
+// Handles the uploading of multiple types of clan images
+func uploadClanImage(c *gin.Context, imageType ClanImage) *APIError {
 	user := getAuthedUser(c)
 
 	if user == nil {
@@ -61,11 +50,11 @@ func UploadClanBanner(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	if err := azure.Client.UploadFile("clan-banners", fmt.Sprintf("%v.jpg", clan.Id), fileBytes); err != nil {
-		return APIErrorServerError("Failed to upload clan banner", err)
+	if err := azure.Client.UploadFile(getClanImageContainerName(imageType), fmt.Sprintf("%v.jpg", clan.Id), fileBytes); err != nil {
+		return APIErrorServerError("Failed to upload file", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Your clan banner has been successfully uploaded."})
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Your %v has been successfully uploaded.", getClanImageString(imageType))})
 	return nil
 }
 
@@ -109,4 +98,28 @@ func validateUploadedClanImage(c *gin.Context) ([]byte, *APIError) {
 	}
 
 	return fileBytes, nil
+}
+
+// Returns a clan image type's azure container name
+func getClanImageContainerName(img ClanImage) string {
+	switch img {
+	case ClanImageAvatar:
+		return "clan-avatars"
+	case ClanImageBanner:
+		return "clan-banners"
+	default:
+		return ""
+	}
+}
+
+// Returns a clan image type's stringed name
+func getClanImageString(img ClanImage) string {
+	switch img {
+	case ClanImageAvatar:
+		return "clan avatar"
+	case ClanImageBanner:
+		return "clan banner"
+	default:
+		return ""
+	}
 }
