@@ -44,17 +44,22 @@ func uploadClanImage(c *gin.Context, imageType ClanImage) *APIError {
 		return apiErr
 	}
 
-	fileBytes, apiErr := validateUploadedClanImage(c)
+	file, apiErr := validateUploadedClanImage(c)
 
 	if apiErr != nil {
 		return apiErr
 	}
 
-	if err := azure.Client.UploadFile(getClanImageContainerName(imageType), fmt.Sprintf("%v.jpg", clan.Id), fileBytes); err != nil {
+	err := azure.Client.UploadFile(clanImageContainer(imageType), fmt.Sprintf("%v.jpg", clan.Id), file)
+
+	if err != nil {
 		return APIErrorServerError("Failed to upload file", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Your %v has been successfully uploaded.", getClanImageString(imageType))})
+	c.JSON(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("Your %v has been successfully uploaded.", clanImageString(imageType)),
+	})
+
 	return nil
 }
 
@@ -87,7 +92,7 @@ func validateUploadedClanImage(c *gin.Context) ([]byte, *APIError) {
 	const fileSizeLimit = 1048576
 
 	if len(fileBytes) > fileSizeLimit || fileHeader.Size > fileSizeLimit {
-		return nil, APIErrorBadRequest("The file you have uploaded is too large. You must not exceed 1MB.")
+		return nil, APIErrorBadRequest("The file you have uploaded must not exceed 1MB.")
 	}
 
 	// Check image type
@@ -101,7 +106,7 @@ func validateUploadedClanImage(c *gin.Context) ([]byte, *APIError) {
 }
 
 // Returns a clan image type's azure container name
-func getClanImageContainerName(img ClanImage) string {
+func clanImageContainer(img ClanImage) string {
 	switch img {
 	case ClanImageAvatar:
 		return "clan-avatars"
@@ -113,7 +118,7 @@ func getClanImageContainerName(img ClanImage) string {
 }
 
 // Returns a clan image type's stringed name
-func getClanImageString(img ClanImage) string {
+func clanImageString(img ClanImage) string {
 	switch img {
 	case ClanImageAvatar:
 		return "clan avatar"
