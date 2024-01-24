@@ -21,8 +21,7 @@ type StorageClient struct {
 	pipe        pipeline.Pipeline
 }
 
-// Client AzureClient Global storage client used throughout the application.
-// Must call InitializeAzure to create
+// Client Global storage client used throughout the application.
 var Client StorageClient
 
 // InitializeClient  Initializes the azure storage client
