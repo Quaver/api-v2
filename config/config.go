@@ -20,6 +20,11 @@ type Config struct {
 		Password string `json:"password"`
 		Database string `json:"database"`
 	} `json:"sql"`
+
+	Azure struct {
+		AccountName string `json:"account_name"`
+		AccountKey  string `json:"account_key"`
+	} `json:"azure"`
 }
 
 var Instance *Config = nil
