@@ -1,4 +1,4 @@
-package files
+package azure
 
 import (
 	"bytes"
@@ -14,26 +14,26 @@ import (
 	"net/url"
 )
 
-type AzureStorageClient struct {
+type StorageClient struct {
 	accountName string
 	accountKey  string
 	credential  azblob.Credential
 	pipe        pipeline.Pipeline
 }
 
-// AzureClient Global storage client used throughout the application.
+// Client AzureClient Global storage client used throughout the application.
 // Must call InitializeAzure to create
-var AzureClient AzureStorageClient
+var Client StorageClient
 
-// InitializeAzure Initializes the files storage client
-func InitializeAzure() {
-	if AzureClient != (AzureStorageClient{}) {
+// InitializeClient  Initializes the azure storage client
+func InitializeClient() {
+	if Client != (StorageClient{}) {
 		return
 	}
 
 	var err error
 
-	client := AzureStorageClient{
+	client := StorageClient{
 		accountName: config.Instance.Azure.AccountName,
 		accountKey:  config.Instance.Azure.AccountKey,
 	}
@@ -45,19 +45,19 @@ func InitializeAzure() {
 	}
 
 	client.pipe = azblob.NewPipeline(client.credential, azblob.PipelineOptions{})
-	AzureClient = client
+	Client = client
 
 	logrus.Info("Successfully created Azure client!")
 }
 
 // Create a ContainerURL object to be able to make requests on that container
-func (c *AzureStorageClient) createContainerURL(container string) azblob.ContainerURL {
+func (c *StorageClient) createContainerURL(container string) azblob.ContainerURL {
 	URL, _ := url.Parse(fmt.Sprintf("https://%s.blob.core.windows.net/%s", c.accountName, container))
 	return azblob.NewContainerURL(*URL, c.pipe)
 }
 
 // UploadFile Uploads a file to a given container
-func (c *AzureStorageClient) UploadFile(container string, fileName string, data []byte) error {
+func (c *StorageClient) UploadFile(container string, fileName string, data []byte) error {
 	containerURL := c.createContainerURL(container)
 	blobURL := containerURL.NewBlockBlobURL(fileName)
 	ctx := context.Background()
@@ -75,7 +75,7 @@ func (c *AzureStorageClient) UploadFile(container string, fileName string, data 
 }
 
 // DownloadFile Downloads a blob from a given container
-func (c *AzureStorageClient) DownloadFile(container string, name string, path string) (bytes.Buffer, error) {
+func (c *StorageClient) DownloadFile(container string, name string, path string) (bytes.Buffer, error) {
 	containerURL := c.createContainerURL(container)
 	blobURL := containerURL.NewBlockBlobURL(name)
 	ctx := context.Background()
