@@ -8,16 +8,17 @@ import (
 )
 
 type Clan struct {
-	Id                     int       `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	OwnerId                int       `gorm:"column:owner_id" json:"owner_id"`
-	Name                   string    `gorm:"column:name" json:"name"`
-	Tag                    string    `gorm:"column:tag" json:"tag"`
-	CreatedAt              int64     `gorm:"column:created_at" json:"-"`
-	AboutMe                *string   `gorm:"column:about_me" json:"about_me"`
-	FavoriteMode           uint8     `gorm:"column:favorite_mode" json:"favorite_mode"`
-	LastNameChangeTime     int64     `gorm:"column:last_name_change_time" json:"-"`
-	CreatedAtJSON          time.Time `gorm:"-:all" json:"created_at"`
-	LastNameChangeTimeJSON time.Time `gorm:"-:all" json:"last_name_change_time"`
+	Id                     int          `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	OwnerId                int          `gorm:"column:owner_id" json:"owner_id"`
+	Name                   string       `gorm:"column:name" json:"name"`
+	Tag                    string       `gorm:"column:tag" json:"tag"`
+	CreatedAt              int64        `gorm:"column:created_at" json:"-"`
+	AboutMe                *string      `gorm:"column:about_me" json:"about_me"`
+	FavoriteMode           uint8        `gorm:"column:favorite_mode" json:"favorite_mode"`
+	LastNameChangeTime     int64        `gorm:"column:last_name_change_time" json:"-"`
+	CreatedAtJSON          time.Time    `gorm:"-:all" json:"created_at"`
+	LastNameChangeTimeJSON time.Time    `gorm:"-:all" json:"last_name_change_time"`
+	Stats                  []*ClanStats `gorm:"foreignKey:ClanId" json:"stats"`
 }
 
 func (clan *Clan) BeforeCreate(*gorm.DB) (err error) {
@@ -71,7 +72,9 @@ func (clan *Clan) Insert() error {
 func GetClanById(id int) (*Clan, error) {
 	var clan *Clan
 
-	result := SQL.Where("id = ?", id).First(&clan)
+	result := SQL.
+		Preload("Stats").
+		Where("clans.id = ?", id).First(&clan)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -84,7 +87,9 @@ func GetClanById(id int) (*Clan, error) {
 func GetClanByName(name string) (*Clan, error) {
 	var clan *Clan
 
-	result := SQL.Where("name = ?", name).First(&clan)
+	result := SQL.
+		Preload("Stats").
+		Where("clans.name = ?", name).First(&clan)
 
 	if result.Error != nil {
 		return nil, result.Error
