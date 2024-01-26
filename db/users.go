@@ -3,8 +3,12 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Quaver/api2/enums"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -70,6 +74,14 @@ func (u *User) AfterFind(*gorm.DB) (err error) {
 
 	if status, err := GetUserClientStatus(u.Id); err == nil {
 		u.ClientStatus = status
+	}
+
+	if keys4Ranks, err := GetUserRanksForMode(u, enums.GameModeKeys4); err == nil && u.StatsKeys4 != nil {
+		u.StatsKeys4.Ranks = keys4Ranks
+	}
+
+	if keys7Ranks, err := GetUserRanksForMode(u, enums.GameModeKeys7); err == nil && u.StatsKeys7 != nil {
+		u.StatsKeys7.Ranks = keys7Ranks
 	}
 
 	return nil
@@ -149,7 +161,7 @@ func UpdateUserClan(userId int, clanId ...int) error {
 func GetUserClientStatus(id int) (*UserClientStatus, error) {
 	result, err := Redis.Get(RedisCtx, fmt.Sprintf("quaver:server:user_status:%v", id)).Result()
 
-	if err != nil {
+	if err != nil && err != redis.Nil {
 		logrus.Error("Error getting user status from redis", err)
 		return nil, err
 	}
@@ -176,4 +188,40 @@ func GetUserClientStatus(id int) (*UserClientStatus, error) {
 		Mode:    parseRedisIntWithDefault(status.Mode, 1),
 		Content: status.Content,
 	}, nil
+}
+
+// GetUserRanksForMode Retrieves a user's global and country ranks for a game mode
+func GetUserRanksForMode(user *User, mode enums.GameMode) (*UserRanks, error) {
+	global, err := getUserRank(user, fmt.Sprintf("quaver:leaderboard:%v", mode))
+
+	if err != nil {
+		logrus.Error("Error getting user global rank: ", err)
+		return nil, err
+	}
+
+	country, err := getUserRank(user, fmt.Sprintf("quaver:country_leaderboard:%v:%v", strings.ToLower(user.Country), mode))
+
+	if err != nil {
+		logrus.Error("Error getting user country rank: ", err)
+		return nil, err
+	}
+
+	return &UserRanks{
+		Global:  global,
+		Country: country,
+	}, nil
+}
+
+func getUserRank(user *User, key string) (int, error) {
+	rank, err := Redis.ZRevRank(RedisCtx, key, strconv.Itoa(user.Id)).Result()
+
+	if err != nil {
+		if err == redis.Nil {
+			return -1, nil
+		}
+
+		return -1, err
+	}
+
+	return int(rank) + 1, nil
 }
