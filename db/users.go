@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"time"
 )
@@ -78,7 +79,7 @@ func GetUserById(id int) (*User, error) {
 	return user, nil
 }
 
-// GetUsersInClan Retrieves all of the users that are in a given clan
+// GetUsersInClan Retrieves all the users that are in a given clan
 func GetUsersInClan(clanId int) ([]*User, error) {
 	var users []*User
 
@@ -86,6 +87,25 @@ func GetUsersInClan(clanId int) ([]*User, error) {
 		Joins("StatsKeys4").
 		Joins("StatsKeys7").
 		Where("users.clan_id = ?", clanId).Find(&users)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return users, nil
+}
+
+// SearchUsersByName Searches for users that have a similar name to the query
+func SearchUsersByName(searchQuery string) ([]*User, error) {
+	var users []*User
+
+	result := SQL.
+		Joins("StatsKeys4").
+		Joins("StatsKeys7").
+		Where("username LIKE ? AND allowed = 1", fmt.Sprintf("%v%%", searchQuery)).
+		Limit(50).
+		Order("id ASC").
+		Find(&users)
 
 	if result.Error != nil {
 		return nil, result.Error

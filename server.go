@@ -50,6 +50,9 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/clan/avatar", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadClanAvatar))
 	engine.POST("/v2/clan/banner", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadClanBanner))
 
+	// User Search
+	engine.GET("/v2/user/search/:name", handlers.CreateHandler(handlers.SearchUsers))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
