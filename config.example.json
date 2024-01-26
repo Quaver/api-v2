@@ -9,6 +9,11 @@
     "password": "",
     "database": ""
   },
+  "redis": {
+    "host": "",
+    "password": "",
+    "database": 0
+  },
   "azure": {
     "account_name": "",
     "account_key": ""

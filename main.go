@@ -19,6 +19,7 @@ func main() {
 	logrus.Infof("Log level set to: `%v`", logrus.GetLevel())
 
 	db.ConnectMySQL()
+	db.InitializeRedis()
 	azure.InitializeClient()
 	initializeServer(config.Instance.Server.Port)
 }

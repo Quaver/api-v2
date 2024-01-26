@@ -21,6 +21,12 @@ type Config struct {
 		Database string `json:"database"`
 	} `json:"sql"`
 
+	Redis struct {
+		Host     string `json:"host"`
+		Password string `json:"password"`
+		Database int    `json:"database"`
+	} `json:"redis"`
+
 	Azure struct {
 		AccountName string `json:"account_name"`
 		AccountKey  string `json:"account_key"`
