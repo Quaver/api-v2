@@ -92,10 +92,32 @@ func (u *User) CanJoinClan() bool {
 	return u.ClanId == nil
 }
 
-// GetUserById Retrieves a user from the database by their Steam Id
+// GetUserById Retrieves a user from the database by their user id
 func GetUserById(id int) (*User, error) {
 	var user *User
-	result := SQL.Where("id = ?", id).First(&user)
+
+	result := SQL.
+		Joins("StatsKeys4").
+		Joins("StatsKeys7").
+		Where("id = ?", id).
+		First(&user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return user, nil
+}
+
+// GetUserByUsername Retrieves a user from the database by their username
+func GetUserByUsername(username string) (*User, error) {
+	var user *User
+
+	result := SQL.
+		Joins("StatsKeys4").
+		Joins("StatsKeys7").
+		Where("username = ?", username).
+		First(&user)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -111,7 +133,8 @@ func GetUsersInClan(clanId int) ([]*User, error) {
 	result := SQL.
 		Joins("StatsKeys4").
 		Joins("StatsKeys7").
-		Where("users.clan_id = ?", clanId).Find(&users)
+		Where("users.clan_id = ?", clanId).
+		Find(&users)
 
 	if result.Error != nil {
 		return nil, result.Error
