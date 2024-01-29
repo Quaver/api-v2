@@ -50,7 +50,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/clan/avatar", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadClanAvatar))
 	engine.POST("/v2/clan/banner", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadClanBanner))
 
-	// User Search
+	// Users
 	engine.GET("/v2/user/:query", handlers.CreateHandler(handlers.GetUser))
 	engine.GET("/v2/user/search/:name", handlers.CreateHandler(handlers.SearchUsers))
 
