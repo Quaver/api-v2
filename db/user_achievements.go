@@ -3,7 +3,7 @@ package db
 import "gorm.io/gorm"
 
 type Achievement struct {
-	Id           int    `gorm:"column:id" json:"id"`
+	Id           int    `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	Difficulty   string `gorm:"column:difficulty" json:"difficulty"`
 	SteamAPIName string `gorm:"column:steam_api_name" json:"steam_api_name"`
 	Name         string `gorm:"column:name" json:"name"`

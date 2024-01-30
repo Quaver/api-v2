@@ -6,7 +6,7 @@ import (
 )
 
 type UserActivity struct {
-	Id            int       `gorm:"column:id" json:"id"`
+	Id            int       `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	UserId        int       `gorm:"column:user_id" json:"user_id"`
 	Type          int8      `gorm:"column:type" json:"type"`
 	Timestamp     int64     `gorm:"column:timestamp" json:"-"`
