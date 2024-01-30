@@ -30,7 +30,7 @@ func SearchUsers(c *gin.Context) *APIError {
 // GetUser Gets a user by their id or username
 // Endpoint: /v2/user/:query
 func GetUser(c *gin.Context) *APIError {
-	query := c.Param("query")
+	query := c.Param("id")
 
 	if query == "" {
 		return APIErrorBadRequest("You must supply a valid username or id.")
