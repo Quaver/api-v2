@@ -53,6 +53,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Users
 	engine.GET("/v2/user/:id", handlers.CreateHandler(handlers.GetUser))
 	engine.GET("/v2/user/:id/achievements", handlers.CreateHandler(handlers.GetUserAchievements))
+	engine.GET("/v2/user/:id/activity", handlers.CreateHandler(handlers.GetUserActivity))
 	engine.GET("/v2/user/search/:name", handlers.CreateHandler(handlers.SearchUsers))
 
 	engine.NoRoute(func(c *gin.Context) {
