@@ -20,7 +20,7 @@ type User struct {
 	TimeRegisteredJSON          time.Time         `gorm:"-:all" json:"time_registered"`
 	Allowed                     bool              `gorm:"column:allowed" json:"allowed"`
 	Privileges                  int64             `gorm:"column:privileges" json:"privileges"`
-	UserGroups                  int64             `gorm:"column:usergroups" json:"usergroups"`
+	UserGroups                  enums.UserGroups  `gorm:"column:usergroups" json:"usergroups"`
 	MuteEndTime                 int64             `gorm:"column:mute_endtime" json:"-"`
 	MuteEndTimeJSON             time.Time         `gorm:"-:all" json:"mute_end_time"`
 	LatestActivity              int64             `gorm:"column:latest_activity" json:"-"`

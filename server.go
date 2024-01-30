@@ -56,6 +56,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/user/:id/activity", handlers.CreateHandler(handlers.GetUserActivity))
 	engine.GET("/v2/user/:id/badges", handlers.CreateHandler(handlers.GetUserBadges))
 	engine.GET("/v2/user/search/:name", handlers.CreateHandler(handlers.SearchUsers))
+	engine.GET("/v2/user/team/members", handlers.CreateHandler(handlers.GetTeamMembers))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
