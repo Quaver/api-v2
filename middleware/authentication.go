@@ -9,6 +9,10 @@ import (
 	"net/http"
 )
 
+const (
+	messageNoHeader = "You must provide a valid `Authorization` or `auth` header."
+)
+
 // RequireAuth Middleware authentication function
 func RequireAuth(c *gin.Context) {
 	user, apiErr := authenticateUser(c)
@@ -26,6 +30,27 @@ func RequireAuth(c *gin.Context) {
 	c.Next()
 }
 
+// AllowAuth Allows user authentication but does not require it. This middleware fails
+// in the event that the user passes in an invalid token OR some other error
+func AllowAuth(c *gin.Context) {
+	user, apiErr := authenticateUser(c)
+
+	if apiErr != nil && apiErr.Error != gorm.ErrRecordNotFound && apiErr.Message != messageNoHeader {
+		handlers.CreateHandler(func(ctx *gin.Context) *handlers.APIError {
+			return apiErr
+		})(c)
+
+		c.Abort()
+		return
+	}
+
+	if user != nil {
+		c.Set("user", user)
+	}
+
+	c.Next()
+}
+
 // authenticateUser Authenticates a user from an incoming HTTP request
 func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 	jwt := c.GetHeader("Authorization")
@@ -39,7 +64,7 @@ func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 	} else if inGameToken != "" {
 		user, err = authenticateInGame(inGameToken)
 	} else {
-		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: "You must provide a valid `Authorization` or `auth` header."}
+		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: messageNoHeader}
 	}
 
 	if err != nil && err != gorm.ErrRecordNotFound {
