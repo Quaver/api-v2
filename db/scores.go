@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 	"time"
 )
@@ -39,6 +40,7 @@ type Score struct {
 	IsDonatorScore              bool      `gorm:"column:is_donator_score" json:"is_donator_score"`
 	TournamentGameId            *int      `gorm:"column:tournament_game_id" json:"tournament_game_id"`
 	ClanId                      *int      `gorm:"column:clan_id" json:"clan_id"`
+	Map                         *MapQua   `gorm:"foreignKey:MapMD5; references:MD5" json:"map"`
 }
 
 func (s *Score) TableName() string {
@@ -53,4 +55,26 @@ func (s *Score) BeforeCreate(*gorm.DB) (err error) {
 func (s *Score) AfterFind(*gorm.DB) (err error) {
 	s.TimestampJSON = time.UnixMilli(s.Timestamp)
 	return nil
+}
+
+// GetUserBestScoresForMode Retrieves a user's best scores for a given game mode
+func GetUserBestScoresForMode(id int, mode enums.GameMode, limit int, page int) ([]*Score, error) {
+	var scores []*Score
+
+	result := SQL.
+		InnerJoins("Map").
+		Where("scores.personal_best = 1 AND "+
+			"scores.user_id = ? AND "+
+			"scores.mode = ? AND "+
+			"scores.is_donator_score = 0", id, mode).
+		Order("scores.performance_rating DESC").
+		Limit(limit).
+		Offset(page * limit).
+		Find(&scores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return scores, nil
 }
