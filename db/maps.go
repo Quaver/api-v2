@@ -3,7 +3,7 @@ package db
 import "github.com/Quaver/api2/enums"
 
 type MapQua struct {
-	Id                   int            `gorm:"column:id" json:"id"`
+	Id                   int            `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	MapsetId             int            `gorm:"column:mapset_id" json:"mapset_id"`
 	MD5                  string         `gorm:"column:md5" json:"md5"`
 	AlternativeMD5       string         `gorm:"column:alternative_md5" json:"alternative_md5"`
