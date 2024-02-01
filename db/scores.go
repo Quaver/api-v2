@@ -78,3 +78,30 @@ func GetUserBestScoresForMode(id int, mode enums.GameMode, limit int, page int) 
 
 	return scores, nil
 }
+
+// GetUserRecentScoresForMode Retrieves a user's recent scores for a given mode
+func GetUserRecentScoresForMode(id int, mode enums.GameMode, isDonator bool, limit int, page int) ([]*Score, error) {
+	var scores []*Score
+
+	donatorScore := " AND scores.is_donator_score = 0"
+
+	if isDonator {
+		donatorScore = ""
+	}
+
+	result := SQL.
+		InnerJoins("Map").
+		Where("scores.user_id = ? AND "+
+			"scores.mode = ?"+
+			donatorScore, id, mode).
+		Order("scores.timestamp DESC").
+		Limit(limit).
+		Offset(page * limit).
+		Find(&scores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return scores, nil
+}
