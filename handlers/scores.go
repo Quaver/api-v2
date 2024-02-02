@@ -85,3 +85,22 @@ func GetUserRecentScoresForMode(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
 	return nil
 }
+
+// GetUserFirstPlaceScoresForMode Gets a user's first place scores for a given game mode
+// Endpoint: /v2/user/:id/scores/:mode/firstplace
+func GetUserFirstPlaceScoresForMode(c *gin.Context) *APIError {
+	query, apiErr := parseUserScoreQuery(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	scores, err := db.GetUserFirstPlaceScoresForMode(query.Id, query.Mode, 50, query.Page)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving scores from database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
