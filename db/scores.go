@@ -114,8 +114,31 @@ func GetUserFirstPlaceScoresForMode(id int, mode enums.GameMode, limit int, page
 	result := SQL.
 		Joins("FirstPlace").
 		Joins("Map").
-		Where("FirstPlace.user_id = ? And Map.game_mode = ?", id, mode).
+		Where("FirstPlace.user_id = ? AND Map.game_mode = ?", id, mode).
 		Order("FirstPlace.performance_rating DESC").
+		Limit(limit).
+		Offset(page * limit).
+		Find(&scores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return scores, nil
+}
+
+// GetUserGradeScoresForMode Retrieves a user's scores for a particular grade
+func GetUserGradeScoresForMode(id int, mode enums.GameMode, grade string, limit int, page int) ([]*Score, error) {
+	var scores []*Score
+
+	result := SQL.
+		Joins("Map").
+		Where("scores.user_id = ? "+
+			"AND Map.game_mode = ? "+
+			"AND scores.grade = ? "+
+			"AND scores.personal_best = 1 "+
+			"AND scores.is_donator_score = 0", id, mode, grade).
+		Order("scores.performance_rating DESC").
 		Limit(limit).
 		Offset(page * limit).
 		Find(&scores)

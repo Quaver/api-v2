@@ -104,3 +104,22 @@ func GetUserFirstPlaceScoresForMode(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
 	return nil
 }
+
+// GetUserGradesForMode Gets a user's scores with a particular grade
+// Endpoint: GET /v2/user/:id/scores/:mode/grade/:grade
+func GetUserGradesForMode(c *gin.Context) *APIError {
+	query, apiErr := parseUserScoreQuery(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	scores, err := db.GetUserGradeScoresForMode(query.Id, query.Mode, c.Param("grade"), 50, query.Page)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving scores from database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}

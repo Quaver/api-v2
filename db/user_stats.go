@@ -16,6 +16,13 @@ type UserStats struct {
 	TotalGood                int        `gorm:"column:total_good" json:"total_good"`
 	TotalOkay                int        `gorm:"column:total_okay" json:"total_okay"`
 	TotalMiss                int        `gorm:"column:total_miss" json:"total_miss"`
+	CountGradeX              int        `gorm:"column:count_grade_x" json:"count_grade_x"`
+	CountGradeSS             int        `gorm:"column:count_grade_ss" json:"count_grade_ss"`
+	CountGradeS              int        `gorm:"column:count_grade_s" json:"count_grade_s"`
+	CountGradeA              int        `gorm:"column:count_grade_a" json:"count_grade_a"`
+	CountGradeB              int        `gorm:"column:count_grade_b" json:"count_grade_b"`
+	CountGradeC              int        `gorm:"column:count_grade_c" json:"count_grade_c"`
+	CountGradeD              int        `gorm:"column:count_grade_d" json:"count_grade_d"`
 }
 
 type UserRanks struct {
