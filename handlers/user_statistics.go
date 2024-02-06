@@ -9,7 +9,7 @@ import (
 // GetUserRankStatisticsForMode Gets a user's rank statistics for a given game mode
 // Endpoint: GET /v2/user/:id/statistics/:mode/rank
 func GetUserRankStatisticsForMode(c *gin.Context) *APIError {
-	query, apiErr := parseUserScoreQuery(c)
+	query, apiErr := parseUserScoreParams(c)
 
 	if apiErr != nil {
 		return apiErr

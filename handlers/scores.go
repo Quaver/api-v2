@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-type userScoreQuery struct {
+type userScoreParams struct {
 	Id   int
 	Mode enums.GameMode
 	Page int
@@ -16,7 +16,7 @@ type userScoreQuery struct {
 
 // Function that parses and returns a struct containing recurring data to query user scores.
 // Example: user best, recent, and first place scores.
-func parseUserScoreQuery(c *gin.Context) (*userScoreQuery, *APIError) {
+func parseUserScoreParams(c *gin.Context) (*userScoreParams, *APIError) {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -35,7 +35,7 @@ func parseUserScoreQuery(c *gin.Context) (*userScoreQuery, *APIError) {
 		page = 0
 	}
 
-	return &userScoreQuery{
+	return &userScoreParams{
 		Id:   id,
 		Mode: enums.GameMode(mode),
 		Page: page,
@@ -45,7 +45,7 @@ func parseUserScoreQuery(c *gin.Context) (*userScoreQuery, *APIError) {
 // GetUserBestScoresForMode Gets the user's best scores for a given game mode
 // Endpoint: /v2/user/:id/scores/:mode/best
 func GetUserBestScoresForMode(c *gin.Context) *APIError {
-	query, apiErr := parseUserScoreQuery(c)
+	query, apiErr := parseUserScoreParams(c)
 
 	if apiErr != nil {
 		return apiErr
@@ -70,7 +70,7 @@ func GetUserRecentScoresForMode(c *gin.Context) *APIError {
 		isDonator = true
 	}
 
-	query, apiErr := parseUserScoreQuery(c)
+	query, apiErr := parseUserScoreParams(c)
 
 	if apiErr != nil {
 		return apiErr
@@ -89,7 +89,7 @@ func GetUserRecentScoresForMode(c *gin.Context) *APIError {
 // GetUserFirstPlaceScoresForMode Gets a user's first place scores for a given game mode
 // Endpoint: /v2/user/:id/scores/:mode/firstplace
 func GetUserFirstPlaceScoresForMode(c *gin.Context) *APIError {
-	query, apiErr := parseUserScoreQuery(c)
+	query, apiErr := parseUserScoreParams(c)
 
 	if apiErr != nil {
 		return apiErr
@@ -108,7 +108,7 @@ func GetUserFirstPlaceScoresForMode(c *gin.Context) *APIError {
 // GetUserGradesForMode Gets a user's scores with a particular grade
 // Endpoint: GET /v2/user/:id/scores/:mode/grade/:grade
 func GetUserGradesForMode(c *gin.Context) *APIError {
-	query, apiErr := parseUserScoreQuery(c)
+	query, apiErr := parseUserScoreParams(c)
 
 	if apiErr != nil {
 		return apiErr
