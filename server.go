@@ -55,6 +55,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/user/:id/achievements", handlers.CreateHandler(handlers.GetUserAchievements))
 	engine.GET("/v2/user/:id/activity", handlers.CreateHandler(handlers.GetUserActivity))
 	engine.GET("/v2/user/:id/badges", handlers.CreateHandler(handlers.GetUserBadges))
+	engine.GET("/v2/user/:id/mapsets", handlers.CreateHandler(handlers.GetUserMapsets))
 	engine.GET("/v2/user/:id/scores/:mode/best", handlers.CreateHandler(handlers.GetUserBestScoresForMode))
 	engine.GET("/v2/user/:id/scores/:mode/recent", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserRecentScoresForMode))
 	engine.GET("/v2/user/:id/scores/:mode/firstplace", handlers.CreateHandler(handlers.GetUserFirstPlaceScoresForMode))

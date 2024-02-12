@@ -44,11 +44,28 @@ func GetMapsetById(id int) (*Mapset, error) {
 
 	result := SQL.
 		Preload("Maps").
-		Where("mapsets.id = ?", id).First(&mapset)
+		Where("mapsets.id = ?", id).
+		First(&mapset)
 
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
 	return mapset, nil
+}
+
+// GetUserMapsets Retrieves a user's uploaded mapsets
+func GetUserMapsets(userId int) ([]*Mapset, error) {
+	var mapsets []*Mapset
+
+	result := SQL.
+		Preload("Maps").
+		Where("mapsets.creator_id = ?", userId).
+		Find(&mapsets)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return mapsets, nil
 }
