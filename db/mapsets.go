@@ -60,7 +60,9 @@ func GetUserMapsets(userId int) ([]*Mapset, error) {
 
 	result := SQL.
 		Preload("Maps").
-		Where("mapsets.creator_id = ?", userId).
+		Where("mapsets.creator_id = ? AND "+
+			"mapsets.visible = 1", userId).
+		Order("mapsets.date_last_updated DESC").
 		Find(&mapsets)
 
 	if result.Error != nil {
