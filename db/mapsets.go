@@ -19,7 +19,7 @@ type Mapset struct {
 	DateLastUpdated     int64     `gorm:"column:date_last_updated" json:"-"`
 	DateLastUpdatedJSON time.Time `gorm:"-:all" json:"date_last_updated"`
 	IsVisible           bool      `gorm:"column:visible" json:"is_visible"`
-	Maps                []*MapQua `gorm:"foreignKey:nId" json:"maps"`
+	Maps                []*MapQua `gorm:"foreignKey:MapsetId" json:"maps"`
 }
 
 func (m *Mapset) TableName() string {
@@ -36,4 +36,19 @@ func (m *Mapset) AfterFind(*gorm.DB) (err error) {
 	m.DateSubmittedJSON = time.UnixMilli(m.DateSubmitted)
 	m.DateLastUpdatedJSON = time.UnixMilli(m.DateLastUpdated)
 	return nil
+}
+
+// GetMapsetById Retrieves a mapset by its id
+func GetMapsetById(id int) (*Mapset, error) {
+	var mapset *Mapset
+
+	result := SQL.
+		Preload("Maps").
+		Where("mapsets.id = ?", id).First(&mapset)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return mapset, nil
 }

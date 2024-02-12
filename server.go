@@ -66,6 +66,9 @@ func initializeRoutes(engine *gin.Engine) {
 	// Maps
 	engine.GET("/v2/map/:id", handlers.CreateHandler(handlers.GetMap))
 
+	// Mapsets
+	engine.GET("/v2/mapset/:id", handlers.CreateHandler(handlers.GetMapsetById))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
