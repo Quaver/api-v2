@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 )
@@ -18,7 +19,12 @@ func GetMapsetById(c *gin.Context) *APIError {
 
 	mapset, err := db.GetMapsetById(id)
 
-	if err != nil {
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		return APIErrorNotFound("Mapset")
+	default:
 		return APIErrorServerError("Failed to get mapset from database", err)
 	}
 
