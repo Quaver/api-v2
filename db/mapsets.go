@@ -14,6 +14,7 @@ type Mapset struct {
 	Title               string    `gorm:"column:title" json:"title"`
 	Source              string    `gorm:"column:source" json:"source"`
 	Tags                string    `gorm:"column:tags" json:"tags"`
+	Description         string    `gorm:"column:description" json:"description"`
 	DateSubmitted       int64     `gorm:"column:date_submitted" json:"-"`
 	DateSubmittedJSON   time.Time `gorm:"-:all" json:"date_submitted"`
 	DateLastUpdated     int64     `gorm:"column:date_last_updated" json:"-"`
