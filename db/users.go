@@ -180,6 +180,17 @@ func UpdateUserClan(userId int, clanId ...int) error {
 	return nil
 }
 
+// UpdateUserAboutMe Updtes a user's about me
+func UpdateUserAboutMe(userId int, aboutMe string) error {
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("userpage", aboutMe)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
 // GetUserClientStatus Retrieves a user's client status from Redis
 func GetUserClientStatus(id int) (*UserClientStatus, error) {
 	result, err := Redis.Get(RedisCtx, fmt.Sprintf("quaver:server:user_status:%v", id)).Result()

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -55,5 +56,40 @@ func GetUser(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"user": user})
+	return nil
+}
+
+// UpdateUserAboutMe Updates a user's about me
+// Endpoint: PATCH /v2/user/aboutme
+func UpdateUserAboutMe(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to update your about me.")
+	}
+
+	body := struct {
+		AboutMe string `form:"about_me" json:"about_me"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if len(body.AboutMe) > 2000 {
+		return APIErrorBadRequest("Your about me must not be longer than 2,000 characters.")
+	}
+
+	err := db.UpdateUserAboutMe(user.Id, body.AboutMe)
+
+	if err != nil {
+		return APIErrorServerError("Error updating user about me", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your about me has been successfully updated!"})
 	return nil
 }
