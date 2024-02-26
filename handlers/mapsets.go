@@ -50,3 +50,50 @@ func GetUserMapsets(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"mapsets": mapsets})
 	return nil
 }
+
+// UpdateMapsetDescription Updates the description of a given mapset
+// Endpoint: PATCH /v2/mapset/:id/description
+func UpdateMapsetDescription(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	mapset, err := db.GetMapsetById(id)
+
+	if err != nil {
+		return APIErrorServerError("Failed to retrieve mapset from database", err)
+	}
+
+	if mapset.CreatorID != user.Id {
+		return APIErrorForbidden("You are not the owner of this mapset.")
+	}
+
+	body := struct {
+		Description string `form:"description" json:"description"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if len(body.Description) > 2000 {
+		return APIErrorBadRequest("Your mapset description cannot exceed 2,000 characters.")
+	}
+
+	err = db.UpdateMapsetDescription(mapset.Id, body.Description)
+
+	if err != nil {
+		return APIErrorServerError("Error updating mapset description", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your mapset description was successfully updated!"})
+	return nil
+}

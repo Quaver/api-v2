@@ -72,3 +72,14 @@ func GetUserMapsets(userId int) ([]*Mapset, error) {
 
 	return mapsets, nil
 }
+
+// UpdateMapsetDescription Updates a given mapset's description
+func UpdateMapsetDescription(id int, description string) error {
+	result := SQL.Model(&Mapset{}).Where("id = ?", id).Update("description", description)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
