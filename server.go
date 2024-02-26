@@ -63,7 +63,10 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/user/:id/statistics/:mode/rank", handlers.CreateHandler(handlers.GetUserRankStatisticsForMode))
 	engine.GET("/v2/user/search/:name", handlers.CreateHandler(handlers.SearchUsers))
 	engine.GET("/v2/user/team/members", handlers.CreateHandler(handlers.GetTeamMembers))
+
+	// User Profile
 	engine.PATCH("/v2/user/profile/aboutme", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateUserAboutMe))
+	engine.POST("/v2/user/profile/cover", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadUserProfileCover))
 
 	// Maps
 	engine.GET("/v2/map/:id", handlers.CreateHandler(handlers.GetMap))
