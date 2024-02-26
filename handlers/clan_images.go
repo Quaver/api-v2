@@ -44,7 +44,7 @@ func uploadClanImage(c *gin.Context, imageType ClanImage) *APIError {
 		return apiErr
 	}
 
-	file, apiErr := validateUploadedClanImage(c)
+	file, apiErr := validateUploadedImage(c)
 
 	if apiErr != nil {
 		return apiErr
@@ -66,7 +66,7 @@ func uploadClanImage(c *gin.Context, imageType ClanImage) *APIError {
 // Validates and returns an uploaded clan image.
 // - Must be a JPEG/PNG file
 // - Must be 1MB or under
-func validateUploadedClanImage(c *gin.Context) ([]byte, *APIError) {
+func validateUploadedImage(c *gin.Context) ([]byte, *APIError) {
 	fileHeader, _ := c.FormFile("image")
 
 	if fileHeader == nil {
