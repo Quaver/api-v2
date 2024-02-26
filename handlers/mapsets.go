@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -121,5 +122,48 @@ func GetMapsetOnlineOffsets(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"online_offsets": offsets})
+	return nil
+}
+
+// DeleteMapset Removes a mapset from being visible on the server
+// Endpoint: POST /v2/mapset/:id/delete
+func DeleteMapset(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	mapset, err := db.GetMapsetById(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving mapset data", err)
+	}
+
+	if mapset.CreatorID != user.Id {
+		return APIErrorForbidden("You are not the owner of this mapset.")
+	}
+
+	if !mapset.IsVisible {
+		return APIErrorForbidden("This mapset has already been deleted.")
+	}
+
+	if mapset.Maps[0].RankedStatus == enums.RankedStatusRanked {
+		return APIErrorForbidden("You cannot delete a ranked mapset.")
+	}
+
+	err = db.DeleteMapset(mapset.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error deleting mapset", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully deleted your mapset!"})
 	return nil
 }

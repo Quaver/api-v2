@@ -120,3 +120,14 @@ func GetMapsetOnlineOffsets() (interface{}, error) {
 
 	return offsets, nil
 }
+
+// DeleteMapset Deletes (hides) a given mapset
+func DeleteMapset(id int) error {
+	result := SQL.Model(&Mapset{}).Where("id = ?", id).Update("visible", 0)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
