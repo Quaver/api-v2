@@ -74,6 +74,9 @@ func initializeRoutes(engine *gin.Engine) {
 	// Mapsets
 	engine.GET("/v2/mapset/:id", handlers.CreateHandler(handlers.GetMapsetById))
 
+	// Chat
+	engine.GET("/v2/chat/:channel/history", middleware.RequireAuth, handlers.CreateHandler(handlers.GetChatHistory))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
