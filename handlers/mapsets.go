@@ -110,3 +110,16 @@ func GetRankedMapsetIds(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"ranked_mapsets": mapsets})
 	return nil
 }
+
+// GetMapsetOnlineOffsets Retrieves online offsets for all ranked mapsets
+// Endpoint: GET /v2/mapset/offsets
+func GetMapsetOnlineOffsets(c *gin.Context) *APIError {
+	offsets, err := db.GetMapsetOnlineOffsets()
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving mapset online offsets", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"online_offsets": offsets})
+	return nil
+}

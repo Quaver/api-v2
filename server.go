@@ -74,6 +74,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Mapsets
 	engine.GET("/v2/mapset/:id", handlers.CreateHandler(handlers.GetMapsetById))
 	engine.GET("/v2/mapset/ranked", handlers.CreateHandler(handlers.GetRankedMapsetIds))
+	engine.GET("/v2/mapset/offsets", handlers.CreateHandler(handlers.GetMapsetOnlineOffsets))
 	engine.PATCH("/v2/mapset/:id/description", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMapsetDescription))
 
 	// Chat

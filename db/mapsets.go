@@ -99,3 +99,24 @@ func GetRankedMapsetIds() ([]int, error) {
 
 	return ids, nil
 }
+
+// GetMapsetOnlineOffsets Retrieves a list of online offsets
+func GetMapsetOnlineOffsets() (interface{}, error) {
+	type onlineOffset struct {
+		Id           int `gorm:"column:id" json:"id"`
+		OnlineOffset int `gorm:"column:online_offset" json:"offset"`
+	}
+
+	var offsets []*onlineOffset
+
+	result := SQL.Raw("SELECT m.id, m.online_offset FROM maps m " +
+		"INNER JOIN mapsets ms ON m.mapset_id = ms.id " +
+		"WHERE m.ranked_status = 2 AND ms.visible = 1 AND m.online_offset != 0").
+		Scan(&offsets)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return offsets, nil
+}
