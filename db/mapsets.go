@@ -83,3 +83,19 @@ func UpdateMapsetDescription(id int, description string) error {
 
 	return nil
 }
+
+// GetRankedMapsetIds Retrieves a list of ranked mapset ids
+func GetRankedMapsetIds() ([]int, error) {
+	var ids []int
+
+	result := SQL.Raw("SELECT DISTINCT ms.id FROM mapsets AS ms " +
+		"INNER JOIN maps AS m ON m.mapset_id = ms.id " +
+		"WHERE m.ranked_status = 2 AND ms.visible = 1").
+		Scan(&ids)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return ids, nil
+}

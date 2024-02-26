@@ -97,3 +97,16 @@ func UpdateMapsetDescription(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "Your mapset description was successfully updated!"})
 	return nil
 }
+
+// GetRankedMapsetIds Retrieves the list of ranked mapset ids
+// Endpoint: GET /v2/mapset/ranked
+func GetRankedMapsetIds(c *gin.Context) *APIError {
+	mapsets, err := db.GetRankedMapsetIds()
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving ranked mapset ids", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ranked_mapsets": mapsets})
+	return nil
+}
