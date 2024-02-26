@@ -60,7 +60,7 @@ func GetUser(c *gin.Context) *APIError {
 }
 
 // UpdateUserAboutMe Updates a user's about me
-// Endpoint: PATCH /v2/user/aboutme
+// Endpoint: PATCH /v2/user/profile/aboutme
 func UpdateUserAboutMe(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 
