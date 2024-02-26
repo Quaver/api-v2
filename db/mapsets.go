@@ -45,7 +45,7 @@ func GetMapsetById(id int) (*Mapset, error) {
 
 	result := SQL.
 		Preload("Maps").
-		Where("mapsets.id = ?", id).
+		Where("mapsets.id = ? AND mapsets.visible = 1", id).
 		First(&mapset)
 
 	if result.Error != nil {
