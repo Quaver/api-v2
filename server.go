@@ -68,6 +68,10 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.PATCH("/v2/user/profile/aboutme", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateUserAboutMe))
 	engine.POST("/v2/user/profile/cover", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadUserProfileCover))
 
+	// User Relationships
+	engine.POST("/v2/user/:id/relationship/add", middleware.RequireAuth, handlers.CreateHandler(handlers.AddFriend))
+	engine.POST("/v2/user/:id/relationship/remove", middleware.RequireAuth, handlers.CreateHandler(handlers.RemoveFriend))
+
 	// Maps
 	engine.GET("/v2/map/:id", handlers.CreateHandler(handlers.GetMap))
 
