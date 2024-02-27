@@ -1,5 +1,7 @@
 package db
 
+import "gorm.io/gorm"
+
 type UserRelationship struct {
 	Id           int   `gorm:"column:id" json:"-"`
 	UserId       int   `gorm:"column:user_id" json:"-"`
@@ -73,10 +75,27 @@ func GetUserFriends(userId int) ([]*UserFriend, error) {
 	var friends []*UserFriend
 
 	for _, relationship := range relationships {
-		friends = append(friends, &UserFriend{
+		friend := &UserFriend{
 			User:     *relationship.User,
 			IsMutual: false,
-		})
+		}
+
+		mutualRelationship, err := GetUserRelationship(relationship.User.Id, userId)
+
+		switch err {
+		case nil:
+			break
+		case gorm.ErrRecordNotFound:
+			friend.IsMutual = false
+		default:
+			return nil, err
+		}
+
+		if mutualRelationship != nil {
+			friend.IsMutual = true
+		}
+
+		friends = append(friends, friend)
 	}
 
 	return friends, nil
