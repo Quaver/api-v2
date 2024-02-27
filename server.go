@@ -69,6 +69,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/user/profile/cover", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadUserProfileCover))
 
 	// User Relationships
+	engine.GET("/v2/user/relationship/friends", middleware.RequireAuth, handlers.CreateHandler(handlers.GetFriendsList))
 	engine.POST("/v2/user/:id/relationship/add", middleware.RequireAuth, handlers.CreateHandler(handlers.AddFriend))
 	engine.POST("/v2/user/:id/relationship/remove", middleware.RequireAuth, handlers.CreateHandler(handlers.RemoveFriend))
 

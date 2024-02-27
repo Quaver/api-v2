@@ -1,10 +1,11 @@
 package db
 
 type UserRelationship struct {
-	Id           int  `gorm:"column:id"`
-	UserId       int  `gorm:"column:user_id"`
-	TargetUserId int  `gorm:"column:target_user_id"`
-	Relationship int8 `gorm:"column:relationship"`
+	Id           int   `gorm:"column:id" json:"-"`
+	UserId       int   `gorm:"column:user_id" json:"-"`
+	TargetUserId int   `gorm:"column:target_user_id" json:"-"`
+	Relationship int8  `gorm:"column:relationship" json:"-"`
+	User         *User `gorm:"foreignKey:TargetUserId" json:"-"`
 }
 
 func (*UserRelationship) TableName() string {
@@ -49,4 +50,34 @@ func RemoveFriend(userId int, targetUserId int) error {
 	}
 
 	return nil
+}
+
+type UserFriend struct {
+	User
+	IsMutual bool `json:"is_mutual"`
+}
+
+// GetUserFriends Returns a user's friends list
+func GetUserFriends(userId int) ([]*UserFriend, error) {
+	var relationships []*UserRelationship
+
+	result := SQL.
+		Joins("User").
+		Where("user_id = ? AND relationship = 1", userId).
+		Find(&relationships)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	var friends []*UserFriend
+
+	for _, relationship := range relationships {
+		friends = append(friends, &UserFriend{
+			User:     *relationship.User,
+			IsMutual: false,
+		})
+	}
+
+	return friends, nil
 }
