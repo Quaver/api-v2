@@ -82,19 +82,11 @@ func GetUserFriends(userId int) ([]*UserFriend, error) {
 
 		mutualRelationship, err := GetUserRelationship(relationship.User.Id, userId)
 
-		switch err {
-		case nil:
-			break
-		case gorm.ErrRecordNotFound:
-			friend.IsMutual = false
-		default:
+		if err != nil && err != gorm.ErrRecordNotFound {
 			return nil, err
 		}
 
-		if mutualRelationship != nil {
-			friend.IsMutual = true
-		}
-
+		friend.IsMutual = mutualRelationship != nil
 		friends = append(friends, friend)
 	}
 
