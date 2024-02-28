@@ -1,6 +1,10 @@
 package db
 
-import "github.com/sirupsen/logrus"
+import (
+	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
+	"strconv"
+)
 
 const (
 	onlineUsersRedisKey  string = "quaver:server:online_users"
@@ -52,4 +56,41 @@ func CacheTotalScoresInRedis() {
 	}
 
 	logrus.Info("Cached total score count in redis")
+}
+
+// GetOnlineUserCountFromRedis Retrieves the amount of online users from redis
+func GetOnlineUserCountFromRedis() (int, error) {
+	return getValueFromRedis(onlineUsersRedisKey)
+}
+
+// GetTotalUserCountFromRedis Retrieves the total amount of users from redis
+func GetTotalUserCountFromRedis() (int, error) {
+	return getValueFromRedis(totalUsersRedisKey)
+}
+
+// GetTotalMapsetCountFromRedis Retrieves the total amount of mapsets from redis
+func GetTotalMapsetCountFromRedis() (int, error) {
+	return getValueFromRedis(totalMapsetsRedisKey)
+}
+
+// GetTotalScoreCountFromRedis Retrieves the total amount of scores from redis
+func GetTotalScoreCountFromRedis() (int, error) {
+	return getValueFromRedis(totalScoresRedisKey)
+}
+
+// Retrieves a single cached value from redis
+func getValueFromRedis(key string) (int, error) {
+	result, err := Redis.Get(RedisCtx, key).Result()
+
+	if err != nil && err != redis.Nil {
+		return 0, err
+	}
+
+	value, err := strconv.Atoi(result)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return value, nil
 }

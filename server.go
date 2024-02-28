@@ -86,6 +86,9 @@ func initializeRoutes(engine *gin.Engine) {
 	// Chat
 	engine.GET("/v2/chat/:channel/history", middleware.RequireAuth, handlers.CreateHandler(handlers.GetChatHistory))
 
+	// Server
+	engine.GET("/v2/server/stats", handlers.CreateHandler(handlers.GetServerStats))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
