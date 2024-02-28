@@ -21,5 +21,14 @@ func main() {
 	db.ConnectMySQL()
 	db.InitializeRedis()
 	azure.InitializeClient()
+
+	db.CacheTotalUsersInRedis()
+	db.CacheTotalMapsetsInRedis()
+
+	if config.Instance.IsProduction {
+		// Extremely long start-up time. Only really need to do this once during debug to populate
+		db.CacheTotalScoresInRedis()
+	}
+
 	initializeServer(config.Instance.Server.Port)
 }
