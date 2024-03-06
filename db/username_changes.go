@@ -1,6 +1,9 @@
 package db
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type UsernameChange struct {
 	Id               int    `gorm:"column:id; PRIMARY_KEY"`
@@ -26,6 +29,10 @@ func CanUserChangeUsername(userId int) (bool, time.Time, error) {
 		First(&change)
 
 	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return true, time.Time{}, result.Error
+		}
+
 		return false, time.Time{}, result.Error
 	}
 
