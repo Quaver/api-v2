@@ -65,7 +65,15 @@ func IsUsernameAvailable(userId int, username string) (bool, error) {
 
 	// User already has this name
 	if user != nil {
-		return false, nil
+		// A user that isn't them has this name already
+		if user.Id != userId {
+			return false, nil
+		}
+
+		// Disallow user to change it to the same exact username (allows casing change)
+		if username == user.Username {
+			return false, nil
+		}
 	}
 
 	var change *UsernameChange
