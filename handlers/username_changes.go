@@ -57,3 +57,38 @@ func IsUsernameAvailable(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"username_available": available})
 	return nil
 }
+
+// ChangeUserUsername Changes a user's username
+// Endpoint: POST /v2/user/profile/username
+func ChangeUserUsername(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to change your username.")
+	}
+
+	body := struct {
+		Username string `form:"username" json:"username" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	changed, reason, err := db.ChangeUserUsername(user.Id, user.Username, body.Username)
+
+	if err != nil {
+		return APIErrorServerError("Error changing username", err)
+	}
+
+	if !changed {
+		return APIErrorBadRequest(reason)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your username has been successfully changed."})
+	return nil
+}

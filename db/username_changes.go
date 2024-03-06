@@ -17,7 +17,8 @@ func (*UsernameChange) TableName() string {
 }
 
 const (
-	thirtyDays float64 = 24 * 30
+	thirtyDays    float64 = 24 * 30
+	usernameRegex string  = "/^[A-Za-z0-9](?!.* {2})[ A-Za-z0-9]{1,13}[A-Za-z0-9]$/"
 )
 
 // CanUserChangeUsername Checks and returns if the user is allowed to change their username.
@@ -54,6 +55,7 @@ func CanUserChangeUsername(userId int) (bool, time.Time, error) {
 // IsUsernameAvailable Returns if a username is available to use.
 // - A user must not already be using that name
 // - A user must not have used that name in the past 60 days.
+// TODO: REGEX USERNAME
 func IsUsernameAvailable(userId int, username string) (bool, error) {
 	user, err := GetUserByUsername(username)
 
@@ -84,4 +86,46 @@ func IsUsernameAvailable(userId int, username string) (bool, error) {
 
 	// Check if someone has used this username in the past 60 days.
 	return time.Now().Sub(time.UnixMilli(change.Timestamp)).Hours() > thirtyDays*2, nil
+}
+
+// ChangeUserUsername Changes a user's username
+// TODO: REGEX USERNAME
+func ChangeUserUsername(userId int, currentName string, username string) (changed bool, unchangedReason string, err error) {
+	eligible, _, err := CanUserChangeUsername(userId)
+
+	if err != nil {
+		return false, "", err
+	}
+
+	if !eligible {
+		return false, "You must wait at least 30 days before changing your username.", nil
+	}
+
+	available, err := IsUsernameAvailable(userId, username)
+
+	if err != nil {
+		return false, "", err
+	}
+
+	if !available {
+		return false, "This username is unavailable.", err
+	}
+
+	err = UpdateUserUsername(userId, username)
+
+	if err != nil {
+		return false, "", err
+	}
+
+	usernameChange := UsernameChange{
+		UserId:           userId,
+		PreviousUsername: currentName,
+		Timestamp:        time.Now().UnixMilli(),
+	}
+
+	if err := SQL.Create(&usernameChange).Error; err != nil {
+		return false, "", err
+	}
+
+	return true, "", nil
 }

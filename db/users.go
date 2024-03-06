@@ -180,9 +180,20 @@ func UpdateUserClan(userId int, clanId ...int) error {
 	return nil
 }
 
-// UpdateUserAboutMe Updtes a user's about me
+// UpdateUserAboutMe Updates a user's about me
 func UpdateUserAboutMe(userId int, aboutMe string) error {
 	result := SQL.Model(&User{}).Where("id = ?", userId).Update("userpage", aboutMe)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
+// UpdateUserUsername Updates a user's username
+func UpdateUserUsername(userId int, username string) error {
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("username", username)
 
 	if result.Error != nil {
 		return result.Error
