@@ -25,8 +25,8 @@ func main() {
 	db.CacheTotalUsersInRedis()
 	db.CacheTotalMapsetsInRedis()
 
+	// Extremely long start-up time. Only really need to do this once during debug to populate
 	if config.Instance.IsProduction {
-		// Extremely long start-up time. Only really need to do this once during debug to populate
 		db.CacheTotalScoresInRedis()
 	}
 
