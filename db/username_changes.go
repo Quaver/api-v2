@@ -53,7 +53,7 @@ func CanUserChangeUsername(userId int) (bool, time.Time, error) {
 
 // IsUsernameAvailable Returns if a username is available to use.
 // - A user must not already be using that name
-// -
+// - A user must not have used that name in the past 60 days.
 func IsUsernameAvailable(userId int, username string) (bool, error) {
 	user, err := GetUserByUsername(username)
 
