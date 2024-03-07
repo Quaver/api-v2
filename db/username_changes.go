@@ -2,6 +2,7 @@ package db
 
 import (
 	"gorm.io/gorm"
+	"regexp"
 	"time"
 )
 
@@ -18,7 +19,7 @@ func (*UsernameChange) TableName() string {
 
 const (
 	thirtyDays    float64 = 24 * 30
-	usernameRegex string  = "/^[A-Za-z0-9](?!.* {2})[ A-Za-z0-9]{1,13}[A-Za-z0-9]$/"
+	usernameRegex string  = "^[a-zA-Z0-9](?:[a-zA-Z0-9 ]{0,13}[a-zA-Z0-9])?$"
 )
 
 // CanUserChangeUsername Checks and returns if the user is allowed to change their username.
@@ -55,8 +56,17 @@ func CanUserChangeUsername(userId int) (bool, time.Time, error) {
 // IsUsernameAvailable Returns if a username is available to use.
 // - A user must not already be using that name
 // - A user must not have used that name in the past 60 days.
-// TODO: REGEX USERNAME
 func IsUsernameAvailable(userId int, username string) (bool, error) {
+	matched, err := regexp.MatchString(usernameRegex, username)
+
+	if err != nil {
+		return false, err
+	}
+
+	if !matched {
+		return false, nil
+	}
+
 	user, err := GetUserByUsername(username)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -97,8 +107,17 @@ func IsUsernameAvailable(userId int, username string) (bool, error) {
 }
 
 // ChangeUserUsername Changes a user's username
-// TODO: REGEX USERNAME
 func ChangeUserUsername(userId int, currentName string, username string) (changed bool, unchangedReason string, err error) {
+	matched, err := regexp.MatchString(usernameRegex, username)
+
+	if err != nil {
+		return false, "", err
+	}
+
+	if !matched {
+		return false, "Invalid username", nil
+	}
+
 	eligible, _, err := CanUserChangeUsername(userId)
 
 	if err != nil {
