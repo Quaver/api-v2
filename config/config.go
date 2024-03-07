@@ -31,6 +31,10 @@ type Config struct {
 		AccountName string `json:"account_name"`
 		AccountKey  string `json:"account_key"`
 	} `json:"azure"`
+
+	Cache struct {
+		DataDirectory string `json:"data_directory"`
+	}
 }
 
 var Instance *Config = nil
