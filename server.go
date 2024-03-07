@@ -92,6 +92,9 @@ func initializeRoutes(engine *gin.Engine) {
 	// Server
 	engine.GET("/v2/server/stats", handlers.CreateHandler(handlers.GetServerStats))
 
+	// Download
+	engine.GET("/v2/download/map/:id", handlers.CreateHandler(handlers.DownloadQua))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
