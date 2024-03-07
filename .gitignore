@@ -21,4 +21,5 @@
 go.work
 
 .idea/
+data/
 config.json
