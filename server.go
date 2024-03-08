@@ -94,7 +94,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Download
 	engine.GET("/v2/download/map/:id", handlers.CreateHandler(handlers.DownloadQua))
-	engine.GET("/v2/download/mapset/:id", handlers.CreateHandler(handlers.DownloadMapset))
+	engine.GET("/v2/download/mapset/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DownloadMapset))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})

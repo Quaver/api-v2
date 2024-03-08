@@ -42,6 +42,12 @@ func DownloadQua(c *gin.Context) *APIError {
 // DownloadMapset Handles the downloading of an individual .qp file
 // Endpoint: GET /v2/download/mapset/:id
 func DownloadMapset(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
