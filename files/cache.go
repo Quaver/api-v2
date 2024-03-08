@@ -25,6 +25,12 @@ func CreateDirectories() {
 		panic(err)
 	}
 
+	err = os.MkdirAll(getMapsetDirectory(), os.ModePerm)
+
+	if err != nil {
+		panic(err)
+	}
+
 	logrus.Info("Created cache directories")
 }
 
@@ -74,6 +80,35 @@ func CacheQuaFile(mapQua *db.MapQua) (string, error) {
 	return path, nil
 }
 
+// CacheMapset Caches a mapset file and returns the path to it
+func CacheMapset(mapset *db.Mapset) (string, error) {
+	fileName := fmt.Sprintf("%v.qp", mapset.Id)
+	path := fmt.Sprintf("%v/%v", getMapsetDirectory(), fileName)
+
+	// Check MD5 hash of existing file
+	if _, err := os.Stat(path); err == nil {
+		md5, err := GetFileMD5(path)
+
+		if err != nil {
+			return "", err
+		}
+
+		if md5 == mapset.PackageMD5 {
+			return path, nil
+		}
+	}
+
+	if _, err := azure.Client.DownloadFile("mapsets", fileName, path); err != nil {
+		return "", err
+	}
+
+	return path, nil
+}
+
 func getMapsDirectory() string {
 	return fmt.Sprintf("%v/maps", config.Instance.Cache.DataDirectory)
+}
+
+func getMapsetDirectory() string {
+	return fmt.Sprintf("%v/mapsets", config.Instance.Cache.DataDirectory)
 }
