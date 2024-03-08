@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"strconv"
+	"time"
 )
 
 // DownloadQua Handles the downloading of an individual .qua file
@@ -69,6 +70,14 @@ func DownloadMapset(c *gin.Context) *APIError {
 	if err != nil {
 		logrus.Error("Error caching mapset", err)
 		return APIErrorNotFound("Mapset")
+	}
+
+	if err := db.InsertMapsetDownload(&db.MapsetDownload{
+		UserId:    user.Id,
+		MapsetId:  mapset.Id,
+		Timestamp: time.Now().UnixMilli(),
+	}); err != nil {
+		return APIErrorServerError("Error inserting mapset download into db", err)
 	}
 
 	c.FileAttachment(path, fmt.Sprintf("%v.qp", mapset.Id))
