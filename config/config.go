@@ -35,6 +35,8 @@ type Config struct {
 	Cache struct {
 		DataDirectory string `json:"data_directory"`
 	}
+
+	QuaverToolsPath string `json:"quaver_tools_path"`
 }
 
 var Instance *Config = nil

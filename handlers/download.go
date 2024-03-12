@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/files"
+	"github.com/Quaver/api2/tools"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"os"
 	"strconv"
 	"time"
 )
@@ -81,5 +83,52 @@ func DownloadMapset(c *gin.Context) *APIError {
 	}
 
 	c.FileAttachment(path, fmt.Sprintf("%v.qp", mapset.Id))
+	return nil
+}
+
+// DownloadReplay Handles the downloading of a replay file
+// Endpoint: GET /v2/download/replay/:id
+func DownloadReplay(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	score, err := db.GetScoreById(id)
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return APIErrorNotFound("Replay")
+		}
+
+		return APIErrorServerError("Error getting score by id", err)
+	}
+
+	user, err := db.GetUserById(score.UserId)
+
+	if err != nil {
+		return APIErrorServerError("Error getting user in DB from score", err)
+	}
+
+	path, err := files.CacheReplay(id)
+
+	if err != nil {
+		return APIErrorNotFound("Replay")
+	}
+
+	tempPath := fmt.Sprintf("%v/replay-%v.qr", files.GetTempDirectory(), time.Now().UnixMilli())
+
+	if err := tools.BuildReplay(user, score, path, tempPath); err != nil {
+		return APIErrorServerError("Error building replay", err)
+	}
+
+	c.FileAttachment(tempPath, fmt.Sprintf("%v.qr", score.Id))
+
+	if err := os.Remove(tempPath); err != nil {
+		logrus.Error("Error deleting rewritten replay", err)
+		return nil
+	}
+
 	return nil
 }

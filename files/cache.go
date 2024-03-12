@@ -13,21 +13,23 @@ import (
 
 // CreateDirectories Creates the directories needed for the cache
 func CreateDirectories() {
-	err := os.MkdirAll(config.Instance.Cache.DataDirectory, os.ModePerm)
-
-	if err != nil {
+	if err := os.MkdirAll(config.Instance.Cache.DataDirectory, os.ModePerm); err != nil {
 		panic(err)
 	}
 
-	err = os.MkdirAll(getMapsDirectory(), os.ModePerm)
-
-	if err != nil {
+	if err := os.MkdirAll(getMapsDirectory(), os.ModePerm); err != nil {
 		panic(err)
 	}
 
-	err = os.MkdirAll(getMapsetDirectory(), os.ModePerm)
+	if err := os.MkdirAll(getMapsetDirectory(), os.ModePerm); err != nil {
+		panic(err)
+	}
 
-	if err != nil {
+	if err := os.MkdirAll(getReplayDirectory(), os.ModePerm); err != nil {
+		panic(err)
+	}
+
+	if err := os.MkdirAll(GetTempDirectory(), os.ModePerm); err != nil {
 		panic(err)
 	}
 
@@ -111,6 +113,7 @@ func CacheReplay(scoreId int) (string, error) {
 	path := fmt.Sprintf("%v/%v", getReplayDirectory(), fileName)
 
 	if _, err := azure.Client.DownloadFile("replays", fileName, path); err != nil {
+		logrus.Error(err)
 		return "", err
 	}
 
@@ -127,4 +130,8 @@ func getMapsetDirectory() string {
 
 func getReplayDirectory() string {
 	return fmt.Sprintf("%v/replays", config.Instance.Cache.DataDirectory)
+}
+
+func GetTempDirectory() string {
+	return "./temp"
 }

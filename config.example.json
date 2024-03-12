@@ -18,5 +18,8 @@
     "account_name": "",
     "account_key": ""
   },
-
+  "cache": {
+    "data_directory": "./data"
+  },
+  "quaver_tools_path": ""
 }

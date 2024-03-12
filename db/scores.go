@@ -149,3 +149,19 @@ func GetUserGradeScoresForMode(id int, mode enums.GameMode, grade string, limit 
 
 	return scores, nil
 }
+
+// GetScoreById Retrieves a score from the database by its id
+func GetScoreById(id int) (*Score, error) {
+	var score *Score
+
+	result := SQL.
+		Joins("Map").
+		Where("scores.id = ?", id).
+		First(&score)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return score, nil
+}

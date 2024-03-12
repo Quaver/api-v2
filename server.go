@@ -94,6 +94,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Download
 	engine.GET("/v2/download/map/:id", handlers.CreateHandler(handlers.DownloadQua))
+	engine.GET("/v2/download/replay/:id", handlers.CreateHandler(handlers.DownloadReplay))
 	engine.GET("/v2/download/mapset/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DownloadMapset))
 
 	engine.NoRoute(func(c *gin.Context) {
