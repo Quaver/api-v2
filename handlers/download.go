@@ -97,12 +97,12 @@ func DownloadReplay(c *gin.Context) *APIError {
 
 	score, err := db.GetScoreById(id)
 
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return APIErrorNotFound("Replay")
-		}
-
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return APIErrorServerError("Error getting score by id", err)
+	}
+
+	if score == nil || (score.Failed && score.TournamentGameId == nil) {
+		return APIErrorNotFound("Replay")
 	}
 
 	user, err := db.GetUserById(score.UserId)
@@ -126,7 +126,6 @@ func DownloadReplay(c *gin.Context) *APIError {
 	c.FileAttachment(tempPath, fmt.Sprintf("%v.qr", score.Id))
 
 	if err := os.Remove(tempPath); err != nil {
-		logrus.Error("Error deleting rewritten replay", err)
 		return nil
 	}
 
