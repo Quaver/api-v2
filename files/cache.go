@@ -105,10 +105,26 @@ func CacheMapset(mapset *db.Mapset) (string, error) {
 	return path, nil
 }
 
+// CacheReplay Caches a replay file and returns the path to it
+func CacheReplay(scoreId int) (string, error) {
+	fileName := fmt.Sprintf("%v.qr", scoreId)
+	path := fmt.Sprintf("%v/%v", getReplayDirectory(), fileName)
+
+	if _, err := azure.Client.DownloadFile("replays", fileName, path); err != nil {
+		return "", err
+	}
+
+	return path, nil
+}
+
 func getMapsDirectory() string {
 	return fmt.Sprintf("%v/maps", config.Instance.Cache.DataDirectory)
 }
 
 func getMapsetDirectory() string {
 	return fmt.Sprintf("%v/mapsets", config.Instance.Cache.DataDirectory)
+}
+
+func getReplayDirectory() string {
+	return fmt.Sprintf("%v/replays", config.Instance.Cache.DataDirectory)
 }
