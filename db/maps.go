@@ -65,3 +65,18 @@ func GetMapByMD5(md5 string) (*MapQua, error) {
 
 	return qua, nil
 }
+
+// GetMapByMD5AndAlternative Retrieves a map from the database by either its md5 or alternative md5
+func GetMapByMD5AndAlternative(md5 string, alternativeMd5 string) (*MapQua, error) {
+	var qua *MapQua
+
+	result := SQL.
+		Where("md5 = ? OR alternative_md5 = ?", md5, alternativeMd5).
+		First(&qua)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return qua, nil
+}
