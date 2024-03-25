@@ -80,3 +80,12 @@ func GetMapByMD5AndAlternative(md5 string, alternativeMd5 string) (*MapQua, erro
 
 	return qua, nil
 }
+
+// InsertMap Inserts a map into the database
+func InsertMap(m *MapQua) error {
+	if err := SQL.Create(&m).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
