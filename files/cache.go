@@ -13,24 +13,18 @@ import (
 
 // CreateDirectories Creates the directories needed for the cache
 func CreateDirectories() {
-	if err := os.MkdirAll(config.Instance.Cache.DataDirectory, os.ModePerm); err != nil {
-		panic(err)
+	directories := []string{
+		config.Instance.Cache.DataDirectory,
+		getMapsDirectory(),
+		getMapsetDirectory(),
+		getReplayDirectory(),
+		GetTempDirectory(),
 	}
 
-	if err := os.MkdirAll(getMapsDirectory(), os.ModePerm); err != nil {
-		panic(err)
-	}
-
-	if err := os.MkdirAll(getMapsetDirectory(), os.ModePerm); err != nil {
-		panic(err)
-	}
-
-	if err := os.MkdirAll(getReplayDirectory(), os.ModePerm); err != nil {
-		panic(err)
-	}
-
-	if err := os.MkdirAll(GetTempDirectory(), os.ModePerm); err != nil {
-		panic(err)
+	for _, directory := range directories {
+		if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+			panic(err)
+		}
 	}
 
 	logrus.Info("Created cache directories")
