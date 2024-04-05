@@ -101,6 +101,9 @@ func initializeRoutes(engine *gin.Engine) {
 	// Logs
 	engine.POST("/v2/logs/crash", middleware.RequireAuth, handlers.CreateHandler(handlers.AddCrashLog))
 
+	// Leaderboards
+	engine.GET("/v2/leaderboard/global", handlers.CreateHandler(handlers.GetGlobalLeaderboardForMode))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
