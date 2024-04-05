@@ -23,10 +23,41 @@ func GetGlobalLeaderboardForMode(c *gin.Context) *APIError {
 		page = 0
 	}
 
-	users, err := db.GetGlobalLeaderboardForMode(enums.GameMode(mode), page, 50)
+	users, err := db.GetGlobalLeaderboard(enums.GameMode(mode), page, 50)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving users for global leaderboard", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"users": users})
+	return nil
+}
+
+// GetCountryLeaderboard Retrieves the country leaderboard for a given country and mode
+// Endpoint: GET /v2/leaderboard/country?country=&mode=&page=
+func GetCountryLeaderboard(c *gin.Context) *APIError {
+	country := c.Query("country")
+
+	if country == "" {
+		return APIErrorBadRequest("You must supply a valid `country` query parameter")
+	}
+
+	mode, err := strconv.Atoi(c.Query("mode"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must supply a valid `mode` query parameter.")
+	}
+
+	page, err := strconv.Atoi(c.Query("page"))
+
+	if err != nil {
+		page = 0
+	}
+
+	users, err := db.GetCountryLeaderboard(country, enums.GameMode(mode), page, 50)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving users for country leaderboard", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"users": users})

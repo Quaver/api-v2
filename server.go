@@ -103,6 +103,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Leaderboards
 	engine.GET("/v2/leaderboard/global", handlers.CreateHandler(handlers.GetGlobalLeaderboardForMode))
+	engine.GET("/v2/leaderboard/country", handlers.CreateHandler(handlers.GetCountryLeaderboard))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
