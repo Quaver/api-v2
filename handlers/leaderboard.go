@@ -63,3 +63,22 @@ func GetCountryLeaderboard(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"users": users})
 	return nil
 }
+
+// GetTotalHitsLeaderboard Retrieves the total hits leaderboard for a given game mode
+// Endpoint: GET /v2/leaderboard/hits?mode=&page=
+func GetTotalHitsLeaderboard(c *gin.Context) *APIError {
+	page, err := strconv.Atoi(c.Query("page"))
+
+	if err != nil {
+		page = 0
+	}
+
+	users, err := db.GetTotalHitsLeaderboard(page, 50)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving users for total hits leaderboard", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"users": users})
+	return nil
+}

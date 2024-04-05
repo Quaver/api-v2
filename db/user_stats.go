@@ -26,8 +26,9 @@ type UserStats struct {
 }
 
 type UserRanks struct {
-	Global  int `json:"global"`
-	Country int `json:"country"`
+	Global    int `json:"global"`
+	Country   int `json:"country"`
+	TotalHits int `json:"total_hits"`
 }
 
 type UserStatsKeys4 UserStats

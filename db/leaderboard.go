@@ -86,3 +86,36 @@ func GetCountryLeaderboard(country string, mode enums.GameMode, page int, limit 
 
 	return users, nil
 }
+
+// GetTotalHitsLeaderboard  Retrieves the total hits leaderboard for a specific game mode
+func GetTotalHitsLeaderboard(page int, limit int) ([]*User, error) {
+	key := "quaver:leaderboard:total_hits_global"
+
+	userIds, err := Redis.ZRevRange(RedisCtx, key, int64(page*limit), int64(page*limit+limit-1)).Result()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(userIds) == 0 {
+		return []*User{}, nil
+	}
+
+	var users []*User
+
+	result := SQL.
+		Joins("StatsKeys4").
+		Joins("StatsKeys7").
+		Where(fmt.Sprintf("Users.id IN (%v) AND allowed = 1", strings.Join(userIds, ","))).
+		Find(&users)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].StatsKeys4.Ranks.TotalHits < users[j].StatsKeys4.Ranks.TotalHits
+	})
+
+	return users, nil
+}

@@ -251,9 +251,17 @@ func GetUserRanksForMode(user *User, mode enums.GameMode) (*UserRanks, error) {
 		return nil, err
 	}
 
+	totalHits, err := getUserRank(user, "quaver:leaderboard:total_hits_global")
+
+	if err != nil {
+		logrus.Error("Error getting user total hits rank: ", err)
+		return nil, err
+	}
+
 	return &UserRanks{
-		Global:  global,
-		Country: country,
+		Global:    global,
+		Country:   country,
+		TotalHits: totalHits,
 	}, nil
 }
 
