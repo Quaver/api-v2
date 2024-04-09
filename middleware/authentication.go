@@ -1,12 +1,15 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/handlers"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
 const (
@@ -62,7 +65,7 @@ func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 	if jwt != "" {
 		user, err = authenticateJWT(jwt)
 	} else if inGameToken != "" {
-		user, err = authenticateInGame(inGameToken)
+		user, err = authenticateInGame(c, inGameToken)
 	} else {
 		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: messageNoHeader}
 	}
@@ -72,7 +75,7 @@ func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 	}
 
 	if user == nil {
-		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: "The authentication token you have provided was not valid"}
+		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: "You are unauthorized to access this resource.."}
 	}
 
 	if !user.Allowed {
@@ -98,7 +101,36 @@ func authenticateJWT(token string) (*db.User, error) {
 
 // Authenticates a user by their in-game token.
 // Header - {Auth:Token}
-func authenticateInGame(token string) (*db.User, error) {
-	logrus.Warn("Please implement db.authenticateInGame().")
-	return nil, nil
+func authenticateInGame(c *gin.Context, token string) (*db.User, error) {
+	if c.GetHeader("User-Agent") != "Quaver" {
+		return nil, nil
+	}
+
+	result, err := db.Redis.Get(db.RedisCtx, fmt.Sprintf("quaver:server:session:%v", token)).Result()
+
+	if err != nil && err != redis.Nil {
+		return nil, err
+	}
+
+	if result == "" {
+		return nil, nil
+	}
+
+	userId, err := strconv.Atoi(result)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := db.GetUserById(userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !user.Allowed {
+		return nil, nil
+	}
+
+	return user, nil
 }
