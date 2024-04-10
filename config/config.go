@@ -16,6 +16,11 @@ type Config struct {
 		Port int `json:"port"`
 	} `json:"server"`
 
+	Steam struct {
+		AppId        int    `json:"app_id"`
+		PublisherKey string `json:"publisher_key"`
+	} `json:"steam"`
+
 	SQL struct {
 		Host     string `json:"host"`
 		Username string `json:"username"`

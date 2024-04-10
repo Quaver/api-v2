@@ -51,6 +51,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/clan/banner", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadClanBanner))
 
 	// Users
+	engine.POST("/v2/user", handlers.CreateHandler(handlers.RegisterNewUser))
 	engine.GET("/v2/user/:id", handlers.CreateHandler(handlers.GetUser))
 	engine.GET("/v2/user/:id/achievements", handlers.CreateHandler(handlers.GetUserAchievements))
 	engine.GET("/v2/user/:id/activity", handlers.CreateHandler(handlers.GetUserActivity))

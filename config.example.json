@@ -4,6 +4,10 @@
   "server": {
     "port": 8080
   },
+  "steam": {
+    "app_id": 980610,
+    "publisher_key": ""
+  },
   "sql": {
     "host": "",
     "username": "",
