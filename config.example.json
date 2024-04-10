@@ -1,5 +1,6 @@
 {
   "is_production": false,
+  "jwt_secret": "",
   "server": {
     "port": 8080
   },

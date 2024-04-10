@@ -10,6 +10,8 @@ import (
 type Config struct {
 	IsProduction bool `json:"is_production"`
 
+	JWTSecret string `json:"jwt_secret"`
+
 	Server struct {
 		Port int `json:"port"`
 	} `json:"server"`

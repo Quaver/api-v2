@@ -1,16 +1,25 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
+	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/handlers"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"strings"
 )
+
+type JWTClaims struct {
+	UserId   int    `json:"user_id"`
+	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
 
 const (
 	messageNoHeader = "You must provide a valid `Authorization` or `auth` header."
@@ -56,14 +65,14 @@ func AllowAuth(c *gin.Context) {
 
 // authenticateUser Authenticates a user from an incoming HTTP request
 func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
-	jwt := c.GetHeader("Authorization")
+	authorizationHeader := c.GetHeader("Authorization")
 	inGameToken := c.GetHeader("auth")
 
 	var user *db.User
 	var err error
 
-	if jwt != "" {
-		user, err = authenticateJWT(jwt)
+	if authorizationHeader != "" {
+		user, err = authenticateJWT(authorizationHeader)
 	} else if inGameToken != "" {
 		user, err = authenticateInGame(c, inGameToken)
 	} else {
@@ -75,7 +84,7 @@ func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 	}
 
 	if user == nil {
-		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: "You are unauthorized to access this resource.."}
+		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: "You are unauthorized to access this resource."}
 	}
 
 	if !user.Allowed {
@@ -87,13 +96,41 @@ func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 
 // Authenticates a user by their JWT token.
 // Header - {Authorization: 'Bearer Token`}
-func authenticateJWT(token string) (*db.User, error) {
-	logrus.Warn("Please implement db.authenticateJWT().")
+func authenticateJWT(header string) (*db.User, error) {
+	header = strings.Replace(header, "Bearer", "", -1)
+	header = strings.TrimSpace(header)
 
-	user, err := db.GetUserById(1)
+	jwtToken, err := jwt.ParseWithClaims(header, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(config.Instance.JWTSecret), nil
+	})
+
+	switch err {
+	case nil:
+		break
+	// Return without any error, which will give them the message that they can't access resource.
+	case jwt.ErrSignatureInvalid:
+	case jwt.ErrTokenSignatureInvalid:
+	case jwt.ErrTokenExpired:
+		return nil, nil
+	// Any other internal errors which should be logged up the call stack.
+	default:
+		return nil, err
+	}
+
+	claims, ok := jwtToken.Claims.(*JWTClaims)
+
+	if !ok {
+		return nil, errors.New("unknown claims type, cannot proceed")
+	}
+
+	user, err := db.GetUserById(claims.UserId)
 
 	if err != nil {
 		return nil, err
+	}
+
+	if !user.Allowed {
+		return nil, nil
 	}
 
 	return user, nil
