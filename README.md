@@ -38,7 +38,17 @@ Built in go tests are used for any unit testing. Simply run `go test` with the a
 
 Request handlers can be tested through [Postman](https://www.postman.com/00swan/workspace/quaver/collection/29785543-d09535f0-68bc-461d-920e-9d388c67f11b).
 
-Some endpoints **require authentication.** To access them, you must generate a JWT and set it in the `variables` section of the Postman collection.
+Some endpoints **require authentication.** To access them, you must [generate a JWT](https://jwt.io/), and set it in the `variables` section of the Postman collection.
+
+#### Example JWT Payload
+
+```json
+{
+  "user_id": 2,
+  "username": "QuaverBot",
+  "iat": 1516239022
+}
+```
 
 ## LICENSE
 
