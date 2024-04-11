@@ -109,6 +109,23 @@ func GetUserById(id int) (*User, error) {
 	return user, nil
 }
 
+// GetUserBySteamId Retrieves a user from the database by their steam id
+func GetUserBySteamId(id string) (*User, error) {
+	var user *User
+
+	result := SQL.
+		Joins("StatsKeys4").
+		Joins("StatsKeys7").
+		Where("steam_id = ?", id).
+		First(&user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return user, nil
+}
+
 // GetUserByUsername Retrieves a user from the database by their username
 func GetUserByUsername(username string) (*User, error) {
 	var user *User
