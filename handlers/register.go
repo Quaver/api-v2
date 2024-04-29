@@ -8,6 +8,7 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
@@ -55,6 +56,13 @@ func RegisterNewUser(c *gin.Context) *APIError {
 		return APIErrorBadRequest("The username you have chosen is unavailable.")
 	}
 
+	country, err := getUserCountryFromIP(c.ClientIP())
+
+	if err != nil {
+		country = "XX"
+		logrus.Error("Error retrieving country from IP: ", err)
+	}
+
 	newUser := &db.User{
 		SteamId:        steamId,
 		Username:       body.Username,
@@ -64,7 +72,7 @@ func RegisterNewUser(c *gin.Context) *APIError {
 		UserGroups:     enums.UserGroupNormal,
 		MuteEndTime:    0,
 		LatestActivity: time.Now().UnixMilli(),
-		Country:        "XX",
+		Country:        country,
 		IP:             c.ClientIP(),
 	}
 
@@ -138,4 +146,28 @@ func authenticateSteamTicket(c *gin.Context) (string, *APIError) {
 	}
 
 	return parsed.Response.Params.SteamId, nil
+}
+
+// Returns the user's country from their ip address
+func getUserCountryFromIP(ip string) (string, error) {
+	resp, err := resty.New().R().Get(fmt.Sprintf("https://ip-api.com/json/%v", ip))
+
+	if err != nil {
+		return "XX", err
+	}
+	if resp.IsError() {
+		return "XX", err
+	}
+
+	type response struct {
+		CountryCode string `json:"countryCode"`
+	}
+
+	var parsed response
+
+	if err = json.Unmarshal(resp.Body(), &parsed); err != nil {
+		return "XX", err
+	}
+
+	return parsed.CountryCode, nil
 }
