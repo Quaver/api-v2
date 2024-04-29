@@ -65,7 +65,7 @@ func RegisterNewUser(c *gin.Context) *APIError {
 		MuteEndTime:    0,
 		LatestActivity: time.Now().UnixMilli(),
 		Country:        "XX",
-		IP:             "",
+		IP:             c.ClientIP(),
 	}
 
 	if err = newUser.Insert(); err != nil {
