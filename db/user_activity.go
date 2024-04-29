@@ -5,14 +5,29 @@ import (
 	"time"
 )
 
+const (
+	UserActivityRegistered UserActivityType = iota
+	UserActivityUploadedMapset
+	UserActivityUpdatedMapset
+	UserActivityRankedMapset
+	UserActivityDeniedMapset
+	UserActivityAchievedFirstPlace
+	UserActivityLostFirstPlace
+	UserActivityUnlockedAchievement
+	UserActivityDonated
+	UserActivityReceivedDonatorGift
+)
+
+type UserActivityType int
+
 type UserActivity struct {
-	Id            int       `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	UserId        int       `gorm:"column:user_id" json:"user_id"`
-	Type          int8      `gorm:"column:type" json:"type"`
-	Timestamp     int64     `gorm:"column:timestamp" json:"-"`
-	TimestampJSON time.Time `gorm:"-:all" json:"timestamp"`
-	Value         string    `gorm:"column:value" json:"value"`
-	MapsetId      int       `gorm:"mapset_id" json:"mapset_id"`
+	Id            int              `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	UserId        int              `gorm:"column:user_id" json:"user_id"`
+	Type          UserActivityType `gorm:"column:type" json:"type"`
+	Timestamp     int64            `gorm:"column:timestamp" json:"-"`
+	TimestampJSON time.Time        `gorm:"-:all" json:"timestamp"`
+	Value         string           `gorm:"column:value" json:"value"`
+	MapsetId      int              `gorm:"mapset_id" json:"mapset_id"`
 }
 
 func (*UserActivity) TableName() string {

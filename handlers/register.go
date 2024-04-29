@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // RegisterNewUser Registers a new user account
@@ -53,7 +55,24 @@ func RegisterNewUser(c *gin.Context) *APIError {
 		return APIErrorBadRequest("The username you have chosen is unavailable.")
 	}
 
-	// TOOD: INSERT NEW USER INTO DB
+	newUser := &db.User{
+		SteamId:        steamId,
+		Username:       body.Username,
+		TimeRegistered: time.Now().UnixMilli(),
+		Allowed:        true,
+		Privileges:     1,
+		UserGroups:     enums.UserGroupNormal,
+		MuteEndTime:    0,
+		LatestActivity: time.Now().UnixMilli(),
+		Country:        "XX",
+		IP:             "",
+	}
+
+	if err = newUser.Insert(); err != nil {
+		return APIErrorServerError("Error inserting user", err)
+	}
+
+	c.JSON(200, gin.H{"message": "Your account has been successfully created."})
 	return nil
 }
 

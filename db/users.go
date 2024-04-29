@@ -87,6 +87,78 @@ func (u *User) AfterFind(*gorm.DB) (err error) {
 	return nil
 }
 
+// Insert Inserts a new user to the database
+func (u *User) Insert() error {
+	err := SQL.Transaction(func(tx *gorm.DB) error {
+		// Insert User
+		result := tx.Create(&u)
+
+		if result.Error != nil {
+			return result.Error
+		}
+
+		// Insert 4K User Stats
+		if err := tx.Create(&UserStatsKeys4{UserId: u.Id}).Error; err != nil {
+			return err
+		}
+
+		// Insert 7K User Stats
+		if err := tx.Create(&UserStatsKeys7{UserId: u.Id}).Error; err != nil {
+			return err
+		}
+
+		// Insert Activity Feed
+		if err := tx.Create(&UserActivity{
+			UserId:    u.Id,
+			Type:      UserActivityRegistered,
+			Timestamp: time.Now().UnixMilli(),
+			MapsetId:  -1,
+		}).Error; err != nil {
+			return err
+		}
+
+		// Global / Country Leaderboards
+		for i := 1; i < 2; i++ {
+			if err := Redis.ZAdd(RedisCtx, fmt.Sprintf("quaver:leaderboard:%v", i), redis.Z{
+				Score:  0,
+				Member: strconv.Itoa(u.Id),
+			}).Err(); err != nil {
+				return err
+			}
+
+			countryLb := fmt.Sprintf("quaver:country_leaderboard:%v:%v", strings.ToLower(u.Country), i)
+
+			if err := Redis.ZAdd(RedisCtx, countryLb, redis.Z{
+				Score:  0,
+				Member: strconv.Itoa(u.Id),
+			}).Err(); err != nil {
+				return err
+			}
+		}
+
+		// Total Hits Leaderboard
+		if err := Redis.ZAdd(RedisCtx, "quaver:leaderboard:total_hits_global", redis.Z{
+			Score:  0,
+			Member: strconv.Itoa(u.Id),
+		}).Err(); err != nil {
+			return err
+		}
+
+		// Increment total user count
+		if err := Redis.Incr(RedisCtx, "quaver:total_user").Err(); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CanJoinClan Returns if the user is eligible to join a new clan
 func (u *User) CanJoinClan() bool {
 	return u.ClanId == nil
