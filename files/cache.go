@@ -106,6 +106,10 @@ func CacheReplay(scoreId int) (string, error) {
 	fileName := fmt.Sprintf("%v.qr", scoreId)
 	path := fmt.Sprintf("%v/%v", getReplayDirectory(), fileName)
 
+	if _, err := os.Stat(path); err == nil {
+		return path, nil
+	}
+
 	if _, err := azure.Client.DownloadFile("replays", fileName, path); err != nil {
 		logrus.Error(err)
 		return "", err
