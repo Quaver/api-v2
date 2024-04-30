@@ -38,19 +38,23 @@ func GetGlobalScoresForMap(c *gin.Context) *APIError {
 // GetCountryScoresForMap Retrieves country scores for a given map
 // Endpoint: GET v2/scores/:md5/country/:country
 func GetCountryScoresForMap(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this scoreboard.")
+	}
+
 	dbMap, apiErr := getScoreboardMap(c)
 
 	if apiErr != nil {
 		return apiErr
 	}
 
-	user := getAuthedUser(c)
 	limit := getScoreboardScoreLimit(user)
-
-	if user == nil || !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
-		return APIErrorForbidden("You must be a donator to access this scoreboard.")
-	}
-
 	scores, err := db.GetCountryScoresForMap(dbMap.MD5, c.Param("country"), limit, 0)
 
 	if err != nil {
@@ -133,24 +137,63 @@ func GetRateScoresForMap(c *gin.Context) *APIError {
 // GetAllScoresForMap Retrieves all scores for a given map
 // Endpoint: GET v2/scores/:md5/all
 func GetAllScoresForMap(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this scoreboard.")
+	}
+
 	dbMap, apiErr := getScoreboardMap(c)
 
 	if apiErr != nil {
 		return apiErr
 	}
 
+	scores, err := db.GetAllScoresForMap(dbMap.MD5, getScoreboardScoreLimit(user), 0)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving all scoreboard", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
+
+// GetFriendScoresForMap Retrieves the friends scoreboard for a given map.
+// Endpoint: GET: /v2/scores/:md5/friends
+func GetFriendScoresForMap(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 
-	if user == nil || !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
-		return APIErrorForbidden("You must be a donator to access this scoreboard.")
+	if user == nil {
+		return nil
+	}
+
+	dbMap, apiErr := getScoreboardMap(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	friends, err := db.GetUserFriends(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving user friends", err)
 	}
 
 	limit := getScoreboardScoreLimit(user)
 
-	scores, err := db.GetAllScoresForMap(dbMap.MD5, limit, 0)
+	if !hasDonatorScoreboardAccess(dbMap, user) {
+		return APIErrorForbidden("You must be a donator to access this scoreboard.")
+	}
+
+	scores, err := db.GetFriendScoresForMap(dbMap.MD5, user.Id, friends, limit, 0)
 
 	if err != nil {
-		return APIErrorServerError("Error retrieving all scoreboard", err)
+		return APIErrorServerError("Error retrieving global scoreboard", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})

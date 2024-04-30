@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 	"time"
@@ -270,6 +271,36 @@ func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 		Joins("User").
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
+			"AND user.allowed = 1", md5).
+		Order("scores.performance_rating DESC").
+		Limit(limit).
+		Offset(page * limit).
+		Find(&scores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return scores, nil
+}
+
+// GetFriendScoresForMap Retrieves the friend scores for a map
+func GetFriendScoresForMap(md5 string, userId int, friends []*UserFriend, limit int, page int) ([]*Score, error) {
+	friendLookup := fmt.Sprintf("AND (scores.user_id = %v", userId)
+
+	for _, friend := range friends {
+		friendLookup += fmt.Sprintf(" OR scores.user_id = %v", friend.Id)
+	}
+
+	friendLookup += ") "
+
+	var scores []*Score
+
+	result := SQL.
+		Joins("User").
+		Where("scores.map_md5 = ? "+
+			"AND scores.personal_best = 1 "+
+			friendLookup+
 			"AND user.allowed = 1", md5).
 		Order("scores.performance_rating DESC").
 		Limit(limit).
