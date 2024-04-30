@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
 // GetGlobalScoresForMap Retrieves the global scoreboard for a given map.
@@ -54,6 +55,43 @@ func GetCountryScoresForMap(c *gin.Context) *APIError {
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving country scoreboard", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
+
+// GetModifierScoresForMap Retrieves modifier scores for a given map
+// Endpoint: GET v2/scores/:md5/mods/:mods
+func GetModifierScoresForMap(c *gin.Context) *APIError {
+	mods, err := strconv.ParseInt(c.Param("mods"), 10, 64)
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid modifier value.")
+	}
+
+	// No mods active, so it's the same as the global leaderboard.
+	if mods == 0 {
+		return GetGlobalScoresForMap(c)
+	}
+
+	dbMap, apiErr := getScoreboardMap(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	user := getAuthedUser(c)
+	limit := getScoreboardScoreLimit(user)
+
+	if !hasDonatorScoreboardAccess(dbMap, user) {
+		return APIErrorForbidden("You must be a donator to access this scoreboard.")
+	}
+
+	scores, err := db.GetModifierScoresForMap(dbMap.MD5, mods, limit, 0)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving modifier scoreboard", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
