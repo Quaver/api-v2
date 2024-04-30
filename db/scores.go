@@ -231,3 +231,33 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 
 	return scores, nil
 }
+
+// GetRateScoresForMap Retrieves the rate scores for a map
+func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score, error) {
+	var scores []*Score
+
+	modsQuery := ""
+
+	if mods == 0 {
+		modsQuery = "AND (scores.mods = 0 OR s.mods = ?) "
+		mods = 2147483648 // TODO: USE ENUM
+	} else {
+		modsQuery = "AND (scores.mods & ?) != 0 "
+	}
+	result := SQL.
+		Joins("User").
+		Where("scores.map_md5 = ? "+
+			"AND scores.failed = 0 "+
+			modsQuery+
+			"AND user.allowed = 1", md5, mods).
+		Order("scores.performance_rating DESC").
+		Limit(limit).
+		Offset(page * limit).
+		Find(&scores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return scores, nil
+}

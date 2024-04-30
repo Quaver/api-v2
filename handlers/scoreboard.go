@@ -98,6 +98,38 @@ func GetModifierScoresForMap(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetRateScoresForMap Retrieves rate scores for a given map
+// Endpoint: GET v2/scores/:md5/rate/:mods
+func GetRateScoresForMap(c *gin.Context) *APIError {
+	mods, err := strconv.ParseInt(c.Param("mods"), 10, 64)
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid modifier value.")
+	}
+
+	dbMap, apiErr := getScoreboardMap(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	user := getAuthedUser(c)
+	limit := getScoreboardScoreLimit(user)
+
+	if !hasDonatorScoreboardAccess(dbMap, user) {
+		return APIErrorForbidden("You must be a donator to access this scoreboard.")
+	}
+
+	scores, err := db.GetRateScoresForMap(dbMap.MD5, mods, limit, 0)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving rate scoreboard", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
+
 // Retrieves the map to be used for the scoreboard. Returns an api error in the event it can't.
 func getScoreboardMap(c *gin.Context) (*db.MapQua, *APIError) {
 	dbMap, err := db.GetMapByMD5(c.Param("md5"))
