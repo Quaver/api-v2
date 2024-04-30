@@ -20,7 +20,7 @@ func GetGlobalScoresForMap(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 	limit := getScoreboardScoreLimit(user)
 
-	if !checkUserHasScoreboardAccess(dbMap, user) {
+	if !hasDonatorScoreboardAccess(dbMap, user) {
 		return APIErrorForbidden("You must be a donator to access this scoreboard.")
 	}
 
@@ -28,6 +28,32 @@ func GetGlobalScoresForMap(c *gin.Context) *APIError {
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving global scoreboard", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
+
+// GetCountryScoresForMap Retrieves country scores for a given map
+// Endpoint: GET v2/scores/:md5/country/:country
+func GetCountryScoresForMap(c *gin.Context) *APIError {
+	dbMap, apiErr := getScoreboardMap(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	user := getAuthedUser(c)
+	limit := getScoreboardScoreLimit(user)
+
+	if user == nil || !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this scoreboard.")
+	}
+
+	scores, err := db.GetCountryScoresForMap(dbMap.MD5, c.Param("country"), limit, 0)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving country scoreboard", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
@@ -65,7 +91,7 @@ func getScoreboardScoreLimit(user *db.User) int {
 }
 
 // Only donators are able to access leaderboards for non-ranked, so run a check for this.
-func checkUserHasScoreboardAccess(dbMap *db.MapQua, user *db.User) bool {
+func hasDonatorScoreboardAccess(dbMap *db.MapQua, user *db.User) bool {
 	if dbMap.RankedStatus != enums.RankedStatusRanked {
 		if user == nil || !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
 			return false

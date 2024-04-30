@@ -187,3 +187,25 @@ func GetGlobalScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 
 	return scores, nil
 }
+
+// GetCountryScoresForMap Retrieves the country scores for a map
+func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]*Score, error) {
+	var scores []*Score
+
+	result := SQL.
+		Joins("User").
+		Where("scores.map_md5 = ? "+
+			"AND scores.personal_best = 1 "+
+			"AND User.country = ? "+
+			"AND User.allowed = 1", md5, country).
+		Order("scores.performance_rating DESC").
+		Limit(limit).
+		Offset(page * limit).
+		Find(&scores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return scores, nil
+}
