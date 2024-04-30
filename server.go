@@ -111,6 +111,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/scores/:md5/country/:country", middleware.RequireAuth, handlers.CreateHandler(handlers.GetCountryScoresForMap))
 	engine.GET("/v2/scores/:md5/mods/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetModifierScoresForMap))
 	engine.GET("/v2/scores/:md5/rate/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetRateScoresForMap))
+	engine.GET("/v2/scores/:md5/all", middleware.RequireAuth, handlers.CreateHandler(handlers.GetAllScoresForMap))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})

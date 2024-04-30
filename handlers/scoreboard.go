@@ -130,6 +130,33 @@ func GetRateScoresForMap(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetAllScoresForMap Retrieves all scores for a given map
+// Endpoint: GET v2/scores/:md5/all
+func GetAllScoresForMap(c *gin.Context) *APIError {
+	dbMap, apiErr := getScoreboardMap(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil || !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this scoreboard.")
+	}
+
+	limit := getScoreboardScoreLimit(user)
+
+	scores, err := db.GetAllScoresForMap(dbMap.MD5, limit, 0)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving all scoreboard", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
+
 // Retrieves the map to be used for the scoreboard. Returns an api error in the event it can't.
 func getScoreboardMap(c *gin.Context) (*db.MapQua, *APIError) {
 	dbMap, err := db.GetMapByMD5(c.Param("md5"))

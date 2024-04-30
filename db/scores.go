@@ -261,3 +261,24 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 
 	return scores, nil
 }
+
+// GetAllScoresForMap Retrieves all scores for a map
+func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
+	var scores []*Score
+
+	result := SQL.
+		Joins("User").
+		Where("scores.map_md5 = ? "+
+			"AND scores.failed = 0 "+
+			"AND user.allowed = 1", md5).
+		Order("scores.performance_rating DESC").
+		Limit(limit).
+		Offset(page * limit).
+		Find(&scores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return scores, nil
+}
