@@ -516,7 +516,7 @@ func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score) err
 		return err
 	}
 
-	return Redis.Set(RedisCtx, scoreboardRedisKey(md5, scoreboard), scoresJson, time.Hour*24*7).Err()
+	return Redis.Set(RedisCtx, scoreboardRedisKey(md5, scoreboard), scoresJson, time.Hour*24*3).Err()
 }
 
 // Retrieves a cached scoreboard from redis
