@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Quaver/api2/enums"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"time"
 )
@@ -171,6 +172,16 @@ func GetScoreById(id int) (*Score, error) {
 
 // GetGlobalScoresForMap Retrieves the global scores for a map
 func GetGlobalScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
+	cached, err := getCachedScoreboard(scoreboardGlobal, md5)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if cached != nil {
+		return cached, nil
+	}
+
 	var scores []*Score
 
 	result := SQL.
@@ -196,6 +207,16 @@ func GetGlobalScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 
 // GetCountryScoresForMap Retrieves the country scores for a map
 func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]*Score, error) {
+	cached, err := getCachedScoreboard(scoreboardCountry, md5)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if cached != nil {
+		return cached, nil
+	}
+
 	var scores []*Score
 
 	result := SQL.
@@ -222,6 +243,16 @@ func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]
 
 // GetModifierScoresForMap Retrieves the modifier scores for a map
 func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score, error) {
+	cached, err := getCachedScoreboard(scoreboardMods, md5)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if cached != nil {
+		return cached, nil
+	}
+
 	var scores []*Score
 
 	result := SQL.
@@ -249,6 +280,16 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 
 // GetRateScoresForMap Retrieves the rate scores for a map
 func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score, error) {
+	cached, err := getCachedScoreboard(scoreboardRate, md5)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if cached != nil {
+		return cached, nil
+	}
+
 	var scores []*Score
 
 	modsQuery := ""
@@ -285,6 +326,16 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 
 // GetAllScoresForMap Retrieves all scores for a map
 func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
+	cached, err := getCachedScoreboard(scoreboardAll, md5)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if cached != nil {
+		return cached, nil
+	}
+
 	var scores []*Score
 
 	result := SQL.
@@ -448,13 +499,16 @@ const (
 	scoreboardAll     scoreboardType = "all"
 )
 
+// Returns the redis key for a scoreboard
+func scoreboardRedisKey(md5 string, scoreboard scoreboardType) string {
+	return fmt.Sprintf("quaver:scoreboard:%v:%v", md5, scoreboard)
+}
+
 // Caches a scoreboard to Redis
 func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score) error {
 	if len(scores) == 0 {
 		return nil
 	}
-
-	key := fmt.Sprintf("quaver:scoreboard:%v:%v", md5, scoreboard)
 
 	scoresJson, err := json.Marshal(scores)
 
@@ -462,5 +516,30 @@ func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score) err
 		return err
 	}
 
-	return Redis.Set(RedisCtx, key, scoresJson, time.Hour*24*7).Err()
+	return Redis.Set(RedisCtx, scoreboardRedisKey(md5, scoreboard), scoresJson, time.Hour*24*7).Err()
+}
+
+// Retrieves a cached scoreboard from redis
+func getCachedScoreboard(scoreboard scoreboardType, md5 string) ([]*Score, error) {
+	result, err := Redis.Get(RedisCtx, scoreboardRedisKey(md5, scoreboard)).Result()
+
+	if err != nil {
+		if err == redis.Nil {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	if result == "" {
+		return nil, nil
+	}
+
+	var scores []*Score
+
+	if err := json.Unmarshal([]byte(result), &scores); err != nil {
+		return nil, err
+	}
+
+	return scores, nil
 }
