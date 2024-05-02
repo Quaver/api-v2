@@ -541,5 +541,23 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string) ([]*Score, error
 		return nil, err
 	}
 
+	// User changed their name, country, or got banned
+	for _, score := range scores {
+		var user *User
+
+		result := SQL.
+			Select("allowed", "username", "country").
+			Where("id = ?", score.UserId).
+			First(&user)
+
+		if result.Error != nil {
+			return nil, result.Error
+		}
+
+		if !user.Allowed || user.Username != score.User.Username || user.Country != score.User.Country {
+			return nil, nil
+		}
+	}
+
 	return scores, nil
 }
