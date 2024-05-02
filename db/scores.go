@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
@@ -186,6 +187,10 @@ func GetGlobalScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 		return nil, result.Error
 	}
 
+	if err := cacheScoreboard(scoreboardGlobal, md5, scores); err != nil {
+		return nil, err
+	}
+
 	return scores, nil
 }
 
@@ -206,6 +211,10 @@ func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	if err := cacheScoreboard(scoreboardCountry, md5, scores); err != nil {
+		return nil, err
 	}
 
 	return scores, nil
@@ -229,6 +238,10 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	if err := cacheScoreboard(scoreboardMods, md5, scores); err != nil {
+		return nil, err
 	}
 
 	return scores, nil
@@ -263,6 +276,10 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 		return nil, result.Error
 	}
 
+	if err := cacheScoreboard(scoreboardRate, md5, scores); err != nil {
+		return nil, err
+	}
+
 	return scores, nil
 }
 
@@ -283,6 +300,10 @@ func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	if err := cacheScoreboard(scoreboardAll, md5, scores); err != nil {
+		return nil, err
 	}
 
 	return scores, nil
@@ -414,4 +435,32 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 	}
 
 	return score, nil
+}
+
+type scoreboardType string
+
+const (
+	scoreboardGlobal  scoreboardType = "global"
+	scoreboardCountry scoreboardType = "country"
+	scoreboardFriends scoreboardType = "friends"
+	scoreboardMods    scoreboardType = "mods"
+	scoreboardRate    scoreboardType = "rate"
+	scoreboardAll     scoreboardType = "all"
+)
+
+// Caches a scoreboard to Redis
+func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score) error {
+	if len(scores) == 0 {
+		return nil
+	}
+
+	key := fmt.Sprintf("quaver:scoreboard:%v:%v", md5, scoreboard)
+
+	scoresJson, err := json.Marshal(scores)
+
+	if err != nil {
+		return err
+	}
+
+	return Redis.Set(RedisCtx, key, scoresJson, time.Hour*24*7).Err()
 }
