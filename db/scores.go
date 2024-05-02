@@ -241,11 +241,12 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 	modsQuery := ""
 
 	if mods == 0 {
-		modsQuery = "AND (scores.mods = 0 OR s.mods = ?) "
+		modsQuery = "AND (scores.mods = 0 OR scores.mods = ?) "
 		mods = 2147483648 // TODO: USE ENUM
 	} else {
 		modsQuery = "AND (scores.mods & ?) != 0 "
 	}
+
 	result := SQL.
 		Joins("User").
 		Where("scores.map_md5 = ? "+
@@ -373,6 +374,36 @@ func GetUserPersonalBestScoreMods(userId int, md5 string, mods int64) (*Score, e
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
 			modsQueryStr+
+			"AND user.id = ? "+
+			"AND user.allowed = 1", md5, mods, userId).
+		Order("scores.performance_rating DESC").
+		First(&score)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return score, nil
+}
+
+// GetUserPersonalBestScoreRate Retrieves a user's personal best rate score on a given map
+func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, error) {
+	var score *Score
+
+	modsQuery := ""
+
+	if mods == 0 {
+		modsQuery = "AND (scores.mods = 0 OR scores.mods = ?) "
+		mods = 2147483648 // TODO: USE ENUM
+	} else {
+		modsQuery = "AND (scores.mods & ?) != 0 "
+	}
+
+	result := SQL.
+		Joins("User").
+		Where("scores.map_md5 = ? "+
+			"AND scores.failed = 0 "+
+			modsQuery+
 			"AND user.id = ? "+
 			"AND user.allowed = 1", md5, mods, userId).
 		Order("scores.performance_rating DESC").
