@@ -317,8 +317,8 @@ func GetFriendScoresForMap(md5 string, userId int, friends []*UserFriend, limit 
 	return scores, nil
 }
 
-// GetUserPersonalBestScore Retrieves a user's personal best score on a given map
-func GetUserPersonalBestScore(userId int, md5 string) (*Score, error) {
+// GetUserPersonalBestScoreGlobal Retrieves a user's personal best global score on a given map
+func GetUserPersonalBestScoreGlobal(userId int, md5 string) (*Score, error) {
 	var score *Score
 
 	result := SQL.
@@ -327,6 +327,26 @@ func GetUserPersonalBestScore(userId int, md5 string) (*Score, error) {
 			"AND scores.personal_best = 1 "+
 			"AND user.id =  ? "+
 			"AND user.allowed = 1", md5, userId).
+		First(&score)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return score, nil
+}
+
+// GetUserPersonalBestScoreAll Retrieves a user's personal best ALL score on a given map
+func GetUserPersonalBestScoreAll(userId int, md5 string) (*Score, error) {
+	var score *Score
+
+	result := SQL.
+		Joins("User").
+		Where("scores.map_md5 = ? "+
+			"AND scores.failed = 0 "+
+			"AND user.id =  ? "+
+			"AND user.allowed = 1", md5, userId).
+		Order("scores.performance_rating DESC").
 		First(&score)
 
 	if result.Error != nil {

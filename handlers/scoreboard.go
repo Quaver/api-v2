@@ -18,10 +18,6 @@ func GetGlobalScoresForMap(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	if dbMap == nil {
-		return nil
-	}
-
 	user := getAuthedUser(c)
 	limit := getScoreboardScoreLimit(user)
 
@@ -58,10 +54,6 @@ func GetCountryScoresForMap(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	if dbMap == nil {
-		return nil
-	}
-
 	limit := getScoreboardScoreLimit(user)
 	scores, err := db.GetCountryScoresForMap(dbMap.MD5, c.Param("country"), limit, 0)
 
@@ -91,10 +83,6 @@ func GetModifierScoresForMap(c *gin.Context) *APIError {
 
 	if apiErr != nil {
 		return apiErr
-	}
-
-	if dbMap == nil {
-		return nil
 	}
 
 	user := getAuthedUser(c)
@@ -127,10 +115,6 @@ func GetRateScoresForMap(c *gin.Context) *APIError {
 
 	if apiErr != nil {
 		return apiErr
-	}
-
-	if dbMap == nil {
-		return nil
 	}
 
 	user := getAuthedUser(c)
@@ -169,10 +153,6 @@ func GetAllScoresForMap(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	if dbMap == nil {
-		return nil
-	}
-
 	scores, err := db.GetAllScoresForMap(dbMap.MD5, getScoreboardScoreLimit(user), 0)
 
 	if err != nil {
@@ -198,10 +178,6 @@ func GetFriendScoresForMap(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	if dbMap == nil {
-		return nil
-	}
-
 	friends, err := db.GetUserFriends(user.Id)
 
 	if err != nil {
@@ -224,17 +200,13 @@ func GetFriendScoresForMap(c *gin.Context) *APIError {
 	return nil
 }
 
-// GetUserPersonalBestScore Retrieves the personal best score on a map for a user
+// GetUserPersonalBestScoreGlobal Retrieves the personal best score on a map for a user
 // Endpoint: GET /v2/scores/:md5/:user_id/global
-func GetUserPersonalBestScore(c *gin.Context) *APIError {
+func GetUserPersonalBestScoreGlobal(c *gin.Context) *APIError {
 	dbMap, apiErr := getScoreboardMap(c)
 
 	if apiErr != nil {
 		return apiErr
-	}
-
-	if dbMap == nil {
-		return nil
 	}
 
 	userId, err := strconv.Atoi(c.Param("user_id"))
@@ -243,10 +215,35 @@ func GetUserPersonalBestScore(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide a valid user id")
 	}
 
-	score, err := db.GetUserPersonalBestScore(userId, dbMap.MD5)
+	score, err := db.GetUserPersonalBestScoreGlobal(userId, dbMap.MD5)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return APIErrorServerError("Error retrieving personal best score from database", err)
+		return APIErrorServerError("Error retrieving personal best global score from database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"score": score})
+	return nil
+}
+
+// GetUserPersonalBestScoreAll Retrieves the personal best (ALL lb) score on a map for a user
+// Endpoint: GET /v2/scores/:md5/:user_id/all
+func GetUserPersonalBestScoreAll(c *gin.Context) *APIError {
+	dbMap, apiErr := getScoreboardMap(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	userId, err := strconv.Atoi(c.Param("user_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid user id")
+	}
+
+	score, err := db.GetUserPersonalBestScoreAll(userId, dbMap.MD5)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving personal best (all-time) score from database", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"score": score})
@@ -261,8 +258,11 @@ func getScoreboardMap(c *gin.Context) (*db.MapQua, *APIError) {
 	case nil:
 		break
 	case gorm.ErrRecordNotFound:
-		c.JSON(404, gin.H{"message": "The map you have provided was not found."})
-		return nil, nil
+		return nil, &APIError{
+			Status:  404,
+			Message: "The map you have provided was not found",
+			Error:   nil,
+		}
 	default:
 		return nil, APIErrorServerError("Error retrieving map from database", err)
 	}
