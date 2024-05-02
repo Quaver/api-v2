@@ -250,6 +250,37 @@ func GetUserPersonalBestScoreAll(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetUserPersonalBestScoreMods Retrieves the personal best modifier score on a map for a user
+// Endpoint: GET /v2/scores/:md5/:user_id/mods/:mods
+func GetUserPersonalBestScoreMods(c *gin.Context) *APIError {
+	mods, err := strconv.ParseInt(c.Param("mods"), 10, 64)
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid modifier value.")
+	}
+
+	dbMap, apiErr := getScoreboardMap(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	userId, err := strconv.Atoi(c.Param("user_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid user id")
+	}
+
+	score, err := db.GetUserPersonalBestScoreMods(userId, dbMap.MD5, mods)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving personal best mods score from database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"score": score})
+	return nil
+}
+
 // Retrieves the map to be used for the scoreboard. Returns an api error in the event it can't.
 func getScoreboardMap(c *gin.Context) (*db.MapQua, *APIError) {
 	dbMap, err := db.GetMapByMD5(c.Param("md5"))

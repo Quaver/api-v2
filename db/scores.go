@@ -355,3 +355,32 @@ func GetUserPersonalBestScoreAll(userId int, md5 string) (*Score, error) {
 
 	return score, nil
 }
+
+// GetUserPersonalBestScoreMods Retrieves a user's personal best modifier score on a given map
+func GetUserPersonalBestScoreMods(userId int, md5 string, mods int64) (*Score, error) {
+	var score *Score
+
+	modsQueryStr := ""
+
+	if mods == 0 {
+		modsQueryStr = "AND scores.mods = ? "
+	} else {
+		modsQueryStr = "AND (scores.mods & ?) != 0 "
+	}
+
+	result := SQL.
+		Joins("User").
+		Where("scores.map_md5 = ? "+
+			"AND scores.failed = 0 "+
+			modsQueryStr+
+			"AND user.id = ? "+
+			"AND user.allowed = 1", md5, mods, userId).
+		Order("scores.performance_rating DESC").
+		First(&score)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return score, nil
+}
