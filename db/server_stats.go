@@ -4,13 +4,15 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"strconv"
+	"strings"
 )
 
 const (
-	onlineUsersRedisKey  string = "quaver:server:online_users"
-	totalUsersRedisKey   string = "quaver:total_users"
-	totalMapsetsRedisKey string = "quaver:total_mapsets"
-	totalScoresRedisKey  string = "quaver:total_scores"
+	onlineUsersRedisKey    string = "quaver:server:online_users"
+	totalUsersRedisKey     string = "quaver:total_users"
+	totalMapsetsRedisKey   string = "quaver:total_mapsets"
+	totalScoresRedisKey    string = "quaver:total_scores"
+	countryPlayersRedisKey string = "quaver:country_players"
 )
 
 // CacheTotalUsersInRedis Caches the number of total scores in redis
@@ -76,6 +78,90 @@ func GetTotalMapsetCountFromRedis() (int, error) {
 // GetTotalScoreCountFromRedis Retrieves the total amount of scores from redis
 func GetTotalScoreCountFromRedis() (int, error) {
 	return getValueFromRedis(totalScoresRedisKey)
+}
+
+// GetTotalCountryPlayersFromRedis Retrieves the total amount of users on the country leaderboard
+func GetTotalCountryPlayersFromRedis() (int, error) {
+	result, err := Redis.HGet(RedisCtx, countryPlayersRedisKey, "total").Result()
+
+	if err != nil {
+		if err == redis.Nil {
+			return 0, nil
+		}
+
+		return 0, err
+	}
+
+	count, err := strconv.Atoi(result)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+// CacheCountryPlayersInRedis Caches the amount of country players in redis
+func CacheCountryPlayersInRedis() (map[string]string, error) {
+	totalUserCount, err := GetTotalUserCountFromRedis()
+
+	if err != nil {
+		return nil, err
+	}
+
+	countryPlayerCount, err := GetTotalCountryPlayersFromRedis()
+
+	if err != nil {
+		return nil, err
+	}
+
+	type CountryPlayers struct {
+		CountryCode string `gorm:"column:country" json:"country"`
+		Total       int    `gorm:"column:total" json:"total"`
+	}
+
+	var countries []*CountryPlayers
+
+	// Total user count does match the amount of country players we have cached, so re-cache.
+	if totalUserCount != countryPlayerCount {
+		result := SQL.
+			Raw("SELECT country, count(country) as total FROM users GROUP BY country").
+			Scan(&countries)
+
+		if result.Error != nil {
+			return nil, result.Error
+		}
+
+		totalUsers := 0
+
+		// Cache total players in each country
+		for _, country := range countries {
+			err := Redis.
+				HSet(RedisCtx, countryPlayersRedisKey, strings.ToLower(country.CountryCode), country.Total).
+				Err()
+
+			if err != nil {
+				return nil, err
+			}
+
+			totalUsers += country.Total
+		}
+
+		// Cache total country players
+		err := Redis.HSet(RedisCtx, countryPlayersRedisKey, "total", totalUsers).Err()
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	result, err := Redis.HGetAll(RedisCtx, countryPlayersRedisKey).Result()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // Retrieves a single cached value from redis

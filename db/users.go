@@ -117,7 +117,7 @@ func (u *User) Insert() error {
 			return err
 		}
 
-		// Global / Country Leaderboards
+		// Global / CountryCode Leaderboards
 		for i := 1; i < 2; i++ {
 			if err := Redis.ZAdd(RedisCtx, fmt.Sprintf("quaver:leaderboard:%v", i), redis.Z{
 				Score:  0,

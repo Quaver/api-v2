@@ -41,3 +41,16 @@ func GetServerStats(c *gin.Context) *APIError {
 	})
 	return nil
 }
+
+// GetCountryPlayers Returns the countries and their total user counts
+// Endpoint: /v2/server/stats/countries
+func GetCountryPlayers(c *gin.Context) *APIError {
+	countries, err := db.CacheCountryPlayersInRedis()
+
+	if err != nil {
+		return APIErrorServerError("Failed to cache country players in redis", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"countries": countries})
+	return nil
+}

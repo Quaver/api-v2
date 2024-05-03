@@ -93,6 +93,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Server
 	engine.GET("/v2/server/stats", handlers.CreateHandler(handlers.GetServerStats))
+	engine.GET("/v2/server/stats/country", handlers.CreateHandler(handlers.GetCountryPlayers))
 
 	// Download
 	engine.GET("/v2/download/map/:id", handlers.CreateHandler(handlers.DownloadQua))
