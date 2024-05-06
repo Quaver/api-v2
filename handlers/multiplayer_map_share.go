@@ -32,6 +32,15 @@ func UploadMultiplayerMapset(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid multiplayer game id")
 	}
 
+	body := struct {
+		MapMD5     string `form:"map_md5" json:"map_md5" binding:"required"`
+		PackageMD5 string `form:"package_md5" json:"package_md5" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
 	if apiErr := validateUploadedMultiplayerMapset(c, id); apiErr != nil {
 		return apiErr
 	}
@@ -39,8 +48,8 @@ func UploadMultiplayerMapset(c *gin.Context) *APIError {
 	mapShare := &db.MultiplayerMapShare{
 		UserId:     user.Id,
 		GameId:     id,
-		MapMD5:     "MD5_HERE",
-		PackageMD5: "PACKAGE_MD5_HERE",
+		MapMD5:     body.MapMD5,
+		PackageMD5: body.PackageMD5,
 		Timestamp:  time.Now().UnixMilli(),
 	}
 
