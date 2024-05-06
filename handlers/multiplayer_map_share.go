@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/files"
 	"github.com/gin-gonic/gin"
@@ -9,10 +10,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // UploadMultiplayerMapset Uploads a multiplayer map to be shared.
-// Endpoint: POST /v2/download/multiplayer/:id
+// Endpoint: POST /v2/download/multiplayer/:id/upload
 func UploadMultiplayerMapset(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 
@@ -34,7 +36,23 @@ func UploadMultiplayerMapset(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Your mapset file was successfully uploaded and shared."})
+	mapShare := &db.MultiplayerMapShare{
+		UserId:     user.Id,
+		GameId:     id,
+		MapMD5:     "MD5_HERE",
+		PackageMD5: "PACKAGE_MD5_HERE",
+		Timestamp:  time.Now().UnixMilli(),
+	}
+
+	if err := mapShare.Insert(); err != nil {
+		return APIErrorServerError("Error inserting map share into DB", err)
+	}
+
+	if err := mapShare.PublishToRedis(); err != nil {
+		return APIErrorServerError("Error publishing map share to redis", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your mapset file was successfully uploaded."})
 	return nil
 }
 
@@ -71,6 +89,8 @@ func validateUploadedMultiplayerMapset(c *gin.Context, gameId int) *APIError {
 	if len(fileBytes) > fileSizeLimit || fileHeader.Size > fileSizeLimit {
 		return APIErrorBadRequest("The file you have uploaded must not exceed 5MB.")
 	}
+
+	// TODO: Validate zip & containing files (IMPORTANT!)
 
 	path := fmt.Sprintf("%v/%v.qp", files.GetTempDirectory(), gameId)
 
