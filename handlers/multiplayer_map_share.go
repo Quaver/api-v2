@@ -101,7 +101,7 @@ func validateUploadedMultiplayerMapset(c *gin.Context, gameId int) *APIError {
 
 	// TODO: Validate zip & containing files (IMPORTANT!)
 
-	path := fmt.Sprintf("%v/%v.qp", files.GetTempDirectory(), gameId)
+	path := fmt.Sprintf("%v/multiplayer/%v.qp", files.GetTempDirectory(), gameId)
 
 	if err := os.WriteFile(path, fileBytes, 0644); err != nil {
 		return APIErrorServerError("Error writing file to temp directory", err)

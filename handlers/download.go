@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/files"
@@ -129,5 +130,30 @@ func DownloadReplay(c *gin.Context) *APIError {
 		return nil
 	}
 
+	return nil
+}
+
+// DownloadMultiplayerMapset Serves the multiplayer mapset that was shared
+// Endpoint: GET /v2/download/multiplayer/:id
+func DownloadMultiplayerMapset(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	path := fmt.Sprintf("%v/multiplayer/%v.qp", files.GetTempDirectory(), id)
+
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return APIErrorNotFound("Multiplayer Mapset")
+	}
+
+	c.FileAttachment(path, fmt.Sprintf("multiplayer_%v.qp", id))
 	return nil
 }

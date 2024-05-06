@@ -23,6 +23,7 @@ func CreateDirectories() {
 		getMapsetDirectory(),
 		getReplayDirectory(),
 		GetTempDirectory(),
+		fmt.Sprintf("%v/multiplayer", GetTempDirectory()),
 	}
 
 	for _, directory := range directories {
