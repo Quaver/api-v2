@@ -1,5 +1,7 @@
 package db
 
+import "encoding/json"
+
 type MultiplayerMapShare struct {
 	Id         int    `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	UserId     int    `gorm:"column:user_id" json:"uploader_id"`
@@ -27,4 +29,11 @@ func (m *MultiplayerMapShare) PublishToRedis() error {
 	}
 
 	return nil
+}
+
+func (m *MultiplayerMapShare) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(m)
+}
+func (m *MultiplayerMapShare) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, &m)
 }
