@@ -13,6 +13,10 @@ import (
 
 // CreateDirectories Creates the directories needed for the cache
 func CreateDirectories() {
+	if err := os.RemoveAll(GetTempDirectory()); err != nil {
+		panic(err)
+	}
+
 	directories := []string{
 		config.Instance.Cache.DataDirectory,
 		getMapsDirectory(),
