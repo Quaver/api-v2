@@ -1,10 +1,10 @@
-# api2
+# api-v2
 
 > 🌎 The new API server for Quaver.
 
 **api2** is the most up-to-date (v2) and open source version of the Quaver web API.
 
-As endpoints are made available in v2, it is recommended to use them instead of its v1 counterpart, as v1 will be made obsolete as we begin to update usage in-game and on our website.
+As endpoints are made available in v2, it is recommended to use them instead of its v1 counterpart, as v1 will be deprecated, as we begin to update usage in-game and on our website.
 
 **This application is being developed for internal network use. As such, no support will be provided for the usage of this software.**
 
@@ -27,14 +27,6 @@ As endpoints are made available in v2, it is recommended to use them instead of 
 - The server is now available at `http://localhost:8080` (or your desired port).
 
 ## Testing
-
-There are two standards when it comes to testing the API — via built in go tests and Postman for request handlers.
-
-### Unit Tests
-
-Built in go tests are used for any unit testing. Simply run `go test` with the appropriate test(s) you would like to run. 
-
-### Integration Tests
 
 Request handlers can be tested through [Postman](https://www.postman.com/00swan/workspace/quaver/collection/29785543-d09535f0-68bc-461d-920e-9d388c67f11b).
 
