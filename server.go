@@ -99,7 +99,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/download/map/:id", handlers.CreateHandler(handlers.DownloadQua))
 	engine.GET("/v2/download/replay/:id", handlers.CreateHandler(handlers.DownloadReplay))
 	engine.GET("/v2/download/mapset/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DownloadMapset))
-	engine.POST("/v2/download/multiplayer/:id/upload", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadMultiplayerMapset))
+	// engine.POST("/v2/download/multiplayer/:id/upload", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadMultiplayerMapset))
 	engine.GET("/v2/download/multiplayer/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DownloadMultiplayerMapset))
 
 	// Logs
