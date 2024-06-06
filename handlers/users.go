@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // SearchUsers Searches for users by username and returns them
@@ -132,6 +133,20 @@ func UnbanUser(c *gin.Context) *APIError {
 		return APIErrorServerError("Error changing user allowed status", err)
 	}
 
+	log := db.AdminActionLog{
+		AuthorId:       user.Id,
+		AuthorUsername: user.Username,
+		TargetId:       targetUser.Id,
+		TargetUsername: targetUser.Username,
+		Action:         db.AdminActionBanned,
+		Notes:          "User Banned",
+		Timestamp:      time.Now().UnixMilli(),
+	}
+
+	if err := log.Insert(); err != nil {
+		return APIErrorServerError("Error inserting admin action log", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "User has been successfully unbanned."})
 	return nil
 }
@@ -176,7 +191,20 @@ func BanUser(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating first place scores", err)
 	}
 
+	log := db.AdminActionLog{
+		AuthorId:       user.Id,
+		AuthorUsername: user.Username,
+		TargetId:       targetUser.Id,
+		TargetUsername: targetUser.Username,
+		Action:         db.AdminActionUpdated,
+		Notes:          "User Unbanned",
+		Timestamp:      time.Now().UnixMilli(),
+	}
+
+	if err := log.Insert(); err != nil {
+		return APIErrorServerError("Error inserting admin action log", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "User has been successfully banned."})
 	return nil
 }
-
