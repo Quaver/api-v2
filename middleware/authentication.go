@@ -79,7 +79,7 @@ func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: messageNoHeader}
 	}
 
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && err != gorm.ErrRecordNotFound && !strings.Contains(err.Error(), jwt.ErrTokenSignatureInvalid.Error()) {
 		return nil, handlers.APIErrorServerError("Error occurred while authenticating user", err)
 	}
 
