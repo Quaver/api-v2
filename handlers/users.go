@@ -94,8 +94,48 @@ func UpdateUserAboutMe(c *gin.Context) *APIError {
 	return nil
 }
 
-// BanUser Bans a user from the game
-// Endpoint: POST /v2/user/:id/ban
+// UnbanUser Unbans a user from the game
+// Endpoint: POST /v2/user/:id/unban
+func UnbanUser(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must supply a valid username or id.")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeBanUsers) {
+		return APIErrorForbidden("You do not have permission to access this resource.")
+	}
+
+	targetUser, err := db.GetUserById(id)
+
+	switch err {
+	case nil:
+		break
+	case gorm.ErrRecordNotFound:
+		return APIErrorNotFound("User not found")
+	default:
+		return APIErrorServerError("Error occurred while fetching user by id", err)
+	}
+
+	if targetUser.Allowed {
+		return APIErrorBadRequest("This user is not banned.")
+	}
+
+	if err := db.UpdateUserAllowed(targetUser.Id, true); err != nil {
+		return APIErrorServerError("Error changing user allowed status", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User has been successfully unbanned."})
+	return nil
+}
+
 func BanUser(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
@@ -139,3 +179,4 @@ func BanUser(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "User has been successfully banned."})
 	return nil
 }
+
