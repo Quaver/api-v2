@@ -19,7 +19,7 @@ type User struct {
 	TimeRegistered              int64             `gorm:"column:time_registered" json:"-"`
 	TimeRegisteredJSON          time.Time         `gorm:"-:all" json:"time_registered"`
 	Allowed                     bool              `gorm:"column:allowed" json:"allowed"`
-	Privileges                  int64             `gorm:"column:privileges" json:"privileges"`
+	Privileges                  enums.Privileges  `gorm:"column:privileges" json:"privileges"`
 	UserGroups                  enums.UserGroups  `gorm:"column:usergroups" json:"usergroups"`
 	MuteEndTime                 int64             `gorm:"column:mute_endtime" json:"-"`
 	MuteEndTimeJSON             time.Time         `gorm:"-:all" json:"mute_end_time"`
@@ -283,6 +283,17 @@ func UpdateUserAboutMe(userId int, aboutMe string) error {
 // UpdateUserUsername Updates a user's username
 func UpdateUserUsername(userId int, username string) error {
 	result := SQL.Model(&User{}).Where("id = ?", userId).Update("username", username)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
+// UpdateUserAllowed Updates whether the user is allowed to play (banned)
+func UpdateUserAllowed(userId int, isAllowed bool) error {
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("allowed", isAllowed)
 
 	if result.Error != nil {
 		return result.Error

@@ -25,7 +25,7 @@ func GetGlobalScoresForMap(c *gin.Context) *APIError {
 		return APIErrorForbidden("You must be a donator to access this scoreboard.")
 	}
 
-	scores, err := db.GetGlobalScoresForMap(dbMap.MD5, limit, 0)
+	scores, err := db.GetGlobalScoresForMap(dbMap.MD5, limit, 0, true)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving global scoreboard", err)
