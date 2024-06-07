@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
@@ -30,5 +31,15 @@ func GetRankingQueue(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"ranking_queue": rankingQueue})
+	return nil
+}
+
+// GetRankingQueueConfig Returns the vote/denial configuration for the ranking queue
+func GetRankingQueueConfig(c *gin.Context) *APIError {
+	c.JSON(http.StatusOK, gin.H{
+		"votes_required":   config.Instance.RankingQueue.VotesRequired,
+		"denials_required": config.Instance.RankingQueue.DenialsRequired,
+	})
+
 	return nil
 }

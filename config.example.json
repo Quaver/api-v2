@@ -26,5 +26,9 @@
   "cache": {
     "data_directory": "./data"
   },
-  "quaver_tools_path": ""
+  "quaver_tools_path": "",
+  "ranking_queue": {
+    "votes_required": 2,
+    "denials_required": 2
+  }
 }

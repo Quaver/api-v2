@@ -126,6 +126,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/scores/:md5/:user_id/rate/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreRate))
 
 	// Ranking Queue
+	engine.GET("/v2/ranking/config", handlers.CreateHandler(handlers.GetRankingQueueConfig))
 	engine.GET("/v2/ranking/queue/:mode", handlers.CreateHandler(handlers.GetRankingQueue))
 
 	engine.NoRoute(func(c *gin.Context) {

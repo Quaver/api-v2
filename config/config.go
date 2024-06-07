@@ -44,6 +44,11 @@ type Config struct {
 	}
 
 	QuaverToolsPath string `json:"quaver_tools_path"`
+
+	RankingQueue struct {
+		VotesRequired   int `json:"votes_required"`
+		DenialsRequired int `json:"denials_required"`
+	} `json:"ranking_queue"`
 }
 
 var Instance *Config = nil
