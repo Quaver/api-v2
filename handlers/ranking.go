@@ -37,8 +37,9 @@ func GetRankingQueue(c *gin.Context) *APIError {
 // GetRankingQueueConfig Returns the vote/denial configuration for the ranking queue
 func GetRankingQueueConfig(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{
-		"votes_required":   config.Instance.RankingQueue.VotesRequired,
-		"denials_required": config.Instance.RankingQueue.DenialsRequired,
+		"votes_required":          config.Instance.RankingQueue.VotesRequired,
+		"denials_required":        config.Instance.RankingQueue.DenialsRequired,
+		"mapset_uploads_required": config.Instance.RankingQueue.MapsetUploadsRequired,
 	})
 
 	return nil

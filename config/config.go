@@ -46,8 +46,9 @@ type Config struct {
 	QuaverToolsPath string `json:"quaver_tools_path"`
 
 	RankingQueue struct {
-		VotesRequired   int `json:"votes_required"`
-		DenialsRequired int `json:"denials_required"`
+		VotesRequired         int `json:"votes_required"`
+		DenialsRequired       int `json:"denials_required"`
+		MapsetUploadsRequired int `json:"mapset_uploads_required"`
 	} `json:"ranking_queue"`
 }
 

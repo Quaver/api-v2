@@ -29,6 +29,7 @@
   "quaver_tools_path": "",
   "ranking_queue": {
     "votes_required": 2,
-    "denials_required": 2
+    "denials_required": 2,
+    "mapset_uploads_required": 0
   }
 }
