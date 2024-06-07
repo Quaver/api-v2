@@ -70,6 +70,10 @@ func Load(path string) error {
 		return err
 	}
 
+	if Instance.RankingQueue.VotesRequired < 1 || Instance.RankingQueue.DenialsRequired < 1 {
+		panic("ranking_queue configuration must be set and greater than 1")
+	}
+
 	logrus.Info("Config file has been loaded")
 	return nil
 }
