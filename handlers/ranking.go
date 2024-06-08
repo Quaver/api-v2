@@ -93,8 +93,10 @@ func SubmitMapsetToRankingQueue(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving user uploaded mapsets from db", err)
 	}
 
-	if len(uploadedMapsets) < 10 {
-		return APIErrorForbidden("You must have at least 10 uploaded mapsets to submit to the queue")
+	uploadsRequired := config.Instance.RankingQueue.MapsetUploadsRequired
+
+	if len(uploadedMapsets) < uploadsRequired {
+		return APIErrorForbidden(fmt.Sprintf("You must have at least %v uploaded mapsets to submit to the queue", ≠uploadsRequired))
 	}
 
 	isEligible, err := isEligibleToSubmitToRankingQueue(user.Id, uploadedMapsets)
