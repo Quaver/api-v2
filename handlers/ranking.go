@@ -18,6 +18,7 @@ func GetRankingQueueConfig(c *gin.Context) *APIError {
 		"votes_required":          config.Instance.RankingQueue.VotesRequired,
 		"denials_required":        config.Instance.RankingQueue.DenialsRequired,
 		"mapset_uploads_required": config.Instance.RankingQueue.MapsetUploadsRequired,
+		"resubmission_days":       config.Instance.RankingQueue.ResubmissionDays,
 	})
 
 	return nil
