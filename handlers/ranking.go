@@ -148,7 +148,7 @@ func resubmitMapsetToRankingQueue(c *gin.Context, mapset *db.RankingQueueMapset)
 
 	// Only if mapset is denied will it get to this point.
 
-	const resubmitDays int = 14
+	resubmitDays := config.Instance.RankingQueue.ResubmissionDays
 	timeSinceDenied := time.Now().Sub(time.UnixMilli(mapset.DateLastUpdated))
 
 	if timeSinceDenied.Hours() < 24*float64(resubmitDays) {

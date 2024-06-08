@@ -49,6 +49,7 @@ type Config struct {
 		VotesRequired         int `json:"votes_required"`
 		DenialsRequired       int `json:"denials_required"`
 		MapsetUploadsRequired int `json:"mapset_uploads_required"`
+		ResubmissionDays      int `json:"resubmission_days"`
 	} `json:"ranking_queue"`
 }
 
@@ -71,7 +72,8 @@ func Load(path string) error {
 		return err
 	}
 
-	if Instance.RankingQueue.VotesRequired < 1 || Instance.RankingQueue.DenialsRequired < 1 {
+	if Instance.RankingQueue.VotesRequired < 1 || Instance.RankingQueue.DenialsRequired < 1 ||
+		Instance.RankingQueue.ResubmissionDays < 1 {
 		panic("ranking_queue configuration must be set and greater than 1")
 	}
 
