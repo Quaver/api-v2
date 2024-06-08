@@ -128,6 +128,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Ranking Queue
 	engine.GET("/v2/ranking/config", handlers.CreateHandler(handlers.GetRankingQueueConfig))
 	engine.GET("/v2/ranking/queue/:mode", handlers.CreateHandler(handlers.GetRankingQueue))
+	engine.POST("/v2/ranking/queue/:id/submit", middleware.RequireAuth, handlers.CreateHandler(handlers.SubmitMapsetToRankingQueue))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})

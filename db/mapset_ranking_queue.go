@@ -41,6 +41,15 @@ func (mapset *RankingQueueMapset) AfterFind(*gorm.DB) (err error) {
 	return nil
 }
 
+// Insert Inserts a mapset into the ranking queue
+func (mapset *RankingQueueMapset) Insert() error {
+	if err := SQL.Create(&mapset).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetRankingQueue Retrieves the ranking queue for a given game mode
 func GetRankingQueue(mode enums.GameMode, limit int, page int) ([]*RankingQueueMapset, error) {
 	var mapsets []*RankingQueueMapset
@@ -58,6 +67,40 @@ func GetRankingQueue(mode enums.GameMode, limit int, page int) ([]*RankingQueueM
 			"date_last_updated DESC", RankingQueueResolved, RankingQueuePending, RankingQueueOnHold)).
 		Limit(limit).
 		Offset(page * limit).
+		Find(&mapsets)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return mapsets, nil
+}
+
+// GetRankingQueueMapset Retrieves a ranking queue mapset for a given mapset id
+func GetRankingQueueMapset(mapsetId int) (*RankingQueueMapset, error) {
+	var mapset *RankingQueueMapset
+
+	result := SQL.
+		Where("mapset_id = ?", mapsetId).
+		First(&mapset)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return mapset, nil
+}
+
+// GetUserMapsetsInRankingQueue Retrieves the mapsets the user has in the ranking queue
+func GetUserMapsetsInRankingQueue(userId int) ([]*RankingQueueMapset, error) {
+	var mapsets []*RankingQueueMapset
+
+	result := SQL.
+		Joins("Mapset").
+		Preload("Mapset.Maps").
+		Joins("LEFT JOIN maps ON maps.mapset_id = Mapset.id").
+		Where("(status = ? OR status = ? OR status = ?) AND Mapset.creator_id = ?",
+			RankingQueuePending, RankingQueueOnHold, RankingQueueResolved, userId).
 		Find(&mapsets)
 
 	if result.Error != nil {

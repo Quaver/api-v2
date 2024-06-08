@@ -199,7 +199,7 @@ func UpdateClan(c *gin.Context) *APIError {
 	}
 
 	if result := db.SQL.Save(clan); result.Error != nil {
-		return APIErrorServerError("Error updating clan in the database", err)
+		return APIErrorServerError("Error updating clan in the database", result.Error)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully updated."})
