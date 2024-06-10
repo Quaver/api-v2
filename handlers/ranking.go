@@ -25,7 +25,7 @@ func GetRankingQueueConfig(c *gin.Context) *APIError {
 }
 
 // GetRankingQueue Retrieves the ranking queue for a given mode
-// Endpoint: /v2/ranking/queue/:mode
+// Endpoint: /v2/ranking/queue/mode/:mode
 func GetRankingQueue(c *gin.Context) *APIError {
 	mode, err := strconv.Atoi(c.Param("mode"))
 
