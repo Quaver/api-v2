@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // GetRankingQueueComments Returns all of the comments for a mapset in the ranking queue
@@ -23,5 +26,61 @@ func GetRankingQueueComments(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"comments": comments})
+	return nil
+}
+
+// AddRankingQueueComment Inserts a ranking queue comment to the database
+// Endpoint: POST /v2/ranking/queue/:id/comment
+func AddRankingQueueComment(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid mapset id")
+	}
+
+	body := struct {
+		Comment string `form:"comment" json:"comment"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if len(body.Comment) == 0 || len(body.Comment) > 2000 {
+		return APIErrorBadRequest("Your comment must be between 1 and 2,000 characters")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	queueMapset, err := db.GetRankingQueueMapset(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving ranking queue mapset from db", err)
+	}
+
+	if queueMapset == nil {
+		return APIErrorNotFound("Mapset")
+	}
+
+	if queueMapset.Mapset.CreatorID != user.Id && enums.HasUserGroup(user.UserGroups, enums.UserGroupRankingSupervisor) {
+		return APIErrorForbidden("You do not have permission to comment on this mapset.")
+	}
+
+	comment := &db.MapsetRankingQueueComment{
+		UserId:    user.Id,
+		MapsetId:  queueMapset.MapsetId,
+		Timestamp: time.Now().UnixMilli(),
+		Comment:   body.Comment,
+	}
+
+	if err := comment.Insert(); err != nil {
+		return APIErrorServerError("Error inserting comment into DB", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully added."})
 	return nil
 }
