@@ -131,6 +131,17 @@ func addMapsetToRankingQueue(c *gin.Context, mapset *db.Mapset) *APIError {
 		return APIErrorServerError("Error inserting mapset into ranking queue", err)
 	}
 
+	comment := &db.MapsetRankingQueueComment{
+		UserId:    mapset.CreatorID,
+		MapsetId:  mapset.Id,
+		Timestamp: time.Now().UnixMilli(),
+		Comment:   "I have just submitted my mapset to the ranking queue!",
+	}
+
+	if err := comment.Insert(); err != nil {
+		return APIErrorServerError("Error inserting ranking queue comment", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Your mapset was successfully submitted to the queue"})
 	return nil
 }
@@ -161,6 +172,17 @@ func resubmitMapsetToRankingQueue(c *gin.Context, mapset *db.RankingQueueMapset)
 
 	if result := db.SQL.Save(mapset); result.Error != nil {
 		return APIErrorServerError("Error updating ranking queue mapset in the database", result.Error)
+	}
+
+	comment := &db.MapsetRankingQueueComment{
+		UserId:    mapset.Mapset.Id,
+		MapsetId:  mapset.Id,
+		Timestamp: time.Now().UnixMilli(),
+		Comment:   "I have just resubmitted my mapset to the ranking queue!",
+	}
+
+	if err := comment.Insert(); err != nil {
+		return APIErrorServerError("Error inserting ranking queue comment", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your mapset has been resubmitted for rank"})

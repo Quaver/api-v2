@@ -81,6 +81,7 @@ func GetRankingQueueMapset(mapsetId int) (*RankingQueueMapset, error) {
 	var mapset *RankingQueueMapset
 
 	result := SQL.
+		Joins("Mapset").
 		Where("mapset_id = ?", mapsetId).
 		First(&mapset)
 
