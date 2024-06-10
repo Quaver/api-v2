@@ -175,7 +175,7 @@ func resubmitMapsetToRankingQueue(c *gin.Context, mapset *db.RankingQueueMapset)
 	}
 
 	comment := &db.MapsetRankingQueueComment{
-		UserId:    mapset.Mapset.Id,
+		UserId:    mapset.Mapset.CreatorID,
 		MapsetId:  mapset.Id,
 		Timestamp: time.Now().UnixMilli(),
 		Comment:   "I have just resubmitted my mapset to the ranking queue!",
