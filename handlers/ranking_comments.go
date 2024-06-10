@@ -46,8 +46,8 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	if len(body.Comment) == 0 || len(body.Comment) > 2000 {
-		return APIErrorBadRequest("Your comment must be between 1 and 2,000 characters")
+	if len(body.Comment) == 0 || len(body.Comment) > 5000 {
+		return APIErrorBadRequest("Your comment must be between 1 and 5,000 characters")
 	}
 
 	user := getAuthedUser(c)
