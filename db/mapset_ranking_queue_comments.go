@@ -24,3 +24,20 @@ func (c *MapsetRankingQueueComment) Insert() error {
 
 	return nil
 }
+
+// GetRankingQueueComments Retrieves the ranking queue comments for a given mapset
+func GetRankingQueueComments(mapsetId int) ([]*MapsetRankingQueueComment, error) {
+	var comments []*MapsetRankingQueueComment
+
+	result := SQL.
+		Joins("User").
+		Where("mapset_id = ?", mapsetId).
+		Order("Id ASC").
+		Find(&comments)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return comments, nil
+}
