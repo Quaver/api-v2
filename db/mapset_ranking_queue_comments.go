@@ -82,3 +82,16 @@ func GetRankingQueueComment(id int) (*MapsetRankingQueueComment, error) {
 
 	return comment, nil
 }
+
+// DeactivateRankingQueueActions "De-activates" ranking queue actions.
+// This means that these specific actions do not currently count towards ranking.
+// Example - If a mapset gets denied, all previous actions (votes/denies) no longer count
+func DeactivateRankingQueueActions(mapsetId int) error {
+	result := SQL.Model(&MapsetRankingQueueComment{}).
+		Where("mapset_id = ?", mapsetId).
+		Updates(map[string]interface{}{
+			"is_active": false,
+		})
+
+	return result.Error
+}

@@ -174,6 +174,11 @@ func resubmitMapsetToRankingQueue(c *gin.Context, mapset *db.RankingQueueMapset)
 		return APIErrorServerError("Error updating ranking queue mapset in the database", result.Error)
 	}
 
+	// Deactivate previous actions since they no longer count
+	if err := db.DeactivateRankingQueueActions(mapset.MapsetId); err != nil {
+		return APIErrorServerError("Error deactivating previous ranking queue actions", err)
+	}
+
 	comment := &db.MapsetRankingQueueComment{
 		UserId:     mapset.Mapset.CreatorID,
 		MapsetId:   mapset.Id,
