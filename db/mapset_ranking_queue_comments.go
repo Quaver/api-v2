@@ -20,7 +20,7 @@ type MapsetRankingQueueComment struct {
 	UserId              int                `gorm:"column:user_id" json:"user_id"`
 	MapsetId            int                `gorm:"column:mapset_id" json:"mapset_id"`
 	ActionType          RankingQueueAction `gorm:"action_type" json:"action_type"`
-	IsActive            bool               `gorm:"is_active" json:"is_active"`
+	IsActive            bool               `gorm:"is_active" json:"is_active"` // If action counts toward ranking
 	Timestamp           int64              `gorm:"column:timestamp" json:"-"`
 	TimestampJSON       time.Time          `gorm:"-:all" json:"timestamp"`
 	Comment             string             `gorm:"comment" json:"comment"`

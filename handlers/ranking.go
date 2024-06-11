@@ -132,10 +132,12 @@ func addMapsetToRankingQueue(c *gin.Context, mapset *db.Mapset) *APIError {
 	}
 
 	comment := &db.MapsetRankingQueueComment{
-		UserId:    mapset.CreatorID,
-		MapsetId:  mapset.Id,
-		Timestamp: time.Now().UnixMilli(),
-		Comment:   "I have just submitted my mapset to the ranking queue!",
+		UserId:          mapset.CreatorID,
+		MapsetId:        mapset.Id,
+		ActionType:      db.RankingQueueActionComment,
+		Timestamp:       time.Now().UnixMilli(),
+		DateLastUpdated: time.Now().UnixMilli(),
+		Comment:         "I have just submitted my mapset to the ranking queue!",
 	}
 
 	if err := comment.Insert(); err != nil {
@@ -175,10 +177,12 @@ func resubmitMapsetToRankingQueue(c *gin.Context, mapset *db.RankingQueueMapset)
 	}
 
 	comment := &db.MapsetRankingQueueComment{
-		UserId:    mapset.Mapset.CreatorID,
-		MapsetId:  mapset.Id,
-		Timestamp: time.Now().UnixMilli(),
-		Comment:   "I have just resubmitted my mapset to the ranking queue!",
+		UserId:          mapset.Mapset.CreatorID,
+		MapsetId:        mapset.Id,
+		ActionType:      db.RankingQueueActionComment,
+		Timestamp:       time.Now().UnixMilli(),
+		DateLastUpdated: time.Now().UnixMilli(),
+		Comment:         "I have just resubmitted my mapset to the ranking queue!",
 	}
 
 	if err := comment.Insert(); err != nil {
