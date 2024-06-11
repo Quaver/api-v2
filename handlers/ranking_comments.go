@@ -86,7 +86,7 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 }
 
 // EditRankingQueueComment Edits a ranking queue comment
-// Endpoint: PATCH /v2/ranking/queue/comment/:id/edit
+// Endpoint: POST /v2/ranking/queue/comment/:id/edit
 func EditRankingQueueComment(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
@@ -121,7 +121,7 @@ func EditRankingQueueComment(c *gin.Context) *APIError {
 	if comment == nil {
 		return APIErrorNotFound("Comment")
 	}
-	
+
 	if comment.UserId != user.Id {
 		return APIErrorForbidden("You are not the author of this comment.")
 	}
