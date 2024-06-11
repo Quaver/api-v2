@@ -1,19 +1,42 @@
 package db
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"time"
+)
+
+type RankingQueueAction int8
+
+const (
+	RankingQueueActionComment RankingQueueAction = iota
+	RankingQueueActionDeny
+	RankingQueueActionBlacklist
+	RankingQueueActionOnHold
+	RankingQueueActionVote
+)
 
 type MapsetRankingQueueComment struct {
-	Id            int       `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	UserId        int       `gorm:"column:user_id" json:"user_id"`
-	MapsetId      int       `gorm:"column:mapset_id" json:"mapset_id"`
-	Timestamp     int64     `gorm:"column:timestamp" json:"-"`
-	TimestampJSON time.Time `gorm:"-:all" json:"timestamp"`
-	Comment       string    `gorm:"comment" json:"comment"`
-	User          *User     `gorm:"foreignKey:UserId; references:Id" json:"user"`
+	Id                  int                `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	UserId              int                `gorm:"column:user_id" json:"user_id"`
+	MapsetId            int                `gorm:"column:mapset_id" json:"mapset_id"`
+	ActionType          RankingQueueAction `gorm:"action_type" json:"action_type"`
+	IsActive            bool               `gorm:"is_active" json:"is_active"`
+	Timestamp           int64              `gorm:"column:timestamp" json:"-"`
+	TimestampJSON       time.Time          `gorm:"-:all" json:"timestamp"`
+	Comment             string             `gorm:"comment" json:"comment"`
+	DateLastUpdated     int64              `gorm:"date_last_updated" json:"-"`
+	DateLastUpdatedJSON time.Time          `gorm:"-:all" json:"date_last_updated"`
+	User                *User              `gorm:"foreignKey:UserId; references:Id" json:"user"`
 }
 
 func (*MapsetRankingQueueComment) TableName() string {
 	return "mapset_ranking_queue_comments"
+}
+
+func (c *MapsetRankingQueueComment) AfterFind(*gorm.DB) (err error) {
+	c.TimestampJSON = time.UnixMilli(c.Timestamp)
+	c.DateLastUpdatedJSON = time.UnixMilli(c.DateLastUpdated)
+	return nil
 }
 
 // Insert Inserts a ranking queue comment into the database
