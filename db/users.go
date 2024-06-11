@@ -164,6 +164,11 @@ func (u *User) CanJoinClan() bool {
 	return u.ClanId == nil
 }
 
+// IsTrialRankingSupervisor Returns if the user is a trial ranking supervisor
+func (u *User) IsTrialRankingSupervisor() bool {
+	return strings.Contains(*u.Title, "Trial 4K") || strings.Contains(*u.Title, "Trial 7K")
+}
+
 // GetUserById Retrieves a user from the database by their user id
 func GetUserById(id int) (*User, error) {
 	var user *User

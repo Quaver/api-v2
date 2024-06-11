@@ -117,6 +117,95 @@ func SubmitMapsetToRankingQueue(c *gin.Context) *APIError {
 	}
 }
 
+// VoteForRankingQueueMapset Adds a vote for a mapset in the ranking queue
+// Endpoint: POST /v2/ranking/queue/:id/vote
+// TODO: SEND RANK & VOTE WEBHOOKS
+func VoteForRankingQueueMapset(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid mapset id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeRankMapsets) {
+		return APIErrorForbidden("You do not have permission to perform this action.")
+	}
+
+	queueMapset, err := db.GetRankingQueueMapset(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving ranking queue mapset", err)
+	}
+
+	if queueMapset == nil {
+		return APIErrorNotFound("Mapset")
+	}
+
+	if queueMapset.Status != db.RankingQueuePending && queueMapset.Status != db.RankingQueueResolved {
+		return APIErrorForbidden("This mapset must be either pending or resolved to be eligible to vote.")
+	}
+
+	if queueMapset.Mapset.CreatorID == user.Id {
+		return APIErrorForbidden("You cannot vote for your own mapset.")
+	}
+
+	if queueMapset.Mapset.Maps[0].RankedStatus == enums.RankedStatusRanked {
+		return APIErrorForbidden("This mapset is already ranked.")
+	}
+
+	existingVotes, err := db.GetRankingQueueVotes(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving ranking queue votes", err)
+	}
+
+	for _, vote := range existingVotes {
+		if vote.UserId == user.Id {
+			return APIErrorForbidden("You have already voted for this mapset.")
+		}
+
+		if vote.User.IsTrialRankingSupervisor() && user.IsTrialRankingSupervisor() {
+			return APIErrorForbidden("Two trial ranking supervisors cannot vote for the same mapset.")
+		}
+	}
+
+	newVote := &db.MapsetRankingQueueComment{
+		UserId:     user.Id,
+		MapsetId:   id,
+		ActionType: db.RankingQueueActionVote,
+		IsActive:   true,
+		Comment:    "I have added +1 vote for this mapset!",
+	}
+
+	if err := newVote.Insert(); err != nil {
+		return APIErrorServerError("Error inserting new ranking queue vote", err)
+	}
+
+	if len(existingVotes)+1 == config.Instance.RankingQueue.VotesRequired {
+		queueMapset.Status = db.RankingQueueRanked
+
+		if err := db.RankMapset(id); err != nil {
+			return APIErrorServerError("Failed to rank mapset", err)
+		}
+	}
+
+	queueMapset.Votes++
+	queueMapset.DateLastUpdated = time.Now().UnixMilli()
+
+	if result := db.SQL.Save(queueMapset); result.Error != nil {
+		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully added a vote to this mapset."})
+	return nil
+}
+
 // Adds a new mapset to the ranking queue
 // TODO: Discord Webhook
 func addMapsetToRankingQueue(c *gin.Context, mapset *db.Mapset) *APIError {

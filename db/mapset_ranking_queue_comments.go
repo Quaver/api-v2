@@ -95,3 +95,19 @@ func DeactivateRankingQueueActions(mapsetId int) error {
 
 	return result.Error
 }
+
+// GetRankingQueueVotes Retrieves the active votes for a given mapset in the ranking queue
+func GetRankingQueueVotes(mapsetId int) ([]*MapsetRankingQueueComment, error) {
+	var votes []*MapsetRankingQueueComment
+
+	result := SQL.
+		Joins("User").
+		Where("mapset_id = ? AND action_type = ? AND is_active = 1", mapsetId, RankingQueueActionVote).
+		Find(&votes)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return votes, nil
+}

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 	"time"
 )
@@ -119,6 +120,27 @@ func GetMapsetOnlineOffsets() (interface{}, error) {
 	}
 
 	return offsets, nil
+}
+
+// RankMapset Ranks all maps in a mapset
+func RankMapset(id int) error {
+	result := SQL.Model(&MapQua{}).
+		Where("mapset_id = ?", id).
+		Update("ranked_status", enums.RankedStatusRanked)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	result = SQL.Model(&Mapset{}).
+		Where("id = ?", id).
+		Update("date_last_updated", time.Now().UnixMilli())
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
 }
 
 // DeleteMapset Deletes (hides) a given mapset
