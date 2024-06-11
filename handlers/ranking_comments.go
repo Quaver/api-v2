@@ -71,10 +71,9 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 	}
 
 	comment := &db.MapsetRankingQueueComment{
-		UserId:    user.Id,
-		MapsetId:  queueMapset.MapsetId,
-		Timestamp: time.Now().UnixMilli(),
-		Comment:   body.Comment,
+		UserId:   user.Id,
+		MapsetId: queueMapset.MapsetId,
+		Comment:  body.Comment,
 	}
 
 	if err := comment.Insert(); err != nil {
@@ -127,6 +126,7 @@ func EditRankingQueueComment(c *gin.Context) *APIError {
 	}
 
 	comment.Comment = body.Comment
+	comment.DateLastUpdated = time.Now().UnixMilli()
 
 	if result := db.SQL.Save(comment); result.Error != nil {
 		return APIErrorServerError("Error updating ranking queue comment in the database", result.Error)

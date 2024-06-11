@@ -41,6 +41,9 @@ func (c *MapsetRankingQueueComment) AfterFind(*gorm.DB) (err error) {
 
 // Insert Inserts a ranking queue comment into the database
 func (c *MapsetRankingQueueComment) Insert() error {
+	c.Timestamp = time.Now().UnixMilli()
+	c.DateLastUpdated = time.Now().UnixMilli()
+
 	if err := SQL.Create(&c).Error; err != nil {
 		return err
 	}
