@@ -84,3 +84,54 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully added."})
 	return nil
 }
+
+// EditRankingQueueComment Edits a ranking queue comment
+// Endpoint: PATCH /v2/ranking/queue/comment/:id/edit
+func EditRankingQueueComment(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid mapset id")
+	}
+
+	body := struct {
+		Comment string `form:"comment" json:"comment"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if len(body.Comment) == 0 || len(body.Comment) > 5000 {
+		return APIErrorBadRequest("Your comment must be between 1 and 5,000 characters")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	comment, err := db.GetRankingQueueComment(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving ranking queue comment", err)
+	}
+
+	if comment == nil {
+		return APIErrorNotFound("Comment")
+	}
+	
+	if comment.UserId != user.Id {
+		return APIErrorForbidden("You are not the author of this comment.")
+	}
+
+	comment.Comment = body.Comment
+
+	if result := db.SQL.Save(comment); result.Error != nil {
+		return APIErrorServerError("Error updating ranking queue comment in the database", result.Error)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully edited."})
+	return nil
+}

@@ -41,3 +41,18 @@ func GetRankingQueueComments(mapsetId int) ([]*MapsetRankingQueueComment, error)
 
 	return comments, nil
 }
+
+// GetRankingQueueComment Retrieves a ranking queue comment at a given id
+func GetRankingQueueComment(id int) (*MapsetRankingQueueComment, error) {
+	var comment *MapsetRankingQueueComment
+
+	result := SQL.
+		Where("id = ?", id).
+		First(&comment)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return comment, nil
+}
