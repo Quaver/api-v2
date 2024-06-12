@@ -208,6 +208,7 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 
 // BlacklistRankingQueueMapset Blacklists a mapset from the ranking queue
 // Endpoint: POST /v2/ranking/queue/:id/blacklist
+// TODO: DISCORD WEBHOOK
 func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
@@ -253,7 +254,7 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 	}
 
 	if err := newVote.Insert(); err != nil {
-		return APIErrorServerError("Error inserting new ranking queue vote", err)
+		return APIErrorServerError("Error inserting new ranking queue blacklist action", err)
 	}
 
 	queueMapset.Status = db.RankingQueueBlacklisted
@@ -265,6 +266,66 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully blacklisted this mapset."})
+	return nil
+}
+
+func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid mapset id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeRankMapsets) {
+		return APIErrorForbidden("You do not have permission to perform this action.")
+	}
+
+	queueMapset, err := db.GetRankingQueueMapset(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving ranking queue mapset", err)
+	}
+
+	if queueMapset == nil {
+		return APIErrorNotFound("Mapset")
+	}
+
+	if queueMapset.Mapset.Maps[0].RankedStatus == enums.RankedStatusRanked ||
+		queueMapset.Status == db.RankingQueueRanked {
+		return APIErrorForbidden("This mapset is already ranked.")
+	}
+
+	if queueMapset.Status == db.RankingQueueOnHold {
+		return APIErrorForbidden("This mapset is already on hold.")
+	}
+
+	newVote := &db.MapsetRankingQueueComment{
+		UserId:     user.Id,
+		MapsetId:   id,
+		ActionType: db.RankingQueueActionOnHold,
+		IsActive:   true,
+		Comment:    "I have just placed your mapset on hold.",
+	}
+
+	if err := newVote.Insert(); err != nil {
+		return APIErrorServerError("Error inserting new ranking queue on hold action.", err)
+	}
+
+	queueMapset.Status = db.RankingQueueOnHold
+	queueMapset.Votes = 0
+	queueMapset.DateLastUpdated = time.Now().UnixMilli()
+
+	if result := db.SQL.Save(queueMapset); result.Error != nil {
+		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully placed this mapset on hold."})
 	return nil
 }
 
