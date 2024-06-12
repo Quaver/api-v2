@@ -235,7 +235,8 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorNotFound("Mapset")
 	}
 
-	if queueMapset.Mapset.Maps[0].RankedStatus == enums.RankedStatusRanked || queueMapset.Status == db.RankingQueueRanked {
+	if queueMapset.Mapset.Maps[0].RankedStatus == enums.RankedStatusRanked ||
+		queueMapset.Status == db.RankingQueueRanked {
 		return APIErrorForbidden("This mapset is already ranked.")
 	}
 
