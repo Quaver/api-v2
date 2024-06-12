@@ -121,6 +121,7 @@ type rankingQueueRequestData struct {
 	MapsetId    int
 	User        *db.User
 	QueueMapset *db.RankingQueueMapset
+	Comment     string
 }
 
 // Validates and returns common data used for ranking queue action requests
@@ -135,6 +136,18 @@ func validateRankingQueueRequest(c *gin.Context) (*rankingQueueRequestData, *API
 
 	if user == nil {
 		return nil, APIErrorUnauthorized("Unauthorized")
+	}
+
+	body := struct {
+		Comment string `form:"comment" json:"comment"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return nil, APIErrorBadRequest("Invalid request body")
+	}
+
+	if len(body.Comment) == 0 || len(body.Comment) > 5000 {
+		return nil, APIErrorBadRequest("Your comment must be between 1 and 5,000 characters")
 	}
 
 	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeRankMapsets) {
@@ -155,6 +168,7 @@ func validateRankingQueueRequest(c *gin.Context) (*rankingQueueRequestData, *API
 		MapsetId:    id,
 		User:        user,
 		QueueMapset: queueMapset,
+		Comment:     body.Comment,
 	}, nil
 }
 
@@ -202,7 +216,7 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		MapsetId:   data.MapsetId,
 		ActionType: db.RankingQueueActionVote,
 		IsActive:   true,
-		Comment:    "I have added +1 vote for this mapset!",
+		Comment:    data.Comment,
 	}
 
 	if err := newVoteAction.Insert(); err != nil {
@@ -252,7 +266,7 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 		MapsetId:   data.MapsetId,
 		ActionType: db.RankingQueueActionBlacklist,
 		IsActive:   true,
-		Comment:    "I have just blacklisted your mapset from the ranking queue.",
+		Comment:    data.Comment,
 	}
 
 	if err := blacklistAction.Insert(); err != nil {
@@ -294,7 +308,7 @@ func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
 		MapsetId:   data.MapsetId,
 		ActionType: db.RankingQueueActionOnHold,
 		IsActive:   true,
-		Comment:    "I have just placed your mapset on hold.",
+		Comment:    data.Comment,
 	}
 
 	if err := onHoldAction.Insert(); err != nil {
