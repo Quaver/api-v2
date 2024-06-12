@@ -19,6 +19,10 @@ func APIErrorForbidden(message string) *APIError {
 	return &APIError{Status: http.StatusForbidden, Message: message}
 }
 
+func APIErrorUnauthorized(message string) *APIError {
+	return &APIError{Status: http.StatusUnauthorized, Message: message}
+}
+
 func APIErrorNotFound(message string) *APIError {
 	return &APIError{Status: http.StatusNotFound, Message: fmt.Sprintf("%v not found", message)}
 }
