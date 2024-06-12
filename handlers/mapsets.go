@@ -158,6 +158,16 @@ func DeleteMapset(c *gin.Context) *APIError {
 		return APIErrorForbidden("You cannot delete a ranked mapset.")
 	}
 
+	rankingQueue, err := db.GetRankingQueueMapset(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving mapset from ranking queue", err)
+	}
+
+	if rankingQueue != nil && (rankingQueue.Status != db.RankingQueueDenied && rankingQueue.Status != db.RankingQueueBlacklisted) {
+		return APIErrorForbidden("You cannot delete a mapset that is pending in the ranking queue.")
+	}
+
 	err = db.DeleteMapset(mapset.Id)
 
 	if err != nil {
