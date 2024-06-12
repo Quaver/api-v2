@@ -136,6 +136,66 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 	return nil
 }
 
+// DenyRankingQueueMapset Adds a deny to a ranking queue mapset
+// Endpoint: POST /v2/ranking/queue/:id/deny
+func DenyRankingQueueMapset(c *gin.Context) *APIError {
+	data, apiErr := validateRankingQueueRequest(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	queueMapset := data.QueueMapset
+
+	if queueMapset.Mapset.Maps[0].RankedStatus == enums.RankedStatusRanked {
+		return APIErrorForbidden("This mapset is already ranked.")
+	}
+
+	if queueMapset.Status == db.RankingQueueDenied || queueMapset.Status == db.RankingQueueBlacklisted {
+		return APIErrorForbidden("This mapset is already denied or blacklisted from the ranking queue.")
+	}
+
+	existingDenies, err := db.GetRankingQueueDenies(data.MapsetId)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving ranking queue denies", err)
+	}
+
+	for _, denial := range existingDenies {
+		if denial.UserId == data.User.Id {
+			return APIErrorForbidden("You have already denied this mapset.")
+		}
+
+		if denial.User.IsTrialRankingSupervisor() && data.User.IsTrialRankingSupervisor() {
+			return APIErrorForbidden("Two trial ranking supervisors cannot deny for the same mapset.")
+		}
+	}
+
+	denyAction := &db.MapsetRankingQueueComment{
+		UserId:     data.User.Id,
+		MapsetId:   data.MapsetId,
+		ActionType: db.RankingQueueActionDeny,
+		IsActive:   true,
+		Comment:    data.Comment,
+	}
+
+	if err := denyAction.Insert(); err != nil {
+		return APIErrorServerError("Error inserting new ranking queue denial", err)
+	}
+
+	if len(existingDenies)+1 == config.Instance.RankingQueue.DenialsRequired {
+		queueMapset.Status = db.RankingQueueDenied
+		queueMapset.DateLastUpdated = time.Now().UnixMilli()
+
+		if result := db.SQL.Save(queueMapset); result.Error != nil {
+			return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully added a deny to this mapset."})
+	return nil
+}
+
 // BlacklistRankingQueueMapset Blacklists a mapset from the ranking queue
 // Endpoint: POST /v2/ranking/queue/:id/blacklist
 func BlacklistRankingQueueMapset(c *gin.Context) *APIError {

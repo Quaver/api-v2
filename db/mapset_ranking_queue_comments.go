@@ -111,3 +111,19 @@ func GetRankingQueueVotes(mapsetId int) ([]*MapsetRankingQueueComment, error) {
 
 	return votes, nil
 }
+
+// GetRankingQueueDenies Retrieves the active denies for a given mapset in the ranking queue
+func GetRankingQueueDenies(mapsetId int) ([]*MapsetRankingQueueComment, error) {
+	var votes []*MapsetRankingQueueComment
+
+	result := SQL.
+		Joins("User").
+		Where("mapset_id = ? AND action_type = ? AND is_active = 1", mapsetId, RankingQueueActionDeny).
+		Find(&votes)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return votes, nil
+}
