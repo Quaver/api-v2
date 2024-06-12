@@ -206,6 +206,67 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 	return nil
 }
 
+// BlacklistRankingQueueMapset Blacklists a mapset from the ranking queue
+// Endpoint: POST /v2/ranking/queue/:id/blacklist
+func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid mapset id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeRankMapsets) {
+		return APIErrorForbidden("You do not have permission to perform this action.")
+	}
+
+	queueMapset, err := db.GetRankingQueueMapset(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving ranking queue mapset", err)
+	}
+
+	if queueMapset == nil {
+		return APIErrorNotFound("Mapset")
+	}
+
+	if queueMapset.Mapset.Maps[0].RankedStatus == enums.RankedStatusRanked || queueMapset.Status == db.RankingQueueRanked {
+		return APIErrorForbidden("This mapset is already ranked.")
+	}
+
+	if queueMapset.Status == db.RankingQueueBlacklisted {
+		return APIErrorForbidden("This mapset is already blacklisted.")
+	}
+
+	newVote := &db.MapsetRankingQueueComment{
+		UserId:     user.Id,
+		MapsetId:   id,
+		ActionType: db.RankingQueueActionBlacklist,
+		IsActive:   true,
+		Comment:    "I have just blacklisted your mapset from the ranking queue.",
+	}
+
+	if err := newVote.Insert(); err != nil {
+		return APIErrorServerError("Error inserting new ranking queue vote", err)
+	}
+
+	queueMapset.Status = db.RankingQueueBlacklisted
+	queueMapset.Votes = 0
+	queueMapset.DateLastUpdated = time.Now().UnixMilli()
+
+	if result := db.SQL.Save(queueMapset); result.Error != nil {
+		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully blacklisted this mapset."})
+	return nil
+}
+
 // Adds a new mapset to the ranking queue
 // TODO: Discord Webhook
 func addMapsetToRankingQueue(c *gin.Context, mapset *db.Mapset) *APIError {
@@ -256,6 +317,7 @@ func resubmitMapsetToRankingQueue(c *gin.Context, mapset *db.RankingQueueMapset)
 		return APIErrorForbidden(fmt.Sprintf("You can only resubmit your mapset for rank every %v days.", resubmitDays))
 	}
 
+	mapset.Votes = 0
 	mapset.Status = db.RankingQueuePending
 	mapset.DateLastUpdated = time.Now().UnixMilli()
 
