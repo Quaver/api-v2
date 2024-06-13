@@ -10,7 +10,7 @@ As endpoints are made available in v2, it is recommended to use them instead of 
 
 ## Requirements
 
-- Go 1.19
+- Go 1.22
 - MariaDB / MySQL
 - Redis
 - Steam API Key
