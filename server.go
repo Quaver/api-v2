@@ -129,6 +129,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/ranking/config", handlers.CreateHandler(handlers.GetRankingQueueConfig))
 	engine.GET("/v2/ranking/queue/mode/:mode", handlers.CreateHandler(handlers.GetRankingQueue))
 	engine.POST("/v2/ranking/queue/:id/submit", middleware.RequireAuth, handlers.CreateHandler(handlers.SubmitMapsetToRankingQueue))
+	engine.POST("/v2/ranking/queue/:id/remove", middleware.RequireAuth, handlers.CreateHandler(handlers.RemoveFromRankingQueue))
 	engine.GET("/v2/ranking/queue/:id/comments", handlers.CreateHandler(handlers.GetRankingQueueComments))
 	engine.POST("/v2/ranking/queue/:id/comment", middleware.RequireAuth, handlers.CreateHandler(handlers.AddRankingQueueComment))
 	engine.POST("/v2/ranking/queue/comment/:id/edit", middleware.RequireAuth, handlers.CreateHandler(handlers.EditRankingQueueComment))

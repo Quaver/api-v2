@@ -117,6 +117,66 @@ func SubmitMapsetToRankingQueue(c *gin.Context) *APIError {
 	}
 }
 
+// RemoveFromRankingQueue Allows a user to remove their mapset from the ranking queue (self deny)
+// Endpoint: POST /v2/ranking/queue/:id/remove
+func RemoveFromRankingQueue(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid mapset id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	queueMapset, err := db.GetRankingQueueMapset(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving ranking queue mapset", err)
+	}
+
+	if queueMapset == nil {
+		return APIErrorNotFound("Mapset")
+	}
+
+	if queueMapset.Mapset.CreatorID != user.Id {
+		return APIErrorForbidden("You do not own this mapset.")
+	}
+
+	if queueMapset.Mapset.Maps[0].RankedStatus == enums.RankedStatusRanked {
+		return APIErrorForbidden("This mapset is already ranked.")
+	}
+
+	if queueMapset.Status == db.RankingQueueDenied || queueMapset.Status == db.RankingQueueBlacklisted {
+		return APIErrorForbidden("This mapset has already been denied or blacklisted from the queue.")
+	}
+
+	denyAction := &db.MapsetRankingQueueComment{
+		UserId:     user.Id,
+		MapsetId:   queueMapset.MapsetId,
+		ActionType: db.RankingQueueActionDeny,
+		IsActive:   true,
+		Comment:    "I have just removed my own mapset from the ranking queue.",
+	}
+
+	if err := denyAction.Insert(); err != nil {
+		return APIErrorServerError("Error inserting new ranking queue denial", err)
+	}
+
+	queueMapset.Status = db.RankingQueueDenied
+	queueMapset.DateLastUpdated = time.Now().UnixMilli()
+
+	if result := db.SQL.Save(queueMapset); result.Error != nil {
+		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully removed your mapset from the ranking queue."})
+	return nil
+}
+
 // Adds a new mapset to the ranking queue
 // TODO: Discord Webhook
 func addMapsetToRankingQueue(c *gin.Context, mapset *db.Mapset) *APIError {
