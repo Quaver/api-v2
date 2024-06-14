@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/webhook"
 	"github.com/sirupsen/logrus"
+	"slices"
+	"strings"
 	"time"
 )
 
@@ -96,6 +99,75 @@ func SendQueueWebhook(user *db.User, mapset *db.Mapset, action db.RankingQueueAc
 		Build()
 
 	_, err := rankingQueue.CreateEmbeds([]discord.Embed{embed})
+
+	if err != nil {
+		logrus.Error("Failed to send ranking queue action webhook")
+		return err
+	}
+
+	return nil
+}
+
+// SendRankedWebhook Sends a webhook that a new mapset was ranked
+func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment) error {
+	if rankedMapsets == nil {
+		return nil
+	}
+
+	votedBy := ""
+
+	for index, voter := range votes {
+		votedBy = fmt.Sprintf("[%v](https://quavergame.com/user/%v)", voter.User.Username, voter.UserId)
+
+		if index != len(votes)-1 {
+			votedBy += ", "
+		}
+	}
+
+	var minDiff float64 = 0
+	var maxDiff float64 = 0
+	var gameModes []string
+
+	for index, currMap := range mapset.Maps {
+		if index == 0 {
+			minDiff = currMap.DifficultyRating
+			maxDiff = currMap.DifficultyRating
+		} else {
+			if currMap.DifficultyRating < minDiff {
+				minDiff = currMap.DifficultyRating
+			}
+
+			if currMap.DifficultyRating > maxDiff {
+				maxDiff = currMap.DifficultyRating
+			}
+		}
+
+		mode := enums.GetShorthandGameModeString(currMap.GameMode)
+
+		if !slices.Contains(gameModes, mode) {
+			gameModes = append(gameModes, mode)
+		}
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle("✅ New Mapset Ranked!").
+		SetDescription("A new mapset has been ranked and is now available to get scores on.").
+		AddField("Song",
+			fmt.Sprintf("[%v - %v](https://quavergame.com/mapsets/%v)", mapset.Artist, mapset.Title, mapset.Id), true).
+		AddField("Creator",
+			fmt.Sprintf("[%v](https://quavergame.com/user/%v)", mapset.CreatorUsername, mapset.CreatorID), true).
+		AddField("Game Modes", strings.Join(gameModes, ", "), true).
+		AddField("Difficulty Range",
+			fmt.Sprintf("%.2f - %.2f", minDiff, maxDiff), true).
+		AddField("Ranked By", votedBy, true).
+		SetImagef("https://cdn.quavergame.com/mapsets/%v.jpg", mapset.Id).
+		SetThumbnail(quaverLogo).
+		SetFooter("Quaver", quaverLogo).
+		SetTimestamp(time.Now()).
+		SetColor(0x00FF00).
+		Build()
+
+	_, err := rankedMapsets.CreateEmbeds([]discord.Embed{embed})
 
 	if err != nil {
 		logrus.Error("Failed to send ranking queue action webhook")

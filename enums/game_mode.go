@@ -19,3 +19,15 @@ func GetGameModeString(mode GameMode) string {
 		return "not_implemented"
 	}
 }
+
+// GetShorthandGameModeString Gets a short-handed version of a game mode
+func GetShorthandGameModeString(mode GameMode) string {
+	switch mode {
+	case GameModeKeys4:
+		return "4K"
+	case GameModeKeys7:
+		return "7K"
+	default:
+		return "not_implemented"
+	}
+}

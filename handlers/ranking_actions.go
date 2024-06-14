@@ -86,9 +86,9 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorForbidden("This mapset must be either pending or resolved to be eligible to vote.")
 	}
 
-	if queueMapset.Mapset.CreatorID == data.User.Id {
-		return APIErrorForbidden("You cannot vote for your own mapset.")
-	}
+	//if queueMapset.Mapset.CreatorID == data.User.Id {
+	//	return APIErrorForbidden("You cannot vote for your own mapset.")
+	//}
 
 	existingVotes, err := db.GetRankingQueueVotes(data.MapsetId)
 
@@ -108,6 +108,7 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 
 	newVoteAction := &db.MapsetRankingQueueComment{
 		UserId:     data.User.Id,
+		User:       data.User,
 		MapsetId:   data.MapsetId,
 		ActionType: db.RankingQueueActionVote,
 		IsActive:   true,
@@ -118,12 +119,16 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting new ranking queue vote", err)
 	}
 
-	if len(existingVotes)+1 == config.Instance.RankingQueue.VotesRequired {
+	existingVotes = append(existingVotes, newVoteAction)
+
+	if len(existingVotes)+1 >= config.Instance.RankingQueue.VotesRequired {
 		queueMapset.Status = db.RankingQueueRanked
 
 		if err := db.RankMapset(data.MapsetId); err != nil {
 			return APIErrorServerError("Failed to rank mapset", err)
 		}
+
+		_ = webhooks.SendRankedWebhook(data.QueueMapset.Mapset, existingVotes)
 	}
 
 	queueMapset.Votes++
