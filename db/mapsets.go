@@ -23,7 +23,7 @@ type Mapset struct {
 	DateLastUpdatedJSON time.Time `gorm:"-:all" json:"date_last_updated"`
 	IsVisible           bool      `gorm:"column:visible" json:"is_visible"`
 	Maps                []*MapQua `gorm:"foreignKey:MapsetId" json:"maps"`
-	User                *User     `gorm:"foreignKey:CreatorID; references:Id" json:"user"`
+	User                *User     `gorm:"foreignKey:CreatorID; references:Id" json:"user,omitempty"`
 }
 
 func (m *Mapset) TableName() string {
