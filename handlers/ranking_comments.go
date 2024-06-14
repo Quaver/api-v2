@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -80,6 +81,7 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting comment into DB", err)
 	}
 
+	_ = webhooks.SendQueueWebhook(user, queueMapset.Mapset, db.RankingQueueActionComment)
 	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully added."})
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -173,6 +174,7 @@ func RemoveFromRankingQueue(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
 	}
 
+	_ = webhooks.SendQueueWebhook(user, queueMapset.Mapset, db.RankingQueueActionDeny)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully removed your mapset from the ranking queue."})
 	return nil
 }
@@ -202,6 +204,7 @@ func addMapsetToRankingQueue(c *gin.Context, mapset *db.Mapset) *APIError {
 		return APIErrorServerError("Error inserting ranking queue comment", err)
 	}
 
+	_ = webhooks.SendQueueSubmitWebhook(getAuthedUser(c), mapset)
 	c.JSON(http.StatusOK, gin.H{"message": "Your mapset was successfully submitted to the queue"})
 	return nil
 }
@@ -251,6 +254,7 @@ func resubmitMapsetToRankingQueue(c *gin.Context, mapset *db.RankingQueueMapset)
 		return APIErrorServerError("Error inserting ranking queue comment", err)
 	}
 
+	_ = webhooks.SendQueueSubmitWebhook(getAuthedUser(c), mapset.Mapset)
 	c.JSON(http.StatusOK, gin.H{"message": "Your mapset has been resubmitted for rank"})
 	return nil
 }

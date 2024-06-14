@@ -46,10 +46,12 @@ type Config struct {
 	QuaverToolsPath string `json:"quaver_tools_path"`
 
 	RankingQueue struct {
-		VotesRequired         int `json:"votes_required"`
-		DenialsRequired       int `json:"denials_required"`
-		MapsetUploadsRequired int `json:"mapset_uploads_required"`
-		ResubmissionDays      int `json:"resubmission_days"`
+		Webhook               string `json:"webhook"`
+		RankedWebhook         string `json:"ranked_webhook"`
+		VotesRequired         int    `json:"votes_required"`
+		DenialsRequired       int    `json:"denials_required"`
+		MapsetUploadsRequired int    `json:"mapset_uploads_required"`
+		ResubmissionDays      int    `json:"resubmission_days"`
 	} `json:"ranking_queue"`
 }
 

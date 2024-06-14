@@ -5,6 +5,7 @@ import (
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/files"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,16 +22,16 @@ func main() {
 
 	db.ConnectMySQL()
 	db.InitializeRedis()
-	azure.InitializeClient()
-
 	db.CacheTotalUsersInRedis()
 	db.CacheTotalMapsetsInRedis()
 
-	// Extremely long start-up time. Only really need to do this once during debug to populate
 	if config.Instance.IsProduction {
 		db.CacheTotalScoresInRedis()
 	}
 
+	azure.InitializeClient()
+	webhooks.InitializeWebhooks()
 	files.CreateDirectories()
+
 	initializeServer(config.Instance.Server.Port)
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -132,6 +133,7 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
 	}
 
+	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionVote)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully added a vote to this mapset."})
 	return nil
 }
@@ -192,6 +194,7 @@ func DenyRankingQueueMapset(c *gin.Context) *APIError {
 		}
 	}
 
+	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionDeny)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully added a deny to this mapset."})
 	return nil
 }
@@ -234,6 +237,7 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
 	}
 
+	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionBlacklist)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully blacklisted this mapset."})
 	return nil
 }
@@ -276,6 +280,7 @@ func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
 	}
 
+	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionOnHold)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully placed this mapset on hold."})
 	return nil
 }
