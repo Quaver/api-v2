@@ -143,6 +143,22 @@ func RankMapset(id int) error {
 	return nil
 }
 
+// ResetPersonalBests Resets the personal best scores of all maps in a set.
+// Usually used when ranking a mapset
+func ResetPersonalBests(mapset *Mapset) error {
+	for _, songMap := range mapset.Maps {
+		result := SQL.Model(&Score{}).
+			Where("map_md5 = ?", songMap.MD5).
+			Update("personal_best", 0)
+
+		if result.Error != nil {
+			return result.Error
+		}
+	}
+
+	return nil
+}
+
 // DeleteMapset Deletes (hides) a given mapset
 func DeleteMapset(id int) error {
 	result := SQL.Model(&Mapset{}).Where("id = ?", id).Update("visible", 0)

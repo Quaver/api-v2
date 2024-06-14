@@ -128,6 +128,10 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 			return APIErrorServerError("Failed to rank mapset", err)
 		}
 
+		if err := db.ResetPersonalBests(data.QueueMapset.Mapset); err != nil {
+			return APIErrorServerError("Failed to reset personal best scores for mapset", err)
+		}
+
 		_ = webhooks.SendRankedWebhook(data.QueueMapset.Mapset, existingVotes)
 	}
 
