@@ -180,7 +180,6 @@ func RemoveFromRankingQueue(c *gin.Context) *APIError {
 }
 
 // Adds a new mapset to the ranking queue
-// TODO: Discord Webhook
 func addMapsetToRankingQueue(c *gin.Context, mapset *db.Mapset) *APIError {
 	rankingQueueMapset := &db.RankingQueueMapset{
 		MapsetId:        mapset.Id,
@@ -210,7 +209,6 @@ func addMapsetToRankingQueue(c *gin.Context, mapset *db.Mapset) *APIError {
 }
 
 // Resubmits a mapset to the ranking queue
-// TODO: Discord Webhook
 func resubmitMapsetToRankingQueue(c *gin.Context, mapset *db.RankingQueueMapset) *APIError {
 	switch mapset.Status {
 	case db.RankingQueuePending, db.RankingQueueOnHold, db.RankingQueueResolved:
