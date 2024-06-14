@@ -67,7 +67,7 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 		return APIErrorNotFound("Mapset")
 	}
 
-	if queueMapset.Mapset.CreatorID != user.Id && enums.HasUserGroup(user.UserGroups, enums.UserGroupRankingSupervisor) {
+	if queueMapset.Mapset.CreatorID != user.Id && !enums.HasPrivilege(user.Privileges, enums.PrivilegeRankMapsets) {
 		return APIErrorForbidden("You do not have permission to comment on this mapset.")
 	}
 
