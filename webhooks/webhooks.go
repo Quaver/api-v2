@@ -39,7 +39,7 @@ func SendQueueSubmitWebhook(user *db.User, mapset *db.Mapset) error {
 		SetAuthorIcon(*user.AvatarUrl).
 		AddField("Ranking Queue Action", "Submitted", true).
 		AddField("Mapset",
-			fmt.Sprintf("[%v - %v](https://quavergame.com/mapsets/%v)", mapset.Artist, mapset.Title, mapset.Id), false).
+			fmt.Sprintf("[%v](https://quavergame.com/mapsets/%v)", mapset.String(), mapset.Id), false).
 		SetDescription("").
 		SetThumbnail(quaverLogo).
 		SetFooter("Quaver", quaverLogo).
@@ -90,7 +90,7 @@ func SendQueueWebhook(user *db.User, mapset *db.Mapset, action db.RankingQueueAc
 		SetAuthorIcon(*user.AvatarUrl).
 		AddField("Ranking Queue Action", actionStr, true).
 		AddField("Mapset",
-			fmt.Sprintf("[%v - %v](https://quavergame.com/mapsets/%v)", mapset.Artist, mapset.Title, mapset.Id), false).
+			fmt.Sprintf("[%v](https://quavergame.com/mapsets/%v)", mapset.String(), mapset.Id), false).
 		SetDescription("").
 		SetThumbnail(quaverLogo).
 		SetFooter("Quaver", quaverLogo).
@@ -153,7 +153,7 @@ func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment)
 		SetTitle("✅ New Mapset Ranked!").
 		SetDescription("A new mapset has been ranked and is now available to get scores on.").
 		AddField("Song",
-			fmt.Sprintf("[%v - %v](https://quavergame.com/mapsets/%v)", mapset.Artist, mapset.Title, mapset.Id), true).
+			fmt.Sprintf("[%v](https://quavergame.com/mapsets/%v)", mapset.String(), mapset.Id), true).
 		AddField("Creator",
 			fmt.Sprintf("[%v](https://quavergame.com/user/%v)", mapset.CreatorUsername, mapset.CreatorID), true).
 		AddField("Game Modes", strings.Join(gameModes, ", "), true).

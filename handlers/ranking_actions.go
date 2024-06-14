@@ -115,12 +115,13 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		Comment:    data.Comment,
 	}
 
+	existingVotes = append(existingVotes, newVoteAction)
+
 	if err := newVoteAction.Insert(); err != nil {
 		return APIErrorServerError("Error inserting new ranking queue vote", err)
 	}
 
-	existingVotes = append(existingVotes, newVoteAction)
-
+	// Handle ranking the mapset
 	if len(existingVotes)+1 >= config.Instance.RankingQueue.VotesRequired {
 		queueMapset.Status = db.RankingQueueRanked
 

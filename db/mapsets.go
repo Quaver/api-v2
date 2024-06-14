@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 	"time"
@@ -26,6 +27,10 @@ type Mapset struct {
 
 func (m *Mapset) TableName() string {
 	return "mapsets"
+}
+
+func (m *Mapset) String() string {
+	return fmt.Sprintf("%v - %v", m.Artist, m.Title)
 }
 
 func (m *Mapset) BeforeCreate(*gorm.DB) (err error) {
