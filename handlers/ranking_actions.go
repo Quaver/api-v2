@@ -86,9 +86,9 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorForbidden("This mapset must be either pending or resolved to be eligible to vote.")
 	}
 
-	//if queueMapset.Mapset.CreatorID == data.User.Id {
-	//	return APIErrorForbidden("You cannot vote for your own mapset.")
-	//}
+	if queueMapset.Mapset.CreatorID == data.User.Id {
+		return APIErrorForbidden("You cannot vote for your own mapset.")
+	}
 
 	existingVotes, err := db.GetRankingQueueVotes(data.MapsetId)
 
