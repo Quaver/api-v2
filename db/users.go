@@ -60,8 +60,8 @@ type UserInformation struct {
 	Twitter             string         `json:"twitter,omitempty"`
 	Twitch              string         `json:"twitch,omitempty"`
 	Youtube             string         `json:"youtube,omitempty"`
-	NotifyMapsetActions bool           `json:"notif_action_mapset"`
-	DefaultMode         enums.GameMode `json:"default_mode"`
+	NotifyMapsetActions bool           `json:"notif_action_mapset,omitempty"`
+	DefaultMode         enums.GameMode `json:"default_mode,omitempty"`
 }
 
 func (u *User) BeforeCreate(*gorm.DB) (err error) {
