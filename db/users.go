@@ -37,7 +37,8 @@ type User struct {
 	DonatorEndTimeJSON          time.Time         `gorm:"-:all" json:"donator_end_time"`
 	Notes                       *string           `gorm:"column:notes" json:"-"`
 	DiscordId                   *string           `gorm:"column:discord_id" json:"discord_id"`
-	Information                 *string           `gorm:"column:information" json:"social_media"`
+	Information                 *string           `gorm:"column:information" json:"-"`
+	MiscInformation             *UserInformation  `gorm:"-:all" json:"misc_information"`
 	UserPageDisabled            bool              `gorm:"column:userpage_disabled" json:"-"`
 	ClanId                      *int              `gorm:"column:clan_id" json:"clan_id"`
 	ClanLeaveTime               int64             `gorm:"column:clan_leave_time" json:"-"`
@@ -52,6 +53,15 @@ type UserClientStatus struct {
 	Status  int    `json:"status"`
 	Mode    int    `json:"mode"`
 	Content string `json:"content"`
+}
+
+type UserInformation struct {
+	Discord             string         `json:"discord,omitempty"`
+	Twitter             string         `json:"twitter,omitempty"`
+	Twitch              string         `json:"twitch,omitempty"`
+	Youtube             string         `json:"youtube,omitempty"`
+	NotifyMapsetActions bool           `json:"notify_action_mapset"`
+	DefaultMode         enums.GameMode `json:"default_mode"`
 }
 
 func (u *User) BeforeCreate(*gorm.DB) (err error) {
@@ -82,6 +92,12 @@ func (u *User) AfterFind(*gorm.DB) (err error) {
 
 	if keys7Ranks, err := GetUserRanksForMode(u, enums.GameModeKeys7); err == nil && u.StatsKeys7 != nil {
 		u.StatsKeys7.Ranks = keys7Ranks
+	}
+
+	if u.Information != nil {
+		if err := json.Unmarshal([]byte(*u.Information), &u.MiscInformation); err != nil {
+			return err
+		}
 	}
 
 	return nil
