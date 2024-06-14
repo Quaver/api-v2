@@ -122,7 +122,7 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 	}
 
 	// Handle ranking the mapset
-	if len(existingVotes)+1 >= config.Instance.RankingQueue.VotesRequired {
+	if len(existingVotes) >= config.Instance.RankingQueue.VotesRequired {
 		queueMapset.Status = db.RankingQueueRanked
 
 		if err := db.RankMapset(data.MapsetId); err != nil {
