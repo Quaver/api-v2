@@ -23,6 +23,7 @@ type Mapset struct {
 	DateLastUpdatedJSON time.Time `gorm:"-:all" json:"date_last_updated"`
 	IsVisible           bool      `gorm:"column:visible" json:"is_visible"`
 	Maps                []*MapQua `gorm:"foreignKey:MapsetId" json:"maps"`
+	User                *User     `gorm:"foreignKey:CreatorID; references:Id" json:"user"`
 }
 
 func (m *Mapset) TableName() string {
@@ -50,12 +51,17 @@ func GetMapsetById(id int) (*Mapset, error) {
 	var mapset *Mapset
 
 	result := SQL.
+		Joins("User").
 		Preload("Maps").
 		Where("mapsets.id = ? AND mapsets.visible = 1", id).
 		First(&mapset)
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	if err := mapset.User.AfterFind(SQL); err != nil {
+		return nil, err
 	}
 
 	return mapset, nil

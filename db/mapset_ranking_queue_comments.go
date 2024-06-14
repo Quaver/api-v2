@@ -65,6 +65,12 @@ func GetRankingQueueComments(mapsetId int) ([]*MapsetRankingQueueComment, error)
 		return nil, result.Error
 	}
 
+	for _, comment := range comments {
+		if err := comment.User.AfterFind(SQL); err != nil {
+			return nil, err
+		}
+	}
+
 	return comments, nil
 }
 
@@ -109,6 +115,12 @@ func GetRankingQueueVotes(mapsetId int) ([]*MapsetRankingQueueComment, error) {
 		return nil, result.Error
 	}
 
+	for _, vote := range votes {
+		if err := vote.User.AfterFind(SQL); err != nil {
+			return nil, err
+		}
+	}
+
 	return votes, nil
 }
 
@@ -123,6 +135,12 @@ func GetRankingQueueDenies(mapsetId int) ([]*MapsetRankingQueueComment, error) {
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	for _, vote := range votes {
+		if err := vote.User.AfterFind(SQL); err != nil {
+			return nil, err
+		}
 	}
 
 	return votes, nil

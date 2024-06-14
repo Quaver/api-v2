@@ -82,6 +82,7 @@ func GetRankingQueueMapset(mapsetId int) (*RankingQueueMapset, error) {
 
 	result := SQL.
 		Joins("Mapset").
+		Preload("Mapset.User").
 		Preload("Mapset.Maps").
 		Where("mapset_id = ?", mapsetId).
 		First(&mapset)

@@ -91,14 +91,16 @@ func SendQueueWebhook(user *db.User, mapset *db.Mapset, action db.RankingQueueAc
 		AddField("Ranking Queue Action", actionStr, true).
 		AddField("Mapset",
 			fmt.Sprintf("[%v](https://quavergame.com/mapsets/%v)", mapset.String(), mapset.Id), false).
-		SetDescription("").
 		SetThumbnail(quaverLogo).
 		SetFooter("Quaver", quaverLogo).
 		SetTimestamp(time.Now()).
 		SetColor(color).
 		Build()
 
-	_, err := rankingQueue.CreateEmbeds([]discord.Embed{embed})
+	_, err := rankedMapsets.CreateMessage(discord.WebhookMessageCreate{
+		Content: getUserPingText(mapset),
+		Embeds:  []discord.Embed{embed},
+	})
 
 	if err != nil {
 		logrus.Error("Failed to send ranking queue action webhook")
@@ -167,7 +169,10 @@ func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment)
 		SetColor(0x00FF00).
 		Build()
 
-	_, err := rankedMapsets.CreateEmbeds([]discord.Embed{embed})
+	_, err := rankedMapsets.CreateMessage(discord.WebhookMessageCreate{
+		Content: getUserPingText(mapset),
+		Embeds:  []discord.Embed{embed},
+	})
 
 	if err != nil {
 		logrus.Error("Failed to send ranking queue action webhook")
@@ -175,4 +180,18 @@ func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment)
 	}
 
 	return nil
+}
+
+func getUserPingText(mapset *db.Mapset) string {
+	content := ""
+
+	if mapset.User.MiscInformation != nil && mapset.User.MiscInformation.NotifyMapsetActions {
+		if mapset.User.DiscordId == nil {
+			return ""
+		}
+
+		content = fmt.Sprintf("<@%v>", *mapset.User.DiscordId)
+	}
+
+	return content
 }
