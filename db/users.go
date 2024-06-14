@@ -44,9 +44,9 @@ type User struct {
 	ClanLeaveTime               int64             `gorm:"column:clan_leave_time" json:"-"`
 	ClanLeaveTimeJSON           time.Time         `gorm:"-:all" json:"clan_leave_time"`
 	ShadowBanned                bool              `gorm:"column:shadow_banned" json:"-"`
-	ClientStatus                *UserClientStatus `gorm:"-:all" json:"client_status"`
-	StatsKeys4                  *UserStatsKeys4   `gorm:"foreignKey:UserId" json:"stats_keys4"`
-	StatsKeys7                  *UserStatsKeys7   `gorm:"foreignKey:UserId" json:"stats_keys7"`
+	ClientStatus                *UserClientStatus `gorm:"-:all" json:"client_status,omitempty"`
+	StatsKeys4                  *UserStatsKeys4   `gorm:"foreignKey:UserId" json:"stats_keys4,omitempty"`
+	StatsKeys7                  *UserStatsKeys7   `gorm:"foreignKey:UserId" json:"stats_keys7,omitempty"`
 }
 
 type UserClientStatus struct {
