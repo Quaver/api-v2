@@ -61,3 +61,20 @@ func GetRecentUserActivity(id int, limit int, page int) ([]*UserActivity, error)
 
 	return activity, nil
 }
+
+// AddUserActivity Adds a new user activity to the database
+func AddUserActivity(userId int, activityType UserActivityType, value string, mapsetId int) error {
+	activity := &UserActivity{
+		UserId:    userId,
+		Type:      activityType,
+		Timestamp: time.Now().UnixMilli(),
+		Value:     value,
+		MapsetId:  mapsetId,
+	}
+
+	if err := SQL.Create(&activity).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

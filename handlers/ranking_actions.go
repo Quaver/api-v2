@@ -133,6 +133,11 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 			return APIErrorServerError("Failed to reset personal best scores for mapset", err)
 		}
 
+		if err := db.AddUserActivity(data.QueueMapset.Mapset.CreatorID, db.UserActivityRankedMapset,
+			data.QueueMapset.Mapset.String(), data.MapsetId); err != nil {
+			return APIErrorServerError("Failed to add new ranked user activity", err)
+		}
+
 		_ = webhooks.SendRankedWebhook(data.QueueMapset.Mapset, existingVotes)
 	}
 
@@ -201,6 +206,11 @@ func DenyRankingQueueMapset(c *gin.Context) *APIError {
 
 		if result := db.SQL.Save(queueMapset); result.Error != nil {
 			return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+		}
+
+		if err := db.AddUserActivity(data.QueueMapset.Mapset.CreatorID, db.UserActivityDeniedMapset,
+			data.QueueMapset.Mapset.String(), data.MapsetId); err != nil {
+			return APIErrorServerError("Failed to add new ranked user activity", err)
 		}
 	}
 
