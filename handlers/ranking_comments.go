@@ -40,7 +40,7 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Comment string `form:"comment" json:"comment"`
+		Comment string `form:"comment" json:"comment" binding:"required"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -96,7 +96,7 @@ func EditRankingQueueComment(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Comment string `form:"comment" json:"comment"`
+		Comment string `form:"comment" json:"comment" binding:"required"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {

@@ -34,7 +34,7 @@ func validateRankingQueueRequest(c *gin.Context) (*rankingQueueRequestData, *API
 	}
 
 	body := struct {
-		Comment string `form:"comment" json:"comment"`
+		Comment string `form:"comment" json:"comment" binding:"required"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
