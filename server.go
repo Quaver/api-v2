@@ -138,7 +138,11 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/ranking/queue/:id/blacklist", middleware.RequireAuth, handlers.CreateHandler(handlers.BlacklistRankingQueueMapset))
 	engine.POST("/v2/ranking/queue/:id/hold", middleware.RequireAuth, handlers.CreateHandler(handlers.OnHoldRankingQueueMapset))
 
+	// Game Builds
 	engine.POST("/v2/builds", middleware.RequireAuth, handlers.CreateHandler(handlers.AddNewGameBuild))
+
+	// Multiplayer
+	engine.GET("/v2/multiplayer/games", handlers.CreateHandler(handlers.GetRecentMultiplayerGames))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
