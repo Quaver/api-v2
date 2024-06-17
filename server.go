@@ -143,6 +143,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Multiplayer
 	engine.GET("/v2/multiplayer/games", handlers.CreateHandler(handlers.GetRecentMultiplayerGames))
+	engine.GET("/v2/multiplayer/game/:id", handlers.CreateHandler(handlers.GetMultiplayerGame))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})

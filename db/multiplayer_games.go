@@ -42,3 +42,23 @@ func GetRecentMultiplayerGames(limit int, page int) ([]*MultiplayerGame, error) 
 
 	return games, nil
 }
+
+// GetMultiplayerGame Gets an individual multiplayer game from the database
+func GetMultiplayerGame(id int) (*MultiplayerGame, error) {
+	var game *MultiplayerGame
+
+	result := SQL.
+		Preload("Matches").
+		Preload("Matches.Map").
+		Preload("Matches.Scores").
+		Preload("Matches.Scores.User").
+		Where("id = ?", id).
+		Order("id DESC").
+		First(&game)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return game, nil
+}
