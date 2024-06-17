@@ -53,7 +53,6 @@ func GetMultiplayerGame(id int) (*MultiplayerGame, error) {
 		Preload("Matches.Scores").
 		Preload("Matches.Scores.User").
 		Where("id = ?", id).
-		Order("id DESC").
 		First(&game)
 
 	if result.Error != nil {
