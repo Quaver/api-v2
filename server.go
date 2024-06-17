@@ -83,6 +83,9 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/map/:id", handlers.CreateHandler(handlers.GetMap))
 	engine.POST("/v2/map", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadUnsubmittedMap))
 
+	// Map Mods
+	engine.GET("/v2/map/:id/mods", handlers.CreateHandler(handlers.GetMapMods))
+
 	// Mapsets
 	engine.GET("/v2/mapset/:id", handlers.CreateHandler(handlers.GetMapsetById))
 	engine.POST("/v2/mapset/:id/delete", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteMapset))
