@@ -24,7 +24,7 @@ type MapMod struct {
 	AuthorId      int              `gorm:"column:author_id" json:"author_id"`
 	Timestamp     int64            `gorm:"column:timestamp" json:"-"`
 	TimestampJSON time.Time        `gorm:"-:all" json:"timestamp"`
-	MapTimestamp  string           `gorm:"column:map_timestamp" json:"map_timestamp"`
+	MapTimestamp  *string          `gorm:"column:map_timestamp" json:"map_timestamp"`
 	Comment       string           `gorm:"column:comment" json:"comment"`
 	Status        MapModStatus     `gorm:"column:status" json:"status"`
 	Type          MapModType       `gorm:"column:type" json:"type"`
@@ -57,4 +57,16 @@ func GetMapMods(id int) ([]*MapMod, error) {
 	}
 
 	return mods, nil
+}
+
+// Insert Inserts a new mod into the database
+func (mod *MapMod) Insert() error {
+	mod.Status = ModStatusPending
+	mod.Timestamp = time.Now().UnixMilli()
+
+	if err := SQL.Create(&mod).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
