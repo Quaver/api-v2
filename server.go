@@ -86,6 +86,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Map Mods
 	engine.GET("/v2/map/:id/mods", handlers.CreateHandler(handlers.GetMapMods))
 	engine.POST("/v2/map/:id/mods", middleware.RequireAuth, handlers.CreateHandler(handlers.SubmitMapMod))
+	engine.POST("/v2/map/:id/mods/:mod_id/status", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMapModStatus))
 
 	// Mapsets
 	engine.GET("/v2/mapset/:id", handlers.CreateHandler(handlers.GetMapsetById))

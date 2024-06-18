@@ -103,6 +103,69 @@ func SubmitMapMod(c *gin.Context) *APIError {
 	return nil
 }
 
+// UpdateMapModStatus Updates the status of a map mod
+// Endpoint: POST /v2/maps/:id/mods/:mod_id/status
+func UpdateMapModStatus(c *gin.Context) *APIError {
+	modId, err := strconv.Atoi(c.Param("mod_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid mod id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	body := struct {
+		Status db.MapModStatus `form:"status" json:"status" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if body.Status != db.ModStatusPending &&
+		body.Status != db.ModStatusAccepted &&
+		body.Status != db.ModStatusDenied {
+		return APIErrorBadRequest("You have provided an invalid mod status")
+	}
+
+	mod, err := db.GetModById(modId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving mod from database", err)
+	}
+
+	if mod == nil {
+		return APIErrorNotFound("Mod")
+	}
+
+	songMap, err := db.GetMapById(mod.MapId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving map from database", err)
+	}
+
+	if mod == nil {
+		return APIErrorNotFound("Map")
+	}
+
+	if songMap.CreatorId != user.Id {
+		return APIErrorForbidden("This map does not belong to you.")
+	}
+
+	mod.Status = body.Status
+
+	if err := db.SQL.Save(&mod).Error; err != nil {
+		return APIErrorServerError("Error updating mod status in database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The mod status has been successfully updated."})
+	return nil
+}
+
 // Returns if a map timestamp has valid syntax
 // Time OR Time|Lane,Time|Lane,...
 func isMapTimestampValid(str string) bool {

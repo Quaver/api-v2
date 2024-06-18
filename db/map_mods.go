@@ -59,6 +59,24 @@ func GetMapMods(id int) ([]*MapMod, error) {
 	return mods, nil
 }
 
+// GetModById Gets a mod by its id
+func GetModById(id int) (*MapMod, error) {
+	var mod *MapMod
+
+	result := SQL.
+		Joins("Author").
+		Preload("Replies").
+		Preload("Replies.Author").
+		Where("map_mods.id = ?", id).
+		First(&mod)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return mod, nil
+}
+
 // Insert Inserts a new mod into the database
 func (mod *MapMod) Insert() error {
 	mod.Status = ModStatusPending
