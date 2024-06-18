@@ -24,3 +24,14 @@ func (comment *MapModComment) AfterFind(*gorm.DB) (err error) {
 	comment.TimestampJSON = time.UnixMilli(comment.Timestamp)
 	return nil
 }
+
+// Insert Inserts a new mod comment into the database
+func (comment *MapModComment) Insert() error {
+	comment.Timestamp = time.Now().UnixMilli()
+
+	if err := SQL.Create(&comment).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -166,6 +166,57 @@ func UpdateMapModStatus(c *gin.Context) *APIError {
 	return nil
 }
 
+// SubmitMapModComment Submits a comment for a map mod
+// Endpoint: POST /v2/maps/:id/mods/:mod_id/comment
+func SubmitMapModComment(c *gin.Context) *APIError {
+	modId, err := strconv.Atoi(c.Param("mod_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid mod id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	body := struct {
+		Comment string `form:"comment" json:"comment" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if len(body.Comment) > 5000 {
+		return APIErrorBadRequest("Your comment must not be greater than 5,000 characters.")
+	}
+
+	mod, err := db.GetModById(modId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving mod from database", err)
+	}
+
+	if mod == nil {
+		return APIErrorNotFound("Mod")
+	}
+
+	comment := &db.MapModComment{
+		MapModId: modId,
+		AuthorId: user.Id,
+		Comment:  body.Comment,
+	}
+
+	if err := comment.Insert(); err != nil {
+		return APIErrorServerError("Error inserting map mod comment into database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully added."})
+	return nil
+}
+
 // Returns if a map timestamp has valid syntax
 // Time OR Time|Lane,Time|Lane,...
 func isMapTimestampValid(str string) bool {
