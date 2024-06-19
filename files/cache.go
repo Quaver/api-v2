@@ -136,5 +136,5 @@ func getReplayDirectory() string {
 }
 
 func GetTempDirectory() string {
-	return "./temp"
+	return "../../temp"
 }
