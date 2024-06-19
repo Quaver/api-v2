@@ -1,9 +1,7 @@
 package db
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"time"
 )
 
@@ -20,42 +18,22 @@ type UserMostPlayedMap struct {
 // GetUserMostPlayedMaps Returns a user's most played maps
 func GetUserMostPlayedMaps(id int, limit int, page int) ([]*UserMostPlayedMap, error) {
 	var maps []*UserMostPlayedMap
-
 	redisKey := fmt.Sprintf("quaver:most_played:%v:%v:%v", id, limit, page)
-	result, err := Redis.Get(RedisCtx, redisKey).Result()
 
-	if err != nil && err != redis.Nil {
-		return nil, err
-	}
-
-	// Get cached version
-	if result != "" {
-		if err := json.Unmarshal([]byte(result), &maps); err == nil {
-			return maps, nil
-		}
-	}
-
-	if err := SQL.Raw("SELECT "+
-		"maps.id, maps.creator_id, maps.creator_username, maps.artist, maps.title, maps.difficulty_name, COUNT(*) "+
-		"FROM scores s "+
-		"INNER JOIN "+
-		"maps ON maps.md5 = s.map_md5 "+
-		"WHERE "+
-		"s.user_id = ? AND maps.mapset_id != -1 AND maps.ranked_status = 2 "+
-		"GROUP BY "+
-		"maps.id "+
-		"ORDER BY COUNT(*) DESC "+
-		fmt.Sprintf("LIMIT %v OFFSET %v", limit, page*limit), id).
-		Scan(&maps).Error; err != nil {
-		return nil, err
-	}
-
-	// Cache in Redis
-	if mapsJson, err := json.Marshal(maps); err == nil {
-		if err := Redis.Set(RedisCtx, redisKey, mapsJson, time.Hour*24).Err(); err != nil {
-			return nil, err
-		}
-	} else {
+	if err := cacheJsonInRedis(redisKey, &maps, time.Hour*24, func() error {
+		return SQL.Raw("SELECT "+
+			"maps.id, maps.creator_id, maps.creator_username, maps.artist, maps.title, maps.difficulty_name, COUNT(*) "+
+			"FROM scores s "+
+			"INNER JOIN "+
+			"maps ON maps.md5 = s.map_md5 "+
+			"WHERE "+
+			"s.user_id = ? AND maps.mapset_id != -1 AND maps.ranked_status = 2 "+
+			"GROUP BY "+
+			"maps.id "+
+			"ORDER BY COUNT(*) DESC "+
+			fmt.Sprintf("LIMIT %v OFFSET %v", limit, page*limit), id).
+			Scan(&maps).Error
+	}); err != nil {
 		return nil, err
 	}
 
@@ -74,19 +52,22 @@ type WeeklyMostPlayedMapsets struct {
 // GetWeeklyMostPlayedMapsets Retrieves the most played mapsets in the past week
 func GetWeeklyMostPlayedMapsets() ([]*WeeklyMostPlayedMapsets, error) {
 	var mapsets []*WeeklyMostPlayedMapsets
+	redisKey := "quaver:weekly_most_played"
 
-	if err := SQL.Raw("SELECT "+
-		"maps.mapset_id, maps.creator_id, maps.creator_username, maps.artist, maps.title, COUNT(*) "+
-		"FROM scores s "+
-		"INNER JOIN "+
-		"maps ON maps.md5 = s.map_md5 "+
-		"WHERE "+
-		"s.timestamp > ? AND maps.mapset_id NOT IN (919, 536, 563, 523, 922, 919, 9, 923, 994, 954, 822, 21846) AND maps.mapset_id != -1 AND maps.ranked_status = 2 "+
-		"GROUP BY "+
-		"maps.mapset_id "+
-		"ORDER BY COUNT(*) DESC "+
-		"LIMIT 10", time.Now().AddDate(0, 0, -7).UnixMilli()).
-		Scan(&mapsets).Error; err != nil {
+	if err := cacheJsonInRedis(redisKey, &mapsets, time.Hour*24, func() error {
+		return SQL.Raw("SELECT "+
+			"maps.mapset_id, maps.creator_id, maps.creator_username, maps.artist, maps.title, COUNT(*) "+
+			"FROM scores s "+
+			"INNER JOIN "+
+			"maps ON maps.md5 = s.map_md5 "+
+			"WHERE "+
+			"s.timestamp > ? AND maps.mapset_id NOT IN (919, 536, 563, 523, 922, 919, 9, 923, 994, 954, 822, 21846) AND maps.mapset_id != -1 AND maps.ranked_status = 2 "+
+			"GROUP BY "+
+			"maps.mapset_id "+
+			"ORDER BY COUNT(*) DESC "+
+			"LIMIT 10", time.Now().AddDate(0, 0, -7).UnixMilli()).
+			Scan(&mapsets).Error
+	}); err != nil {
 		return nil, err
 	}
 
