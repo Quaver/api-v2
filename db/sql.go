@@ -45,4 +45,6 @@ func CloseMySQL() {
 	if err != nil {
 		logrus.Panic(err)
 	}
+
+	logrus.Info("Closed MySQL database connection")
 }

@@ -13,6 +13,7 @@ func RunPlaylistMapset() {
 	}
 
 	db.ConnectMySQL()
+	defer db.CloseMySQL()
 
 	playlists, err := db.GetAllPlaylists()
 
