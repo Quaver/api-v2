@@ -53,6 +53,8 @@ type Config struct {
 		MapsetUploadsRequired int    `json:"mapset_uploads_required"`
 		ResubmissionDays      int    `json:"resubmission_days"`
 	} `json:"ranking_queue"`
+
+	BundledMapsets []int `json:"bundled_mapsets"`
 }
 
 var Instance *Config = nil
