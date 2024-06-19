@@ -19,10 +19,11 @@ As endpoints are made available in v2, it is recommended to use them instead of 
   
 ## Setup
 
-- Install `Go 1.19` or later.
+- Install `Go 1.22` or later.
 - Clone the repository.
 - Copy `config.example.json` and make a file named `config.json`
 - Fill out the config file with the appropriate details.
+- Navigate to the `/cmd/api/` directory.
 - Start the server with `go run .` or your method of choice.
 - The server is now available at `http://localhost:8080` (or your desired port).
 
