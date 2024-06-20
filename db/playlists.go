@@ -7,7 +7,8 @@ import (
 
 type Playlist struct {
 	Id                  int               `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	UserId              int               `gorm:"column:user_id" json:"user_id"`
+	UserId              int               `gorm:"column:user_id" json:"-"`
+	User                *User             `gorm:"foreignKey:UserId" json:"user"`
 	Name                string            `gorm:"column:name" json:"name"`
 	Description         string            `gorm:"column:description" json:"description"`
 	LikeCount           int               `gorm:"column:like_count" json:"-"`
@@ -24,6 +25,11 @@ type Playlist struct {
 
 func (*Playlist) TableName() string {
 	return "playlists"
+}
+
+func (p *Playlist) BeforeSave(*gorm.DB) (err error) {
+	p.TimeLastUpdated = time.Now().UnixMilli()
+	return nil
 }
 
 func (p *Playlist) AfterFind(*gorm.DB) (err error) {
@@ -57,7 +63,8 @@ func GetPlaylist(id int) (*Playlist, error) {
 		Preload("Mapsets.Mapset").
 		Preload("Mapsets.Maps").
 		Preload("Mapsets.Maps.Map").
-		Where("id = ? AND visible = 1", id).
+		Joins("User").
+		Where("playlists.id = ? AND playlists.visible = 1", id).
 		First(&playlist)
 
 	if result.Error != nil {
