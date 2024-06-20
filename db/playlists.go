@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"time"
 )
@@ -105,15 +106,35 @@ func GetPlaylistFull(id int) (*Playlist, error) {
 
 // GetUserPlaylists Gets a user's created playlists
 func GetUserPlaylists(userId int) ([]*Playlist, error) {
-	var playlist []*Playlist
+	var playlists []*Playlist
 
 	result := SQL.
 		Where("user_id = ? AND visible = 1", userId).
-		Find(&playlist)
+		Find(&playlists)
 
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	return playlist, nil
+	return playlists, nil
+}
+
+// SearchPlaylists Returns playlists that meet a particular search query
+func SearchPlaylists(query string, limit int, page int) ([]*Playlist, error) {
+	var playlists []*Playlist
+
+	likeQuery := fmt.Sprintf("%v%%", query)
+
+	result := SQL.
+		Joins("User").
+		Where("(playlists.name LIKE ? OR User.username LIKE ?) AND playlists.visible = 1", likeQuery, likeQuery).
+		Limit(limit).
+		Offset(limit * page).
+		Find(&playlists)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return playlists, nil
 }

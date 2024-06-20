@@ -156,6 +156,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Playlists
 	engine.POST("/v2/playlists", middleware.RequireAuth, handlers.CreateHandler(handlers.CreatePlaylist))
+	engine.GET("/v2/playlists/search", handlers.CreateHandler(handlers.SearchPlaylists))
 	engine.GET("/v2/playlists/:id", handlers.CreateHandler(handlers.GetPlaylist))
 	engine.POST("/v2/playlists/:id/update", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdatePlaylist))
 	engine.DELETE("/v2/playlists/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeletePlaylist))

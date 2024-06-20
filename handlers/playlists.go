@@ -211,3 +211,22 @@ func GetPlaylistContainsMap(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"exists": exists})
 	return nil
 }
+
+// SearchPlaylists Searches for playlists by name/creator username
+// Endpoint: /v2/playlists/search?query=
+func SearchPlaylists(c *gin.Context) *APIError {
+	page, err := strconv.Atoi(c.Query("page"))
+
+	if err != nil {
+		page = 0
+	}
+
+	playlists, err := db.SearchPlaylists(c.Query("query"), 20, page)
+
+	if err != nil {
+		return APIErrorServerError("Error searching playlists", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"playlists": playlists})
+	return nil
+}
