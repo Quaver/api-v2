@@ -6,18 +6,20 @@ import (
 )
 
 type Playlist struct {
-	Id                  int            `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	UserId              int            `gorm:"column:user_id" json:"user_id"`
-	Name                string         `gorm:"column:name" json:"name"`
-	Description         string         `gorm:"column:description" json:"description"`
-	LikeCount           int            `gorm:"column:like_count" json:"-"`
-	MapCount            int            `gorm:"column:map_count" json:"map_count"`
-	Timestamp           int64          `gorm:"column:timestamp" json:"-"`
-	TimestampJSON       time.Time      `gorm:"-:all" json:"timestamp"`
-	TimeLastUpdated     int64          `gorm:"column:time_last_updated" json:"-"`
-	TimeLastUpdatedJSON time.Time      `gorm:"-:all" json:"time_last_updated"`
-	Visible             bool           `gorm:"column:visible" json:"-"`
-	Maps                []*PlaylistMap `gorm:"foreignKey:PlaylistId" json:"-"`
+	Id                  int               `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	UserId              int               `gorm:"column:user_id" json:"user_id"`
+	Name                string            `gorm:"column:name" json:"name"`
+	Description         string            `gorm:"column:description" json:"description"`
+	LikeCount           int               `gorm:"column:like_count" json:"-"`
+	MapCount            int               `gorm:"column:map_count" json:"map_count"`
+	Timestamp           int64             `gorm:"column:timestamp" json:"-"`
+	TimestampJSON       time.Time         `gorm:"-:all" json:"timestamp"`
+	TimeLastUpdated     int64             `gorm:"column:time_last_updated" json:"-"`
+	TimeLastUpdatedJSON time.Time         `gorm:"-:all" json:"time_last_updated"`
+	Visible             bool              `gorm:"column:visible" json:"-"`
+	Mapsets             []*PlaylistMapset `gorm:"foreignKey:PlaylistId" json:"mapsets"`
+
+	Maps []*PlaylistMap `gorm:"foreignKey:PlaylistId" json:"-"` // Only used for migration
 }
 
 func (*Playlist) TableName() string {
@@ -44,4 +46,23 @@ func GetAllPlaylists() ([]*Playlist, error) {
 	}
 
 	return playlists, nil
+}
+
+// GetPlaylist Gets an individual playlist
+func GetPlaylist(id int) (*Playlist, error) {
+	var playlist *Playlist
+
+	result := SQL.
+		Preload("Mapsets").
+		Preload("Mapsets.Mapset").
+		Preload("Mapsets.Maps").
+		Preload("Mapsets.Maps.Map").
+		Where("id = ? AND visible = 1", id).
+		First(&playlist)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return playlist, result.Error
 }

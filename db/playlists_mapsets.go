@@ -1,9 +1,11 @@
 package db
 
 type PlaylistMapset struct {
-	Id         int `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	PlaylistId int `gorm:"column:playlist_id" json:"playlist_id"`
-	MapsetId   int `gorm:"column:mapset_id" json:"mapset_id"`
+	Id         int            `gorm:"column:id; PRIMARY_KEY" json:"playlist_mapset_id"`
+	PlaylistId int            `gorm:"column:playlist_id" json:"-"`
+	MapsetId   int            `gorm:"column:mapset_id" json:"-"`
+	Mapset     *Mapset        `gorm:"foreignKey:MapsetId" json:"mapset"`
+	Maps       []*PlaylistMap `gorm:"foreignKey:PlaylistsMapsetId" json:"maps"`
 }
 
 func (*PlaylistMapset) TableName() string {
