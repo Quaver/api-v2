@@ -84,3 +84,42 @@ func UpdatePlaylist(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "Your playlist has been successfully updated"})
 	return nil
 }
+
+// DeletePlaylist Deletes (hides) a playlist
+// Endpoint: DELETE /v2/playlists/:id
+func DeletePlaylist(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	playlist, err := db.GetPlaylist(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving playlist from db", err)
+	}
+
+	if playlist == nil {
+		return APIErrorNotFound("Playlist")
+	}
+
+	if playlist.UserId != user.Id {
+		return APIErrorForbidden("You do not own this playlist.")
+	}
+
+	playlist.Visible = false
+
+	if err := db.SQL.Save(&playlist).Error; err != nil {
+		return APIErrorServerError("Error deleting (updating visibility) playlist in db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your playlist has been successfully deleted"})
+	return nil
+}
