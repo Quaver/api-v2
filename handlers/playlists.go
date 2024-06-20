@@ -221,7 +221,7 @@ func SearchPlaylists(c *gin.Context) *APIError {
 		page = 0
 	}
 
-	playlists, err := db.SearchPlaylists(c.Query("query"), 20, page)
+	playlists, err := db.SearchPlaylists(c.Query("query"), 50, page)
 
 	if err != nil {
 		return APIErrorServerError("Error searching playlists", err)

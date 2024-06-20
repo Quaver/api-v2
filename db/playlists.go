@@ -130,6 +130,7 @@ func SearchPlaylists(query string, limit int, page int) ([]*Playlist, error) {
 		Where("(playlists.name LIKE ? OR User.username LIKE ?) AND playlists.visible = 1", likeQuery, likeQuery).
 		Limit(limit).
 		Offset(limit * page).
+		Order("playlists.time_last_updated DESC").
 		Find(&playlists)
 
 	if result.Error != nil {
