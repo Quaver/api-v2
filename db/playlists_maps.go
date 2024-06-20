@@ -1,5 +1,9 @@
 package db
 
+import (
+	"gorm.io/gorm"
+)
+
 type PlaylistMap struct {
 	Id                int     `gorm:"column:id; PRIMARY_KEY" json:"playlist_map_id"`
 	PlaylistId        int     `gorm:"column:playlist_id" json:"-"`
@@ -10,4 +14,23 @@ type PlaylistMap struct {
 
 func (*PlaylistMap) TableName() string {
 	return "playlists_maps"
+}
+
+// DoesPlaylistContainMap Checks if a playlist contains a specific map id
+func DoesPlaylistContainMap(playlistId int, mapId int) (bool, error) {
+	var playlistMap *PlaylistMap
+
+	result := SQL.
+		Where("playlist_id = ? AND map_id = ?", playlistId, mapId).
+		First(&playlistMap)
+
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+
+		return false, result.Error
+	}
+
+	return true, nil
 }

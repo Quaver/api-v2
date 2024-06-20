@@ -186,3 +186,28 @@ func GetUserPlaylists(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"playlists": playlists})
 	return nil
 }
+
+// GetPlaylistContainsMap Returns if a playlist contains an individual map id
+// Endpoint: /v2/playlists/:id/contains/:map_id
+func GetPlaylistContainsMap(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	mapId, err := strconv.Atoi(c.Param("map_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid map_id")
+	}
+
+	exists, err := db.DoesPlaylistContainMap(id, mapId)
+
+	if err != nil {
+		return APIErrorServerError("Error checking if map exists in playlist", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"exists": exists})
+	return nil
+}
