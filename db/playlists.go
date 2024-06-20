@@ -123,7 +123,7 @@ func GetUserPlaylists(userId int) ([]*Playlist, error) {
 func SearchPlaylists(query string, limit int, page int) ([]*Playlist, error) {
 	var playlists []*Playlist
 
-	likeQuery := fmt.Sprintf("%v%%", query)
+	likeQuery := fmt.Sprintf("%%%s%%", query)
 
 	result := SQL.
 		Joins("User").
