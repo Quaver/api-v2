@@ -54,8 +54,24 @@ func GetAllPlaylists() ([]*Playlist, error) {
 	return playlists, nil
 }
 
-// GetPlaylist Gets an individual playlist
+// GetPlaylist Gets an individual playlist without mapset data
 func GetPlaylist(id int) (*Playlist, error) {
+	var playlist *Playlist
+
+	result := SQL.
+		Joins("User").
+		Where("playlists.id = ? AND playlists.visible = 1", id).
+		First(&playlist)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return playlist, result.Error
+}
+
+// GetPlaylistFull Gets an individual playlist with mapsets/maps included
+func GetPlaylistFull(id int) (*Playlist, error) {
 	var playlist *Playlist
 
 	result := SQL.
