@@ -38,7 +38,7 @@ func (p *Playlist) AfterFind(*gorm.DB) (err error) {
 	return nil
 }
 
-// Inserts a new playlist into the database
+// Insert Inserts a new playlist into the database
 func (p *Playlist) Insert() error {
 	p.Visible = true
 	p.Timestamp = time.Now().UnixMilli()
@@ -80,7 +80,7 @@ func GetPlaylist(id int) (*Playlist, error) {
 		return nil, result.Error
 	}
 
-	return playlist, result.Error
+	return playlist, nil
 }
 
 // GetPlaylistFull Gets an individual playlist with mapsets/maps included
@@ -101,4 +101,19 @@ func GetPlaylistFull(id int) (*Playlist, error) {
 	}
 
 	return playlist, result.Error
+}
+
+// GetUserPlaylists Gets a user's created playlists
+func GetUserPlaylists(userId int) ([]*Playlist, error) {
+	var playlist []*Playlist
+
+	result := SQL.
+		Where("user_id = ? AND visible = 1", userId).
+		Find(&playlist)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return playlist, nil
 }

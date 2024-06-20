@@ -167,3 +167,22 @@ func DeletePlaylist(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "Your playlist has been successfully deleted"})
 	return nil
 }
+
+// GetUserPlaylists Returns a user's created playlists
+// Endpoint: /v2/user/:id/playlists
+func GetUserPlaylists(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	playlists, err := db.GetUserPlaylists(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving user playlists", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"playlists": playlists})
+	return nil
+}
