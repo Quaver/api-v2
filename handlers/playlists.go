@@ -8,6 +8,50 @@ import (
 	"strconv"
 )
 
+// CreatePlaylist Creates a new playlist
+// Endpoint: /v2/playlists
+func CreatePlaylist(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	body := struct {
+		Name        string `form:"name" json:"name" binding:"required"`
+		Description string `form:"description" json:"description" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if len(body.Name) > 100 {
+		return APIErrorBadRequest("Your playlist name cannot be longer than 100 characters.")
+	}
+
+	if len(body.Description) > 2000 {
+		return APIErrorBadRequest("Your playlist description cannot be longer than 2000 characters.")
+	}
+
+	playlist := db.Playlist{
+		UserId:      user.Id,
+		Name:        body.Name,
+		Description: body.Description,
+	}
+
+	if err := playlist.Insert(); err != nil {
+		return APIErrorServerError("Error inserting playlist into db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "You have successfully created a new playlist",
+		"playlist": playlist,
+	})
+
+	return nil
+}
+
 // GetPlaylist Gets an individual playlist
 // Endpoint: GET /v2/playlists/:id
 func GetPlaylist(c *gin.Context) *APIError {

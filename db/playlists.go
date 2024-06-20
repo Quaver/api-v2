@@ -8,7 +8,7 @@ import (
 type Playlist struct {
 	Id                  int               `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	UserId              int               `gorm:"column:user_id" json:"-"`
-	User                *User             `gorm:"foreignKey:UserId" json:"user"`
+	User                *User             `gorm:"foreignKey:UserId" json:"user,omitempty"`
 	Name                string            `gorm:"column:name" json:"name"`
 	Description         string            `gorm:"column:description" json:"description"`
 	LikeCount           int               `gorm:"column:like_count" json:"-"`
@@ -18,7 +18,7 @@ type Playlist struct {
 	TimeLastUpdated     int64             `gorm:"column:time_last_updated" json:"-"`
 	TimeLastUpdatedJSON time.Time         `gorm:"-:all" json:"time_last_updated"`
 	Visible             bool              `gorm:"column:visible" json:"-"`
-	Mapsets             []*PlaylistMapset `gorm:"foreignKey:PlaylistId" json:"mapsets"`
+	Mapsets             []*PlaylistMapset `gorm:"foreignKey:PlaylistId" json:"mapsets,omitempty"`
 
 	Maps []*PlaylistMap `gorm:"foreignKey:PlaylistId" json:"-"` // Only used for migration
 }
@@ -35,6 +35,19 @@ func (p *Playlist) BeforeSave(*gorm.DB) (err error) {
 func (p *Playlist) AfterFind(*gorm.DB) (err error) {
 	p.TimestampJSON = time.UnixMilli(p.Timestamp)
 	p.TimeLastUpdatedJSON = time.UnixMilli(p.TimeLastUpdated)
+	return nil
+}
+
+// Inserts a new playlist into the database
+func (p *Playlist) Insert() error {
+	p.Visible = true
+	p.Timestamp = time.Now().UnixMilli()
+	p.TimeLastUpdated = time.Now().UnixMilli()
+
+	if err := SQL.Create(&p).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 

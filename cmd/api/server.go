@@ -154,6 +154,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/multiplayer/game/:id", handlers.CreateHandler(handlers.GetMultiplayerGame))
 
 	// Playlists
+	engine.POST("/v2/playlists", middleware.RequireAuth, handlers.CreateHandler(handlers.CreatePlaylist))
 	engine.GET("/v2/playlists/:id", handlers.CreateHandler(handlers.GetPlaylist))
 	engine.POST("/v2/playlists/:id/update", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdatePlaylist))
 	engine.DELETE("/v2/playlists/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeletePlaylist))
