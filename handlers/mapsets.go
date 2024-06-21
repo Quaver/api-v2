@@ -142,8 +142,12 @@ func DeleteMapset(c *gin.Context) *APIError {
 
 	mapset, err := db.GetMapsetById(id)
 
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return APIErrorServerError("Error retrieving mapset data", err)
+	}
+
+	if mapset == nil {
+		return APIErrorNotFound("Mapset")
 	}
 
 	if mapset.CreatorID != user.Id {
@@ -166,6 +170,25 @@ func DeleteMapset(c *gin.Context) *APIError {
 
 	if rankingQueue != nil && (rankingQueue.Status != db.RankingQueueDenied && rankingQueue.Status != db.RankingQueueBlacklisted) {
 		return APIErrorForbidden("You cannot delete a mapset that is pending in the ranking queue.")
+	}
+
+	// Find all playlists that have this mapset in it and it from them
+	playlistMapsets, err := db.GetPlaylistMapsetsByMapsetId(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving playlist mapsets by mapset id", err)
+	}
+
+	for _, playlistMapset := range playlistMapsets {
+		if err := db.DeletePlaylistMapset(playlistMapset.PlaylistId, id); err != nil {
+			return APIErrorServerError("Error deleting playlist mapset", err)
+		}
+
+		for _, playlistMap := range playlistMapset.Maps {
+			if err := db.DeletePlaylistMap(playlistMapset.PlaylistId, playlistMap.MapId); err != nil {
+				return APIErrorServerError("Error deleting playlist mapset", err)
+			}
+		}
 	}
 
 	err = db.DeleteMapset(mapset.Id)
