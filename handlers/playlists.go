@@ -233,13 +233,12 @@ func SearchPlaylists(c *gin.Context) *APIError {
 
 // Struct reused when parsing/fetching data to use in endpoints where we're adding/removing maps to playlists
 type addRemoveMapPlaylistData struct {
-	PlaylistId int
-	MapId      int
-	User       *db.User
-	Playlist   *db.Playlist
-	Map        *db.MapQua
+	User     *db.User
+	Playlist *db.Playlist
+	Map      *db.MapQua
 }
 
+// Parses any ids, performs validation and returns data to be used when adding/removing maps from playlists
 func validateAddRemoveMapFromPlaylist(c *gin.Context) (*addRemoveMapPlaylistData, *APIError) {
 	playlistId, err := strconv.Atoi(c.Param("id"))
 
@@ -283,12 +282,14 @@ func validateAddRemoveMapFromPlaylist(c *gin.Context) (*addRemoveMapPlaylistData
 		return nil, APIErrorNotFound("Map")
 	}
 
+	if songMap.MapsetId == -1 {
+		return nil, APIErrorBadRequest("You cannot add this map to your playlist")
+	}
+
 	return &addRemoveMapPlaylistData{
-		PlaylistId: playlistId,
-		MapId:      mapId,
-		User:       user,
-		Playlist:   playlist,
-		Map:        songMap,
+		User:     user,
+		Playlist: playlist,
+		Map:      songMap,
 	}, nil
 }
 
@@ -319,7 +320,7 @@ func AddMapToPlaylist(c *gin.Context) *APIError {
 	// Create new playlist mapset
 	if existingMapset == nil {
 		existingMapset = &db.PlaylistMapset{
-			PlaylistId: data.PlaylistId,
+			PlaylistId: data.Playlist.Id,
 			MapsetId:   data.Map.MapsetId,
 		}
 
@@ -329,8 +330,8 @@ func AddMapToPlaylist(c *gin.Context) *APIError {
 	}
 
 	playlistMap := &db.PlaylistMap{
-		PlaylistId:        data.PlaylistId,
-		MapId:             data.MapId,
+		PlaylistId:        data.Playlist.Id,
+		MapId:             data.Map.Id,
 		PlaylistsMapsetId: existingMapset.Id,
 	}
 
