@@ -430,7 +430,7 @@ func UploadPlaylistCover(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	if err := azure.Client.UploadFile("playlists", fmt.Sprintf("%v.jpg", user.Id), file); err != nil {
+	if err := azure.Client.UploadFile("playlists", fmt.Sprintf("%v.jpg", playlist.Id), file); err != nil {
 		return APIErrorServerError("Failed to upload file", err)
 	}
 
