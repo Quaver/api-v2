@@ -27,9 +27,21 @@ func GetPlaylistMapsetByIds(playlistId int, mapsetId int) (*PlaylistMapset, erro
 	return playlistMapset, nil
 }
 
+// Insert Inserts a playlist mapset into the db
 func (pm *PlaylistMapset) Insert() error {
 	if err := SQL.Create(&pm).Error; err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// DeletePlaylistMapset Deletes a playlist mapset row
+func DeletePlaylistMapset(playlistId int, mapsetId int) error {
+	result := SQL.Delete(&PlaylistMapset{}, "playlist_id = ? AND mapset_id = ?", playlistId, mapsetId)
+
+	if result.Error != nil {
+		return result.Error
 	}
 
 	return nil

@@ -339,6 +339,10 @@ func AddMapToPlaylist(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting playlist map in database", err)
 	}
 
+	if err := db.UpdatePlaylistMapCount(data.Playlist.Id, data.Playlist.MapCount+1); err != nil {
+		return APIErrorServerError("Error updating playlist map count (add)", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "The map has been successfully added to your playlist."})
 	return nil
 }
@@ -352,24 +356,39 @@ func RemoveMapFromPlaylist(c *gin.Context) *APIError {
 		return apiErr
 	}
 
+	var deleteMap bool
+	var deleteMapset bool
+
 	for _, playlistMapset := range data.Playlist.Mapsets {
 		for _, playlistMap := range playlistMapset.Maps {
-			// Map exists, so remove it
 			if playlistMap.MapId == data.Map.Id {
-				if err := db.SQL.Delete(&playlistMap).Error; err != nil {
-					return APIErrorServerError("Error removing playlist map from db", err)
-				}
+				deleteMap = true
+			}
 
-				// This was the last map in the mapset, so remove the playlist mapset from the db
-				if len(playlistMapset.Maps) == 1 {
-					if err := db.SQL.Delete(&playlistMapset).Error; err != nil {
-						return APIErrorServerError("Error removing playlist mapset from db", err)
-					}
-				}
+			if len(playlistMapset.Maps) == 1 {
+				deleteMapset = true
 			}
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "The map has been successfully removed from your playlist."})
+	if !deleteMap {
+		return APIErrorBadRequest("This map is not in your playlist.")
+	}
+
+	if err := db.DeletePlaylistMap(data.Playlist.Id, data.Map.Id); err != nil {
+		return APIErrorServerError("Error removing playlist map from db", err)
+	}
+
+	if deleteMapset {
+		if err := db.DeletePlaylistMapset(data.Playlist.Id, data.Map.MapsetId); err != nil {
+			return APIErrorServerError("Error removing playlist mapset from db", err)
+		}
+	}
+
+	if err := db.UpdatePlaylistMapCount(data.Playlist.Id, data.Playlist.MapCount-1); err != nil {
+		return APIErrorServerError("Error updating playlist map count (remove)", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"Message": "You have successfully removed the map from your playlist."})
 	return nil
 }

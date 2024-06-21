@@ -52,6 +52,15 @@ func (p *Playlist) Insert() error {
 	return nil
 }
 
+// UpdatePlaylistMapCount Updates the map count for a playlist
+func UpdatePlaylistMapCount(id int, count int) error {
+	result := SQL.Model(&Playlist{}).
+		Where("id = ?", id).
+		Update("map_count", count)
+
+	return result.Error
+}
+
 // GetAllPlaylists Returns all the playlists in the db
 func GetAllPlaylists() ([]*Playlist, error) {
 	var playlists []*Playlist
