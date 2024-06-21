@@ -180,13 +180,13 @@ func DeleteMapset(c *gin.Context) *APIError {
 	}
 
 	for _, playlistMapset := range playlistMapsets {
-		if err := db.DeletePlaylistMapset(playlistMapset.PlaylistId, id); err != nil {
+		if err := db.DeletePlaylistMapset(playlistMapset.PlaylistId, playlistMapset.MapsetId); err != nil {
 			return APIErrorServerError("Error deleting playlist mapset", err)
 		}
 
 		for _, playlistMap := range playlistMapset.Maps {
 			if err := db.DeletePlaylistMap(playlistMapset.PlaylistId, playlistMap.MapId); err != nil {
-				return APIErrorServerError("Error deleting playlist mapset", err)
+				return APIErrorServerError("Error deleting playlist map", err)
 			}
 		}
 	}
