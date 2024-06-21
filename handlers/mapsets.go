@@ -172,7 +172,7 @@ func DeleteMapset(c *gin.Context) *APIError {
 		return APIErrorForbidden("You cannot delete a mapset that is pending in the ranking queue.")
 	}
 
-	// Find all playlists that have this mapset in it and it from them
+	// Find all playlists that have this mapset in it and delete it from them
 	playlistMapsets, err := db.GetPlaylistMapsetsByMapsetId(id)
 
 	if err != nil {
