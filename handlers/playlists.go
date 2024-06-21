@@ -283,7 +283,7 @@ func validateAddRemoveMapFromPlaylist(c *gin.Context) (*addRemoveMapPlaylistData
 	}
 
 	if songMap.MapsetId == -1 {
-		return nil, APIErrorBadRequest("You cannot add this map to your playlist")
+		return nil, APIErrorBadRequest("You cannot add/remove this map to your playlist.")
 	}
 
 	return &addRemoveMapPlaylistData{
@@ -346,6 +346,30 @@ func AddMapToPlaylist(c *gin.Context) *APIError {
 // RemoveMapFromPlaylist Removes a map from a playlist
 // Endpoint: /v2/playlist/:id/remove/:map_id
 func RemoveMapFromPlaylist(c *gin.Context) *APIError {
+	data, apiErr := validateAddRemoveMapFromPlaylist(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	for _, playlistMapset := range data.Playlist.Mapsets {
+		for _, playlistMap := range playlistMapset.Maps {
+			// Map exists, so remove it
+			if playlistMap.MapId == data.Map.Id {
+				if err := db.SQL.Delete(&playlistMap).Error; err != nil {
+					return APIErrorServerError("Error removing playlist map from db", err)
+				}
+
+				// This was the last map in the mapset, so remove the playlist mapset from the db
+				if len(playlistMapset.Maps) == 1 {
+					if err := db.SQL.Delete(&playlistMapset).Error; err != nil {
+						return APIErrorServerError("Error removing playlist mapset from db", err)
+					}
+				}
+			}
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "The map has been successfully removed from your playlist."})
 	return nil
 }
