@@ -34,3 +34,11 @@ func DoesPlaylistContainMap(playlistId int, mapId int) (bool, error) {
 
 	return true, nil
 }
+
+func (pm *PlaylistMap) Insert() error {
+	if err := SQL.Create(&pm).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

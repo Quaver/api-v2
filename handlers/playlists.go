@@ -230,3 +230,89 @@ func SearchPlaylists(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"playlists": playlists})
 	return nil
 }
+
+// AddMapToPlaylist Adds a map to a playlist
+// Endpoint: /v2/playlist/:id/add/:map_id
+func AddMapToPlaylist(c *gin.Context) *APIError {
+	playlistId, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	mapId, err := strconv.Atoi(c.Param("map_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid map_id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	playlist, err := db.GetPlaylistFull(playlistId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving playlist from database", err)
+	}
+
+	if playlist == nil {
+		return APIErrorNotFound("Playlist")
+	}
+
+	if playlist.UserId != user.Id {
+		return APIErrorForbidden("You do not own this playlist.")
+	}
+
+	songMap, err := db.GetMapById(mapId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error getting map from database", err)
+	}
+
+	if songMap == nil {
+		return APIErrorNotFound("Map")
+	}
+
+	var existingMapset *db.PlaylistMapset
+
+	for _, mapset := range playlist.Mapsets {
+		for _, playlistMap := range mapset.Maps {
+			if playlistMap.MapId == songMap.Id {
+				return APIErrorBadRequest("This map already exists in the playlist.")
+			}
+		}
+
+		// Set existing mapset
+		if mapset.MapsetId == songMap.MapsetId {
+			existingMapset = mapset
+		}
+	}
+
+	// Create new playlist mapset
+	if existingMapset == nil {
+		existingMapset = &db.PlaylistMapset{
+			PlaylistId: playlistId,
+			MapsetId:   songMap.MapsetId,
+		}
+
+		if err := existingMapset.Insert(); err != nil {
+			return APIErrorServerError("Error inserting playlist mapset to database", err)
+		}
+	}
+
+	playlistMap := &db.PlaylistMap{
+		PlaylistId:        playlistId,
+		MapId:             songMap.Id,
+		PlaylistsMapsetId: existingMapset.Id,
+	}
+
+	if err := playlistMap.Insert(); err != nil {
+		return APIErrorServerError("Error inserting playlist map in database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The map has been successfully added to your playlist."})
+	return nil
+}
