@@ -180,6 +180,16 @@ func DeleteMapset(c *gin.Context) *APIError {
 	}
 
 	for _, playlistMapset := range playlistMapsets {
+		playlist, err := db.GetPlaylist(id)
+
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return APIErrorServerError("Error retrieving playlist from db", err)
+		}
+
+		if playlist == nil {
+			continue
+		}
+
 		if err := db.DeletePlaylistMapset(playlistMapset.PlaylistId, playlistMapset.MapsetId); err != nil {
 			return APIErrorServerError("Error deleting playlist mapset", err)
 		}
@@ -188,6 +198,10 @@ func DeleteMapset(c *gin.Context) *APIError {
 			if err := db.DeletePlaylistMap(playlistMapset.PlaylistId, playlistMap.MapId); err != nil {
 				return APIErrorServerError("Error deleting playlist map", err)
 			}
+		}
+
+		if err := db.UpdatePlaylistMapCount(playlistMapset.PlaylistId, playlist.MapCount-len(playlistMapset.Maps)); err != nil {
+			return APIErrorServerError("Error updating playlist map count", err)
 		}
 	}
 
