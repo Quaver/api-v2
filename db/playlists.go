@@ -56,7 +56,10 @@ func (p *Playlist) Insert() error {
 func UpdatePlaylistMapCount(id int, count int) error {
 	result := SQL.Model(&Playlist{}).
 		Where("id = ?", id).
-		Update("map_count", count)
+		Updates(map[string]interface{}{
+			"map_count":         count,
+			"time_last_updated": time.Now().UnixMilli(),
+		})
 
 	return result.Error
 }
