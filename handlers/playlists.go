@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -390,5 +392,51 @@ func RemoveMapFromPlaylist(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"Message": "You have successfully removed the map from your playlist."})
+	return nil
+}
+
+// UploadPlaylistCover Uploads a playlist cover
+// Endpoint: POST /v2/playlists/:id/cover
+func UploadPlaylistCover(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	playlist, err := db.GetPlaylist(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving playlist from db", err)
+	}
+
+	if playlist == nil {
+		return APIErrorNotFound("Playlist")
+	}
+
+	if playlist.UserId != user.Id {
+		return APIErrorForbidden("You do not own this playlist.")
+	}
+
+	file, apiErr := validateUploadedImage(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	if err := azure.Client.UploadFile("playlists", fmt.Sprintf("%v.jpg", user.Id), file); err != nil {
+		return APIErrorServerError("Failed to upload file", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Your playlist cover has been successfully updated!",
+	})
+
 	return nil
 }
