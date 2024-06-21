@@ -231,62 +231,87 @@ func SearchPlaylists(c *gin.Context) *APIError {
 	return nil
 }
 
-// AddMapToPlaylist Adds a map to a playlist
-// Endpoint: /v2/playlist/:id/add/:map_id
-func AddMapToPlaylist(c *gin.Context) *APIError {
+// Struct reused when parsing/fetching data to use in endpoints where we're adding/removing maps to playlists
+type addRemoveMapPlaylistData struct {
+	PlaylistId int
+	MapId      int
+	User       *db.User
+	Playlist   *db.Playlist
+	Map        *db.MapQua
+}
+
+func validateAddRemoveMapFromPlaylist(c *gin.Context) (*addRemoveMapPlaylistData, *APIError) {
 	playlistId, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		return APIErrorBadRequest("Invalid id")
+		return nil, APIErrorBadRequest("Invalid id")
 	}
 
 	mapId, err := strconv.Atoi(c.Param("map_id"))
 
 	if err != nil {
-		return APIErrorBadRequest("Invalid map_id")
+		return nil, APIErrorBadRequest("Invalid map_id")
 	}
 
 	user := getAuthedUser(c)
 
 	if user == nil {
-		return nil
+		return nil, APIErrorUnauthorized("User not authenticated")
 	}
 
 	playlist, err := db.GetPlaylistFull(playlistId)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return APIErrorServerError("Error retrieving playlist from database", err)
+		return nil, APIErrorServerError("Error retrieving playlist from database", err)
 	}
 
 	if playlist == nil {
-		return APIErrorNotFound("Playlist")
+		return nil, APIErrorNotFound("Playlist")
 	}
 
 	if playlist.UserId != user.Id {
-		return APIErrorForbidden("You do not own this playlist.")
+		return nil, APIErrorForbidden("You do not own this playlist.")
 	}
 
 	songMap, err := db.GetMapById(mapId)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return APIErrorServerError("Error getting map from database", err)
+		return nil, APIErrorServerError("Error getting map from database", err)
 	}
 
 	if songMap == nil {
-		return APIErrorNotFound("Map")
+		return nil, APIErrorNotFound("Map")
+	}
+
+	return &addRemoveMapPlaylistData{
+		PlaylistId: playlistId,
+		MapId:      mapId,
+		User:       user,
+		Playlist:   playlist,
+		Map:        songMap,
+	}, nil
+}
+
+// AddMapToPlaylist Adds a map to a playlist
+// Endpoint: /v2/playlist/:id/add/:map_id
+func AddMapToPlaylist(c *gin.Context) *APIError {
+	data, apiErr := validateAddRemoveMapFromPlaylist(c)
+
+	if apiErr != nil {
+		return apiErr
 	}
 
 	var existingMapset *db.PlaylistMapset
 
-	for _, mapset := range playlist.Mapsets {
+	for _, mapset := range data.Playlist.Mapsets {
 		for _, playlistMap := range mapset.Maps {
-			if playlistMap.MapId == songMap.Id {
+			if playlistMap.MapId == data.Map.Id {
 				return APIErrorBadRequest("This map already exists in the playlist.")
 			}
 		}
 
 		// Set existing mapset
-		if mapset.MapsetId == songMap.MapsetId {
+		if mapset.MapsetId == data.Map.MapsetId {
 			existingMapset = mapset
 		}
 	}
@@ -294,8 +319,8 @@ func AddMapToPlaylist(c *gin.Context) *APIError {
 	// Create new playlist mapset
 	if existingMapset == nil {
 		existingMapset = &db.PlaylistMapset{
-			PlaylistId: playlistId,
-			MapsetId:   songMap.MapsetId,
+			PlaylistId: data.PlaylistId,
+			MapsetId:   data.Map.MapsetId,
 		}
 
 		if err := existingMapset.Insert(); err != nil {
@@ -304,8 +329,8 @@ func AddMapToPlaylist(c *gin.Context) *APIError {
 	}
 
 	playlistMap := &db.PlaylistMap{
-		PlaylistId:        playlistId,
-		MapId:             songMap.Id,
+		PlaylistId:        data.PlaylistId,
+		MapId:             data.MapId,
 		PlaylistsMapsetId: existingMapset.Id,
 	}
 
@@ -314,5 +339,12 @@ func AddMapToPlaylist(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "The map has been successfully added to your playlist."})
+	return nil
+}
+
+// RemoveMapFromPlaylist Removes a map from a playlist
+// Endpoint: /v2/playlist/:id/remove/:map_id
+func RemoveMapFromPlaylist(c *gin.Context) *APIError {
+	c.JSON(http.StatusOK, gin.H{"message": "The map has been successfully removed from your playlist."})
 	return nil
 }

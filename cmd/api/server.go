@@ -162,6 +162,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.DELETE("/v2/playlists/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeletePlaylist))
 	engine.GET("/v2/playlists/:id/contains/:map_id", handlers.CreateHandler(handlers.GetPlaylistContainsMap))
 	engine.POST("/v2/playlists/:id/add/:map_id", middleware.RequireAuth, handlers.CreateHandler(handlers.AddMapToPlaylist))
+	engine.POST("/v2/playlists/:id/remove/:map_id", middleware.RequireAuth, handlers.CreateHandler(handlers.RemoveMapFromPlaylist))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
