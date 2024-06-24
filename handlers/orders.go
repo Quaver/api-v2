@@ -15,7 +15,7 @@ func GetUserOrders(c *gin.Context) *APIError {
 		return nil
 	}
 
-	orders, err := db.GetUserOrders(5)
+	orders, err := db.GetUserOrders(user.Id)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving orders from db", err)
