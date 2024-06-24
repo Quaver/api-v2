@@ -56,7 +56,7 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		SteamOrderId:   generateSteamOrderId(),
 		IPAddress:      getSteamTransactionIp(c),
 		ItemId:         1,
-		Quantity:       1,
+		Quantity:       body.Months,
 		Amount:         price,
 		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks", body.Months),
 		ReceiverUserId: body.GiftUserId,
@@ -75,7 +75,7 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 			"currency":       "USD",
 			"itemcount":      "1",
 			"itemid[0]":      "1",
-			"qty[0]":         "1",
+			"qty[0]":         "1", // qty 1 on steam because we already calculate the total price in 1 qty.
 			"amount[0]":      fmt.Sprintf("%v", order.Amount*100),
 			"description[0]": order.Description,
 		}).
@@ -103,7 +103,7 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		return APIErrorServerError("Error saving order to db", err)
 	}
 
-	returnUrl := fmt.Sprintf("%v/orders/donations/steam/finalize?order_id=%v&transaction_id=%v",
+	returnUrl := fmt.Sprintf("%v/v2/orders/donations/steam/finalize?order_id=%v&transaction_id=%v",
 		config.Instance.APIUrl, parsed.Response.Params.OrderId, parsed.Response.Params.TransactionId)
 
 	c.JSON(http.StatusOK, gin.H{
