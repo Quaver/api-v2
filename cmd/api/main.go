@@ -7,6 +7,8 @@ import (
 	"github.com/Quaver/api2/files"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/sirupsen/logrus"
+	"math/rand"
+	"time"
 )
 
 func main() {
@@ -33,5 +35,6 @@ func main() {
 	webhooks.InitializeWebhooks()
 	files.CreateDirectories()
 
+	rand.Seed(time.Now().UnixNano())
 	initializeServer(config.Instance.Server.Port)
 }

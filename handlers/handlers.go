@@ -39,3 +39,15 @@ func getAuthedUser(c *gin.Context) *db.User {
 
 	return user.(*db.User)
 }
+
+// Gets the ip address from the request
+func getIpFromRequest(c *gin.Context) string {
+	// Running under NGINX
+	ip := c.GetHeader("X-Forwarded-For")
+
+	if ip != "" {
+		return ip
+	}
+
+	return "::1"
+}
