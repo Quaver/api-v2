@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"net/http"
