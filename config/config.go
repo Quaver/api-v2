@@ -10,6 +10,8 @@ import (
 type Config struct {
 	IsProduction bool `json:"is_production"`
 
+	APIUrl string `json:"api_url"`
+
 	JWTSecret string `json:"jwt_secret"`
 
 	Server struct {

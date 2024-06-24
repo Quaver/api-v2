@@ -122,9 +122,12 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		return APIErrorServerError("Error saving order to db", err)
 	}
 
+	returnUrl := fmt.Sprintf("%v/orders/donations/steam/finalize?order_id=%v&transaction_id=%v",
+		config.Instance.APIUrl, parsed.Response.Params.OrderId, parsed.Response.Params.TransactionId)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "The transaction has been successfully initiated.",
-		"steam_url": parsed.Response.Params.SteamURL,
+		"steam_url": fmt.Sprintf("%v?returnurl=%v", parsed.Response.Params.SteamURL, returnUrl),
 	})
 
 	return nil

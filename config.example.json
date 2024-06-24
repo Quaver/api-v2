@@ -1,5 +1,6 @@
 {
   "is_production": false,
+  "api_url": "https://api.quavergame.com",
   "jwt_secret": "",
   "server": {
     "port": 8080
