@@ -167,8 +167,8 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Orders
 	engine.GET("/v2/orders", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserOrders))
-	engine.POST("/v2/orders/donations/steam/initiate", middleware.RequireAuth, handlers.CreateHandler(handlers.InitiateSteamDonatorTransaction))
-	engine.GET("/v2/orders/donations/steam/finalize", handlers.CreateHandler(handlers.FinalizeSteamDonatorTransaction))
+	engine.POST("/v2/orders/steam/initiate/donation", middleware.RequireAuth, handlers.CreateHandler(handlers.InitiateSteamDonatorTransaction))
+	engine.GET("/v2/orders/steam/finalize", handlers.CreateHandler(handlers.FinalizeSteamTransaction))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})

@@ -18,7 +18,7 @@ import (
 )
 
 // InitiateSteamDonatorTransaction Initiates a transaction for Steam donator
-// Endpoint: POST /v2/orders/donations/steam/initiate
+// Endpoint: POST /v2/orders/steam/initiate/donation
 func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 
@@ -125,7 +125,7 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		}
 	}
 
-	returnUrl := fmt.Sprintf("%v/v2/orders/donations/steam/finalize?order_id=%v%%26transaction_id=%v",
+	returnUrl := fmt.Sprintf("%v/v2/orders/steam/finalize?order_id=%v%%26transaction_id=%v",
 		config.Instance.APIUrl, orders[0].SteamOrderId, orders[0].SteamTransactionId)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -135,9 +135,9 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 	return nil
 }
 
-// FinalizeSteamDonatorTransaction Finalizes a Steam transaction
-// Endpoint: GET /v2/orders/donations/steam/finalize?order_id=&transaction_id=
-func FinalizeSteamDonatorTransaction(c *gin.Context) *APIError {
+// FinalizeSteamTransaction Finalizes a Steam transaction
+// Endpoint: GET /v2/orders/steam/finalize?order_id=&transaction_id=
+func FinalizeSteamTransaction(c *gin.Context) *APIError {
 	orderId := c.Query("order_id")
 	transactionId := c.Query("transaction_id")
 
