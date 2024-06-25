@@ -7,17 +7,14 @@ import (
 	"time"
 )
 
-type OrderItemId int
-
-const (
-	OrderItemDonator OrderItemId = 1
-)
-
 type OrderStatus string
+type OrderItemId int
 
 const (
 	OrderStatusWaiting   OrderStatus = "Waiting"
 	OrderStatusCompleted OrderStatus = "Completed"
+
+	OrderItemDonator OrderItemId = 1
 )
 
 type Order struct {
@@ -35,6 +32,7 @@ type Order struct {
 	Timestamp          int64       `gorm:"column:timestamp" json:"-"`
 	TimestampJSON      time.Time   `gorm:"-:all" json:"timestamp"`
 	Status             OrderStatus `gorm:"column:status" json:"status"`
+	Item               *OrderItem  `gorm:"foreignKey:ItemId" json:"item"`
 }
 
 func (*Order) TableName() string {
@@ -48,6 +46,7 @@ func (order *Order) AfterFind(*gorm.DB) (err error) {
 
 // Insert Inserts a new order into the database
 func (order *Order) Insert() error {
+	order.Status = OrderStatusWaiting
 	order.Timestamp = time.Now().UnixMilli()
 
 	if err := SQL.Create(&order).Error; err != nil {
@@ -59,13 +58,22 @@ func (order *Order) Insert() error {
 
 // Finalize Finalizes an order and grants the user their purchase items
 func (order *Order) Finalize() error {
-	if order.ItemId == OrderItemDonator {
+	switch order.Item.Category {
+	case OrderItemCategoryDonator:
 		if err := order.FinalizeDonator(); err != nil {
 			return err
 		}
+		break
+	case OrderItemCategoryBadge:
+		if err := order.FinalizeBadge(); err != nil {
+			return err
+		}
+		break
+	default:
+		return errors.New("invalid order item category")
 	}
 
-	order.Status = "Completed"
+	order.Status = OrderStatusCompleted
 	return SQL.Save(&order).Error
 }
 
@@ -115,12 +123,45 @@ func (order *Order) FinalizeDonator() error {
 	return nil
 }
 
+// FinalizeBadge Finalizes a badge order
+func (order *Order) FinalizeBadge() error {
+	if order.Item.Category != OrderItemCategoryBadge {
+		return errors.New("cannot call FinalizeBadge() on a non badge order")
+	}
+
+	if order.Item.BadgeId == nil {
+		return errors.New("badgeId in database is NULL")
+	}
+
+	userHasBadge, err := UserHasBadge(order.ReceiverUserId, *order.Item.BadgeId)
+
+	if err != nil {
+		return err
+	}
+
+	if userHasBadge {
+		return nil
+	}
+
+	badge := &UserBadge{
+		UserId:  order.ReceiverUserId,
+		BadgeId: *order.Item.BadgeId,
+	}
+
+	if err := badge.Insert(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetUserOrders Gets a user's orders
 func GetUserOrders(userId int) ([]*Order, error) {
 	var orders []*Order
 
 	result := SQL.
 		Preload("Receiver").
+		Preload("Item").
 		Where("orders.user_id = ? AND orders.status = ?", userId, "Completed").
 		Find(&orders)
 
@@ -138,6 +179,7 @@ func GetSteamOrdersByIds(steamOrderId string, transactionId string) ([]*Order, e
 
 	result := SQL.
 		Preload("Receiver").
+		Preload("Item").
 		Where("orders.order_id = ? AND orders.transaction_id = ?", steamOrderId, transactionId).
 		Find(&orders)
 

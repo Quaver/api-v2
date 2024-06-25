@@ -27,8 +27,9 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Months     int `form:"months" json:"months" binding:"required"`
-		GiftUserId int `form:"gift_user_id" json:"gift_user_id"`
+		Months       int            `form:"months" json:"months" binding:"required"`
+		GiftUserId   int            `form:"gift_user_id" json:"gift_user_id"`
+		BundleItemId db.OrderItemId `form:"bundle_item_id" json:"bundle_item_id"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -55,7 +56,6 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 	}
 
 	orders := []*db.Order{
-		// Main Donator Order
 		{
 			UserId:         user.Id,
 			SteamOrderId:   generateSteamOrderId(),
@@ -65,11 +65,44 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 			Amount:         price,
 			Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks", body.Months),
 			ReceiverUserId: body.GiftUserId,
-			Status:         db.OrderStatusWaiting,
 		},
 	}
 
-	// TODO: Create Special Badge Order
+	// Add bundled item to the order
+	if body.BundleItemId > 0 {
+		item, err := db.GetOrderItemById(int(body.BundleItemId))
+
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return APIErrorServerError("Error retrieving order item from db", err)
+		}
+
+		if item == nil {
+			return APIErrorBadRequest("You provided a bundle item that does not exist.")
+		}
+
+		if !item.DonatorBundleItem {
+			return APIErrorBadRequest("You provided an item that cannot be bundled with donator.")
+		}
+
+		if !item.InStock {
+			return APIErrorBadRequest("The bundle item you have provided is no longer in stock.")
+		}
+
+		if !item.CanGift {
+			return APIErrorBadRequest("This bundle item you have provided cannot be gifted.")
+		}
+
+		orders = append(orders, &db.Order{
+			UserId:         user.Id,
+			SteamOrderId:   orders[0].SteamOrderId,
+			IPAddress:      getSteamTransactionIp(c),
+			ItemId:         db.OrderItemId(item.Id),
+			Quantity:       1,
+			Amount:         float32(item.PriceSteam) / 100,
+			Description:    item.Name,
+			ReceiverUserId: body.GiftUserId,
+		})
+	}
 
 	parsed, apiErr := steamInitTransaction(user, orders)
 
