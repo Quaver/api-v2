@@ -1,6 +1,8 @@
 package db
 
 import (
+	"errors"
+	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 	"time"
 )
@@ -39,16 +41,74 @@ func (*Order) TableName() string {
 	return "orders"
 }
 
-func (o *Order) AfterFind(*gorm.DB) (err error) {
-	o.TimestampJSON = time.UnixMilli(o.Timestamp)
+func (order *Order) AfterFind(*gorm.DB) (err error) {
+	order.TimestampJSON = time.UnixMilli(order.Timestamp)
 	return nil
 }
 
 // Insert Inserts a new order into the database
-func (o *Order) Insert() error {
-	o.Timestamp = time.Now().UnixMilli()
+func (order *Order) Insert() error {
+	order.Timestamp = time.Now().UnixMilli()
 
-	if err := SQL.Create(&o).Error; err != nil {
+	if err := SQL.Create(&order).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Finalize Finalizes an order and grants the user their purchase items
+func (order *Order) Finalize() error {
+	if order.ItemId == OrderItemDonator {
+		if err := order.FinalizeDonator(); err != nil {
+			return err
+		}
+	}
+
+	order.Status = "Completed"
+	return SQL.Save(&order).Error
+}
+
+// FinalizeDonator Finalizes a donator item
+func (order *Order) FinalizeDonator() error {
+	if order.ItemId != OrderItemDonator {
+		return errors.New("calling FinalizeDonator() on a non-donator item")
+	}
+
+	// Give usergroup if they don't already have it
+	if !enums.HasUserGroup(order.Receiver.UserGroups, enums.UserGroupDonator) {
+		if err := order.Receiver.UpdateUserGroups(order.Receiver.UserGroups | enums.UserGroupDonator); err != nil {
+			return err
+		}
+	}
+
+	// Extend Donator Time
+	var endTime int64
+	timeAdded := int64(order.Quantity * 30 * 24 * 60 * 60 * 1000)
+
+	if order.Receiver.DonatorEndTime == 0 {
+		endTime = time.Now().UnixMilli() + timeAdded
+	} else {
+		endTime = order.Receiver.DonatorEndTime + timeAdded
+	}
+
+	if err := order.Receiver.UpdateDonatorEndTime(endTime); err != nil {
+		return err
+	}
+
+	// Add Activity Log
+	activity := &UserActivity{
+		UserId:   order.ReceiverUserId,
+		MapsetId: -1,
+	}
+
+	if order.UserId == order.ReceiverUserId {
+		activity.Type = UserActivityDonated
+	} else {
+		activity.Type = UserActivityReceivedDonatorGift
+	}
+
+	if err := activity.Insert(); err != nil {
 		return err
 	}
 

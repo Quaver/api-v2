@@ -35,6 +35,7 @@ func (*UserActivity) TableName() string {
 }
 
 func (ua *UserActivity) BeforeCreate(*gorm.DB) (err error) {
+	ua.Timestamp = time.Now().UnixMilli()
 	ua.TimestampJSON = time.Now()
 	return nil
 }
@@ -73,6 +74,15 @@ func AddUserActivity(userId int, activityType UserActivityType, value string, ma
 	}
 
 	if err := SQL.Create(&activity).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Insert Inserts a new user activity to the database directly with the object
+func (ua *UserActivity) Insert() error {
+	if err := SQL.Create(&ua).Error; err != nil {
 		return err
 	}
 

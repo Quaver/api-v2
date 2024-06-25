@@ -175,6 +175,28 @@ func (u *User) Insert() error {
 	return nil
 }
 
+// UpdateUserGroups Sets & updates a user's usergroups
+func (u *User) UpdateUserGroups(groups enums.UserGroups) error {
+	u.UserGroups = groups
+
+	result := SQL.Model(&User{}).
+		Where("id = ?", u.Id).
+		Update("usergroups", groups)
+
+	return result.Error
+}
+
+// UpdateDonatorEndTime UpdateUserGroups Sets & updates a user's donator end time
+func (u *User) UpdateDonatorEndTime(endTime int64) error {
+	u.DonatorEndTime = endTime
+
+	result := SQL.Model(&User{}).
+		Where("id = ?", u.Id).
+		Update("donator_end_time", endTime)
+
+	return result.Error
+}
+
 // CanJoinClan Returns if the user is eligible to join a new clan
 func (u *User) CanJoinClan() bool {
 	return u.ClanId == nil

@@ -131,7 +131,11 @@ func FinalizeSteamDonatorTransaction(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	// TODO: GRANT ORDER ITEMS
+	for _, order := range orders {
+		if err := order.Finalize(); err != nil {
+			return APIErrorServerError("Error finalizing Steam order", err)
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "The transaction has been successfully completed",
