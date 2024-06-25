@@ -36,17 +36,24 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	// Check to see if the gift user exists
+	var orderReceiver *db.User
+
+	// Set order receiver + check if user exists
 	if body.GiftUserId != 0 {
-		if _, err := db.GetUserById(body.GiftUserId); err != nil {
+		receiver, err := db.GetUserById(body.GiftUserId)
+
+		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return APIErrorBadRequest("The user you are trying to gift to doesn't exist.")
 			}
 
 			return APIErrorServerError("Error retrieving donator gift user id", err)
 		}
+
+		orderReceiver = receiver
 	} else {
 		body.GiftUserId = user.Id
+		orderReceiver = user
 	}
 
 	price, err := getDonatorPrice(body.Months, true)
@@ -63,8 +70,9 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 			ItemId:         db.OrderItemDonator,
 			Quantity:       body.Months,
 			Amount:         price,
-			Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks", body.Months),
+			Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks for %v", body.Months, orderReceiver.Username),
 			ReceiverUserId: body.GiftUserId,
+			Receiver:       orderReceiver,
 		},
 	}
 
@@ -99,8 +107,9 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 			ItemId:         db.OrderItemId(item.Id),
 			Quantity:       1,
 			Amount:         float32(item.PriceSteam) / 100,
-			Description:    item.Name,
+			Description:    fmt.Sprintf("%v for %v", item.Name, orderReceiver.Username),
 			ReceiverUserId: body.GiftUserId,
+			Receiver:       orderReceiver,
 		})
 	}
 
