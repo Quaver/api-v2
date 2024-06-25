@@ -12,6 +12,9 @@ import (
 	"gorm.io/gorm"
 	"math/rand"
 	"net/http"
+	"slices"
+	"strconv"
+	"time"
 )
 
 // InitiateSteamDonatorTransaction Initiates a transaction for Steam donator
@@ -51,66 +54,89 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You have provided an invalid amount of months.")
 	}
 
-	order := &db.Order{
-		UserId:         user.Id,
-		SteamOrderId:   generateSteamOrderId(),
-		IPAddress:      getSteamTransactionIp(c),
-		ItemId:         1,
-		Quantity:       body.Months,
-		Amount:         price,
-		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks", body.Months),
-		ReceiverUserId: body.GiftUserId,
-		Status:         db.OrderStatusWaiting,
+	orders := []*db.Order{
+		// Main Donator Order
+		{
+			UserId:         user.Id,
+			SteamOrderId:   generateSteamOrderId(),
+			IPAddress:      getSteamTransactionIp(c),
+			ItemId:         db.OrderItemDonator,
+			Quantity:       body.Months,
+			Amount:         price,
+			Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks", body.Months),
+			ReceiverUserId: body.GiftUserId,
+			Status:         db.OrderStatusWaiting,
+		},
 	}
 
-	resp, err := resty.New().R().
-		SetFormData(map[string]string{
-			"appid":          fmt.Sprintf("%v", config.Instance.Steam.AppId),
-			"key":            config.Instance.Steam.PublisherKey,
-			"steamid":        user.SteamId,
-			"orderid":        fmt.Sprintf("%v", generateSteamOrderId()),
-			"usersession":    "web",
-			"ipaddress":      order.IPAddress,
-			"language":       "en",
-			"currency":       "USD",
-			"itemcount":      "1",
-			"itemid[0]":      "1",
-			"qty[0]":         "1", // qty 1 on steam because we already calculate the total price in 1 qty.
-			"amount[0]":      fmt.Sprintf("%v", order.Amount*100),
-			"description[0]": order.Description,
-		}).
-		Post(getSteamTransactionUrl())
+	// TODO: Create Special Badge Order
 
-	if err != nil || resp.IsError() {
-		logrus.Errorf("Steam InitTxn failed w/ error: %v - %v", resp.StatusCode(), string(resp.Body()))
-		return APIErrorServerError("Steam InitTxn Failed", err)
+	parsed, apiErr := steamInitTransaction(user, orders)
+
+	if apiErr != nil {
+		return apiErr
 	}
 
-	var parsed steamInitTxnResponse
-
-	if err := json.Unmarshal(resp.Body(), &parsed); err != nil {
-		return APIErrorServerError("Error parsing Steam InitTxn response", err)
+	for _, order := range orders {
+		if err := order.Insert(); err != nil {
+			return APIErrorServerError("Error saving order to db", err)
+		}
 	}
 
-	if parsed.Response.Result != "OK" {
-		logrus.Errorf("Steam InitTxn failed w/ error: %v - %v", resp.StatusCode(), string(resp.Body()))
-		return APIErrorServerError("Steam InitTxn Failed", errors.New("result not OK"))
-	}
-
-	order.SteamTransactionId = parsed.Response.Params.TransactionId
-
-	if err := order.Insert(); err != nil {
-		return APIErrorServerError("Error saving order to db", err)
-	}
-
-	returnUrl := fmt.Sprintf("%v/v2/orders/donations/steam/finalize?order_id=%v&transaction_id=%v",
-		config.Instance.APIUrl, parsed.Response.Params.OrderId, parsed.Response.Params.TransactionId)
+	returnUrl := fmt.Sprintf("%v/v2/orders/donations/steam/finalize?order_id=%v%%26transaction_id=%v",
+		config.Instance.APIUrl, orders[0].SteamOrderId, orders[0].SteamTransactionId)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "The transaction has been successfully initiated.",
 		"steam_url": fmt.Sprintf("%v?returnurl=%v", parsed.Response.Params.SteamURL, returnUrl),
 	})
+	return nil
+}
 
+// FinalizeSteamDonatorTransaction Finalizes a Steam transaction
+// Endpoint: GET /v2/orders/donations/steam/finalize?order_id=&transaction_id=
+func FinalizeSteamDonatorTransaction(c *gin.Context) *APIError {
+	orderId := c.Query("order_id")
+	transactionId := c.Query("transaction_id")
+
+	if orderId == "" {
+		return APIErrorBadRequest("You must provide a valid orderid query parameter.")
+	}
+
+	if transactionId == "" {
+		return APIErrorBadRequest("You must provide a valid transactionid query parameter.")
+	}
+
+	orders, err := db.GetSteamOrdersByIds(orderId, transactionId)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving Steam orders by id in db", err)
+	}
+
+	if len(orders) == 0 {
+		return APIErrorNotFound("Order")
+	}
+
+	if slices.ContainsFunc(orders, func(order *db.Order) bool {
+		return order.Status == "Completed"
+	}) {
+		return APIErrorForbidden("This order was already completed.")
+	}
+
+	if _, apiErr := steamQueryTransaction(orderId, transactionId); apiErr != nil {
+		return apiErr
+	}
+
+	if _, apiErr := steamFinalizeTransaction(orderId); apiErr != nil {
+		return apiErr
+	}
+
+	// TODO: GRANT ORDER ITEMS
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "The transaction has been successfully completed",
+		"orders":  orders,
+	})
 	return nil
 }
 
@@ -120,14 +146,6 @@ func generateSteamOrderId() int {
 	maximum := 99999999
 
 	return rand.Intn(maximum-minimum+1) + minimum
-}
-
-func getSteamTransactionUrl() string {
-	if config.Instance.IsProduction {
-		return "https://partner.steam-api.com/ISteamMicroTxn/InitTxn/v3/"
-	} else {
-		return "https://partner.steam-api.com/ISteamMicroTxnSandbox/InitTxn/v3"
-	}
 }
 
 // Returns the transaction ip address for steam
@@ -140,7 +158,7 @@ func getSteamTransactionIp(c *gin.Context) string {
 }
 
 // Response from Steam InitTxn API Call
-// Endpoint: https://partner.steam-api.com/ISteamMicroTxn/InitTxn/v3/
+// Endpoint: getSteamInitTransactionUrl()
 type steamInitTxnResponse struct {
 	Response struct {
 		Result string `json:"result,omitempty"`
@@ -153,4 +171,184 @@ type steamInitTxnResponse struct {
 
 		Error interface{} `json:"error,omitempty"`
 	} `json:"response"`
+}
+
+func steamInitTransaction(user *db.User, orders []*db.Order) (*steamInitTxnResponse, *APIError) {
+	var endpoint string
+
+	if config.Instance.IsProduction {
+		endpoint = "https://partner.steam-api.com/ISteamMicroTxn/InitTxn/v3/"
+	} else {
+		endpoint = "https://partner.steam-api.com/ISteamMicroTxnSandbox/InitTxn/v3"
+	}
+
+	data := map[string]string{
+		"appid":       fmt.Sprintf("%v", config.Instance.Steam.AppId),
+		"key":         config.Instance.Steam.PublisherKey,
+		"steamid":     user.SteamId,
+		"orderid":     fmt.Sprintf("%v", generateSteamOrderId()),
+		"usersession": "web",
+		"ipaddress":   orders[0].IPAddress,
+		"language":    "en",
+		"currency":    "USD",
+		"itemcount":   fmt.Sprintf("%v", len(orders)),
+	}
+
+	// Add all items to the order
+	for index, order := range orders {
+		data[fmt.Sprintf("itemid[%v]", index)] = fmt.Sprintf("%v", order.ItemId)
+		data[fmt.Sprintf("amount[%v]", index)] = fmt.Sprintf("%v", order.Amount*100)
+		data[fmt.Sprintf("description[%v]", index)] = fmt.Sprintf("%v", order.Description)
+
+		quantity := order.Quantity
+
+		// Donator always has a quantity of 1.
+		if order.ItemId == db.OrderItemDonator {
+			quantity = 1
+		}
+
+		data[fmt.Sprintf("qty[%v]", index)] = fmt.Sprintf("%v", quantity)
+	}
+
+	resp, err := resty.New().R().
+		SetFormData(data).
+		Post(endpoint)
+
+	if err != nil || resp.IsError() {
+		logrus.Errorf("Steam InitTxn failed w/ error: %v - %v", resp.StatusCode(), string(resp.Body()))
+		return nil, APIErrorServerError("Steam InitTxn Failed", err)
+	}
+
+	var parsed steamInitTxnResponse
+
+	if err := json.Unmarshal(resp.Body(), &parsed); err != nil {
+		return nil, APIErrorServerError("Error parsing Steam InitTxn response", err)
+	}
+
+	if parsed.Response.Result != "OK" {
+		logrus.Errorf("Steam InitTxn failed w/ error: %v - %v", resp.StatusCode(), string(resp.Body()))
+		return nil, APIErrorServerError("Steam InitTxn Failed", errors.New("result not OK"))
+	}
+
+	for _, order := range orders {
+		order.SteamOrderId, _ = strconv.Atoi(parsed.Response.Params.OrderId)
+		order.SteamTransactionId = parsed.Response.Params.TransactionId
+	}
+
+	return &parsed, nil
+}
+
+// Response from Steam QueryTxn API Call
+// Endpoint: getSteamQueryTransactionUrl()
+type steamQueryTxnResponse struct {
+	Response struct {
+		Result string `json:"result,omitempty"`
+		Params struct {
+			OrderId     string    `json:"orderid,omitempty"`
+			TransId     string    `json:"transid,omitempty"`
+			SteamId     string    `json:"steamid,omitempty"`
+			Status      string    `json:"status,omitempty"`
+			Currency    string    `json:"currency,omitempty"`
+			Time        time.Time `json:"time,omitempty"`
+			Country     string    `json:"country,omitempty"`
+			USState     string    `json:"usstate,omitempty"`
+			TimeCreated time.Time `json:"timecreated,omitempty"`
+			Items       []struct {
+				ItemId     int    `json:"itemid,omitempty"`
+				Qty        int    `json:"qty,omitempty"`
+				Amount     int    `json:"amount,omitempty"`
+				Vat        int    `json:"vat,omitempty"`
+				ItemStatus string `json:"itemstatus,omitempty"`
+			} `json:"items,omitempty"`
+		} `json:"params,omitempty"`
+	} `json:"response"`
+}
+
+// Requests the endpoint to query a steam transaction
+func steamQueryTransaction(orderId string, transactionId string) (*steamQueryTxnResponse, *APIError) {
+	var endpoint string
+
+	if config.Instance.IsProduction {
+		endpoint = "https://partner.steam-api.com/ISteamMicroTxn/QueryTxn/v3/"
+	} else {
+		endpoint = "https://partner.steam-api.com/ISteamMicroTxnSandbox/QueryTxn/v3/"
+	}
+
+	resp, err := resty.New().R().
+		SetQueryParams(map[string]string{
+			"key":     config.Instance.Steam.PublisherKey,
+			"appid":   fmt.Sprintf("%v", config.Instance.Steam.AppId),
+			"orderid": orderId,
+			"transid": transactionId,
+		}).
+		Get(endpoint)
+
+	if err != nil || resp.IsError() {
+		logrus.Errorf("Steam QueryTxn failed w/ error: %v - %v", resp.StatusCode(), string(resp.Body()))
+		return nil, APIErrorServerError("Steam QueryTxn Failed", err)
+	}
+
+	var parsed steamQueryTxnResponse
+
+	if err := json.Unmarshal(resp.Body(), &parsed); err != nil {
+		return nil, APIErrorServerError("Error parsing Steam QueryTxn response", err)
+	}
+
+	if parsed.Response.Result != "OK" {
+		logrus.Errorf("Steam QueryTxn failed w/ error: %v - %v", resp.StatusCode(), string(resp.Body()))
+		return nil, APIErrorServerError("Steam QueryTxn Failed", errors.New("result not OK"))
+	}
+
+	if parsed.Response.Params.Status != "Approved" {
+		return nil, APIErrorBadRequest("The transaction was not approved on Steam.")
+	}
+
+	return &parsed, nil
+}
+
+type steamFinalizeTxnResponse struct {
+	Response struct {
+		Result string `json:"result"`
+		Params struct {
+			Orderid string `json:"orderid,omitempty"`
+			Transid string `json:"transid,omitempty"`
+		} `json:"params,omitempty"`
+	} `json:"response"`
+}
+
+// Requests the Steam endpoint to finalize a transaction
+func steamFinalizeTransaction(orderId string) (*steamFinalizeTxnResponse, *APIError) {
+	var endpoint string
+
+	if config.Instance.IsProduction {
+		endpoint = "https://partner.steam-api.com/ISteamMicroTxn/FinalizeTxn/v2/"
+	} else {
+		endpoint = "https://partner.steam-api.com/ISteamMicroTxnSandbox/FinalizeTxn/v2/"
+	}
+
+	resp, err := resty.New().R().
+		SetFormData(map[string]string{
+			"appid":   fmt.Sprintf("%v", config.Instance.Steam.AppId),
+			"key":     config.Instance.Steam.PublisherKey,
+			"orderid": orderId,
+		}).
+		Post(endpoint)
+
+	if err != nil || resp.IsError() {
+		logrus.Errorf("Steam FinalizeTxn failed w/ error: %v - %v", resp.StatusCode(), string(resp.Body()))
+		return nil, APIErrorServerError("Steam FinalizeTxn Failed", err)
+	}
+
+	var parsed steamFinalizeTxnResponse
+
+	if err := json.Unmarshal(resp.Body(), &parsed); err != nil {
+		return nil, APIErrorServerError("Error parsing Steam FinalizeTxn response", err)
+	}
+
+	if parsed.Response.Result != "OK" {
+		logrus.Errorf("Steam FinalizeTxn failed w/ error: %v - %v", resp.StatusCode(), string(resp.Body()))
+		return nil, APIErrorServerError("Steam FinalizeTx Failed", errors.New("result not OK"))
+	}
+
+	return &parsed, nil
 }

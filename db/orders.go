@@ -70,3 +70,20 @@ func GetUserOrders(userId int) ([]*Order, error) {
 
 	return orders, nil
 }
+
+// GetSteamOrdersByIds Retrieves orders by their steam order id & transaction id.
+// Multiple orders in the database can have them if a user has multiple items in their cart.
+func GetSteamOrdersByIds(steamOrderId string, transactionId string) ([]*Order, error) {
+	var orders []*Order
+
+	result := SQL.
+		Preload("Receiver").
+		Where("orders.order_id = ? AND orders.transaction_id = ?", steamOrderId, transactionId).
+		Find(&orders)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return orders, nil
+}
