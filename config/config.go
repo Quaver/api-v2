@@ -57,6 +57,8 @@ type Config struct {
 	} `json:"ranking_queue"`
 
 	BundledMapsets []int `json:"bundled_mapsets"`
+
+	OrdersWebhook string `json:"orders_webhook"`
 }
 
 var Instance *Config = nil

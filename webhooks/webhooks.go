@@ -16,6 +16,7 @@ import (
 var (
 	rankingQueue  webhook.Client
 	rankedMapsets webhook.Client
+	orders        webhook.Client
 )
 
 const (
@@ -25,6 +26,7 @@ const (
 func InitializeWebhooks() {
 	rankingQueue, _ = webhook.NewWithURL(config.Instance.RankingQueue.Webhook)
 	rankedMapsets, _ = webhook.NewWithURL(config.Instance.RankingQueue.RankedWebhook)
+	orders, _ = webhook.NewWithURL(config.Instance.OrdersWebhook)
 }
 
 // SendQueueSubmitWebhook Sends a webhook displaying that the user submitted a mapset to the ranking queue
@@ -176,6 +178,36 @@ func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment)
 
 	if err != nil {
 		logrus.Error("Failed to send ranking queue action webhook")
+		return err
+	}
+
+	return nil
+}
+
+func SendOrderWebhook(purchasedOrders []*db.Order) error {
+	description := "**A new order has been purchased!**"
+
+	for _, order := range purchasedOrders {
+		description += fmt.Sprintf("\n- %v", order.Description)
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle("💰 New Order Incoming").
+		SetDescription(description).
+		AddField("Purchaser", fmt.Sprintf("[User Profile](https://quavergame.com/user/%v)", purchasedOrders[0].UserId), true).
+		AddField("Receiver", fmt.Sprintf("[User Profile](https://quavergame.com/user/%v)", purchasedOrders[0].ReceiverUserId), true).
+		SetThumbnail(quaverLogo).
+		SetFooter("Quaver", quaverLogo).
+		SetTimestamp(time.Now()).
+		SetColor(0x00FF00).
+		Build()
+
+	_, err := orders.CreateMessage(discord.WebhookMessageCreate{
+		Embeds: []discord.Embed{embed},
+	})
+
+	if err != nil {
+		logrus.Error("Failed to send order webhook", err)
 		return err
 	}
 

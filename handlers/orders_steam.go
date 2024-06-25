@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
@@ -183,6 +184,8 @@ func FinalizeSteamTransaction(c *gin.Context) *APIError {
 		"message": "The transaction has been successfully completed",
 		"orders":  orders,
 	})
+
+	_ = webhooks.SendOrderWebhook(orders)
 	return nil
 }
 
