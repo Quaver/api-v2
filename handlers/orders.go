@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+	"slices"
 )
 
 type checkoutPaymentMethod int
@@ -65,10 +66,15 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 	}
 
 	var orders []*db.Order
+	var itemIds []int
 
 	for _, lineItem := range body.LineItems {
 		if lineItem.Id == db.OrderItemDonator {
 			return APIErrorBadRequest("You cannot purchase donator through this endpoint.")
+		}
+
+		if slices.Contains(itemIds, int(lineItem.Id)) {
+			return APIErrorBadRequest("You must submit 1 line_item per item id.")
 		}
 
 		orderItem, err := db.GetOrderItemById(int(lineItem.Id))
@@ -117,7 +123,9 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 		} else if body.PaymentMethod == paymentMethodStripe {
 			order.Amount = float32(orderItem.PriceStripe) / 100
 		}
+
 		orders = append(orders, order)
+		itemIds = append(itemIds, int(lineItem.Id))
 	}
 
 	switch body.PaymentMethod {
