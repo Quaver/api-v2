@@ -48,34 +48,30 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You have provided an invalid amount of months.")
 	}
 
-	orders := []*db.Order{
-		{
-			UserId:         user.Id,
-			OrderId:        generateSteamOrderId(),
-			IPAddress:      getSteamTransactionIp(c),
-			ItemId:         db.OrderItemDonator,
-			Quantity:       body.Months,
-			Amount:         price,
-			Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks for %v", body.Months, orderReceiver.Username),
-			ReceiverUserId: body.GiftUserId,
-			Receiver:       orderReceiver,
-		},
+	order := &db.Order{
+		UserId:         user.Id,
+		OrderId:        generateSteamOrderId(),
+		IPAddress:      getSteamTransactionIp(c),
+		ItemId:         db.OrderItemDonator,
+		Quantity:       body.Months,
+		Amount:         price,
+		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks for %v", body.Months, orderReceiver.Username),
+		ReceiverUserId: body.GiftUserId,
+		Receiver:       orderReceiver,
 	}
 
-	parsed, apiErr := steamInitTransaction(user, orders)
+	parsed, apiErr := steamInitTransaction(user, []*db.Order{order})
 
 	if apiErr != nil {
 		return apiErr
 	}
 
-	for _, order := range orders {
-		if err := order.Insert(); err != nil {
-			return APIErrorServerError("Error saving order to db", err)
-		}
+	if err := order.Insert(); err != nil {
+		return APIErrorServerError("Error saving order to db", err)
 	}
 
 	returnUrl := fmt.Sprintf("%v/v2/orders/steam/finalize?order_id=%v%%26transaction_id=%v",
-		config.Instance.APIUrl, orders[0].OrderId, orders[0].TransactionId)
+		config.Instance.APIUrl, order.OrderId, order.TransactionId)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "The transaction has been successfully initiated.",
@@ -134,7 +130,10 @@ func FinalizeSteamTransaction(c *gin.Context) *APIError {
 		"orders":  orders,
 	})
 
-	_ = webhooks.SendOrderWebhook(orders)
+	if err := webhooks.SendOrderWebhook(orders); err != nil {
+		logrus.Error("Error sending order webhook", err)
+	}
+
 	return nil
 }
 

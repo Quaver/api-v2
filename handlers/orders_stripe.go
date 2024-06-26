@@ -70,31 +70,28 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		return APIErrorServerError("Error creating stripe checkout session", err)
 	}
 
-	orders := []*db.Order{
-		{
-			UserId:         user.Id,
-			OrderId:        -1,
-			TransactionId:  s.ID,
-			IPAddress:      getIpFromRequest(c),
-			ItemId:         db.OrderItemDonator,
-			Quantity:       body.Months,
-			Amount:         price,
-			Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks for %v (Stripe)", body.Months, orderReceiver.Username),
-			ReceiverUserId: body.GiftUserId,
-			Receiver:       orderReceiver,
-		},
+	order := &db.Order{
+		UserId:         user.Id,
+		OrderId:        -1,
+		TransactionId:  s.ID,
+		IPAddress:      getIpFromRequest(c),
+		ItemId:         db.OrderItemDonator,
+		Quantity:       body.Months,
+		Amount:         price,
+		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks for %v (Stripe)", body.Months, orderReceiver.Username),
+		ReceiverUserId: body.GiftUserId,
+		Receiver:       orderReceiver,
 	}
 
-	for _, order := range orders {
-		if err := order.Insert(); err != nil {
-			return APIErrorServerError("Error inserting order into db", err)
-		}
+	if err := order.Insert(); err != nil {
+		return APIErrorServerError("Error inserting order into db", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Stripe checkout session successfully created.",
 		"url":     s.URL,
 	})
+
 	return nil
 }
 
