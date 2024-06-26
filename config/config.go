@@ -61,7 +61,8 @@ type Config struct {
 	OrdersWebhook string `json:"orders_webhook"`
 
 	Stripe struct {
-		APIKey string `json:"api_key"`
+		APIKey               string `json:"api_key"`
+		WebhookSigningSecret string `json:"webhook_signing_secret"`
 	} `json:"stripe"`
 }
 

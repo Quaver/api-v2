@@ -1,12 +1,17 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/checkout/session"
+	"github.com/stripe/stripe-go/v79/webhook"
+	"io"
 	"net/http"
 )
 
@@ -90,6 +95,66 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		"message": "Stripe checkout session successfully created.",
 		"url":     s.URL,
 	})
+	return nil
+}
+
+// HandleStripeWebhook Handles an incoming stripe webhook
+// POST: /v2/orders/stripe/webhook
+func HandleStripeWebhook(c *gin.Context) *APIError {
+	body, _ := io.ReadAll(c.Request.Body)
+
+	event, err := webhook.ConstructEvent(body,
+		c.Request.Header.Get("Stripe-Signature"), config.Instance.Stripe.WebhookSigningSecret)
+
+	if err != nil {
+		logrus.Error("Error verifying stripe webhook signature: ", err)
+		return APIErrorUnauthorized("Error verifying webhook signature.")
+	}
+
+	switch event.Type {
+	case "checkout.session.completed":
+		if apiErr := FinalizeStripeOrder(&event); apiErr != nil {
+			return apiErr
+		}
+		break
+	default:
+		break
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	return nil
+}
+
+// FinalizeStripeOrder Handles the finalization of a Stripe order
+func FinalizeStripeOrder(event *stripe.Event) *APIError {
+	var stripeSession stripe.CheckoutSession
+
+	err := json.Unmarshal(event.Data.Raw, &stripeSession)
+
+	if err != nil {
+		logrus.Error("Error parsing stripe webhook JSON", err)
+		return APIErrorBadRequest("Error parsing stripe webhook JSON")
+	}
+
+	params := &stripe.CheckoutSessionParams{}
+	params.AddExpand("line_items")
+
+	orders, err := db.GetStripeOrderById(stripeSession.ID)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving stripe order by id", err)
+	}
+
+	for _, order := range orders {
+		if err := order.Finalize(); err != nil {
+			return APIErrorServerError("Error finalizing order", err)
+		}
+	}
+
+	if err := webhooks.SendOrderWebhook(orders); err != nil {
+		logrus.Error("Error sending order webhook: ", err)
+	}
+
 	return nil
 }
 

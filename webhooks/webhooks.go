@@ -207,7 +207,7 @@ func SendOrderWebhook(purchasedOrders []*db.Order) error {
 	})
 
 	if err != nil {
-		logrus.Error("Failed to send order webhook", err)
+		logrus.Error("Failed to send order webhook: ", err)
 		return err
 	}
 

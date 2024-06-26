@@ -189,3 +189,20 @@ func GetSteamOrdersByIds(steamOrderId string, transactionId string) ([]*Order, e
 
 	return orders, nil
 }
+
+// GetStripeOrderById Gets Stripe orders by id
+func GetStripeOrderById(transactionId string) ([]*Order, error) {
+	var orders []*Order
+
+	result := SQL.
+		Preload("Receiver").
+		Preload("Item").
+		Where("orders.transaction_id = ?", transactionId).
+		Find(&orders)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return orders, nil
+}

@@ -174,6 +174,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Orders Stripe
 	engine.POST("/v2/orders/stripe/initiate/donation", middleware.RequireAuth, handlers.CreateHandler(handlers.InitiateStripeDonatorCheckoutSession))
+	engine.POST("/v2/orders/stripe/webhook", handlers.CreateHandler(handlers.HandleStripeWebhook))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
