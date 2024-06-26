@@ -9,6 +9,7 @@ const (
 
 type OrderItem struct {
 	Id                 int               `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	StripePriceId      string            `gorm:"column:stripe_price_id" json:"-"`
 	Category           OrderItemCategory `gorm:"column:category" json:"category"`
 	Name               string            `gorm:"column:name" json:"name"`
 	PriceSteam         int               `gorm:"column:price_steam" json:"price_steam"`

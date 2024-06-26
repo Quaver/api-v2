@@ -157,11 +157,8 @@ func createStripeCheckoutSession(c *gin.Context, orders []*db.Order) *APIError {
 	var lineItems []*stripe.CheckoutSessionLineItemParams
 
 	for _, order := range orders {
-		order.OrderId = -1
-		order.Amount = float32(order.Item.PriceStripe) / 100
-
 		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
-			Price:    stripe.String("PRICE ID HERE"),
+			Price:    stripe.String(order.Item.StripePriceId),
 			Quantity: stripe.Int64(int64(order.Quantity)),
 		})
 	}
@@ -181,10 +178,11 @@ func createStripeCheckoutSession(c *gin.Context, orders []*db.Order) *APIError {
 		return APIErrorServerError("Error creating stripe checkout session", err)
 	}
 
+	// Make sure all properties are set and insert to db
 	for _, order := range orders {
-		// Make sure the ids are properly set
 		order.OrderId = -1
 		order.TransactionId = s.ID
+		order.Amount = float32(order.Item.PriceStripe) / 100
 
 		if err := order.Insert(); err != nil {
 			return APIErrorServerError("Error inserting order into db", err)

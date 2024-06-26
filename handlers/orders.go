@@ -52,15 +52,15 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		PaymentMethod checkoutPaymentMethod `json:"payment_method" binding:"required"`
+		PaymentMethod checkoutPaymentMethod `json:"payment_method"`
 		LineItems     []struct {
-			Id         db.OrderItemId `json:"id" binding:"required"`
-			Quantity   int            `json:"qty" binding:"required"`
+			Id         db.OrderItemId `json:"id"`
+			Quantity   int            `json:"quantity"`
 			GiftUserId int            `json:"gift_user_id"`
-		} `json:"line_items" binding:"required"`
+		} `json:"line_items"`
 	}{}
 
-	if err := c.ShouldBind(&body); err != nil {
+	if err := c.ShouldBindJSON(&body); err != nil {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
@@ -112,6 +112,11 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 			return APIErrorBadRequest(fmt.Sprintf("Gifting item %v to a user who doesn't exist", lineItem.Id))
 		}
 
+		if body.PaymentMethod == paymentMethodSteam {
+			order.Amount = float32(orderItem.PriceSteam) / 100
+		} else if body.PaymentMethod == paymentMethodStripe {
+			order.Amount = float32(orderItem.PriceStripe) / 100
+		}
 		orders = append(orders, order)
 	}
 
@@ -120,9 +125,9 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 		return createSteamCheckoutSession(c, user, orders)
 	case paymentMethodStripe:
 		return createStripeCheckoutSession(c, orders)
-	default:
-		return APIErrorBadRequest("Invalid payment method")
 	}
+
+	return APIErrorBadRequest("Invalid payment method provided")
 }
 
 // Gets the donator price.
