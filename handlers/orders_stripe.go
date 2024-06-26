@@ -152,27 +152,54 @@ func FinalizeStripeOrder(event *stripe.Event) *APIError {
 
 // Gets the donator price id for Stripe
 func getStripeDonatorPriceId(months int, isRecurring bool) string {
-	if isRecurring {
-		switch months {
-		case 1:
-			return "price_1PVwIaRw21C92BKsG9v8AbPs"
-		case 3:
-			return "price_1PVwJfRw21C92BKsYDQVjBAD"
-		case 6:
-			return "price_1PVwKwRw21C92BKsIiU4zoDf"
-		case 12:
-			return "price_1PVwLRRw21C92BKskJdQafnA"
+	if config.Instance.IsProduction {
+		if isRecurring {
+			switch months {
+			case 1:
+				return "price_1PVzPCRw21C92BKs2QSHNO7r"
+			case 3:
+				return "price_1PVzPCRw21C92BKsKAP3P5q1"
+			case 6:
+				return "price_1PVzPCRw21C92BKsTBr4KH42"
+			case 12:
+				return "price_1PVzPCRw21C92BKsHmJrMTzV"
+			}
+		} else {
+			switch months {
+			case 1:
+				return "price_1PVzPCRw21C92BKs2QSHNO7r"
+			case 3:
+				return "price_1PVzPCRw21C92BKshby0SSMt"
+			case 6:
+				return "price_1PVzPCRw21C92BKsQPIwwwXE"
+			case 12:
+				return "price_1PVzPCRw21C92BKsk16cVikC"
+			}
 		}
+		// Debug
 	} else {
-		switch months {
-		case 1:
-			return "price_1PVw9yRw21C92BKstVWQy0zJ"
-		case 3:
-			return "price_1PVwJSRw21C92BKs6DbA6L1n"
-		case 6:
-			return "price_1PVwKkRw21C92BKs3VhkLSMJ"
-		case 12:
-			return "price_1PVwLGRw21C92BKsNHpvLuTb"
+		if isRecurring {
+			switch months {
+			case 1:
+				return "price_1PVwIaRw21C92BKsG9v8AbPs"
+			case 3:
+				return "price_1PVwJfRw21C92BKsYDQVjBAD"
+			case 6:
+				return "price_1PVwKwRw21C92BKsIiU4zoDf"
+			case 12:
+				return "price_1PVwLRRw21C92BKskJdQafnA"
+			}
+		} else {
+			switch months {
+			case 1:
+				return "price_1PVw9yRw21C92BKstVWQy0zJ"
+			case 3:
+				return "price_1PVwJSRw21C92BKs6DbA6L1n"
+			case 6:
+				return "price_1PVwKkRw21C92BKs3VhkLSMJ"
+			case 12:
+				return "price_1PVwLGRw21C92BKsNHpvLuTb"
+			}
 		}
 	}
 
