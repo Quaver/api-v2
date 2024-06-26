@@ -126,15 +126,10 @@ func HandleStripeWebhook(c *gin.Context) *APIError {
 func FinalizeStripeOrder(event *stripe.Event) *APIError {
 	var stripeSession stripe.CheckoutSession
 
-	err := json.Unmarshal(event.Data.Raw, &stripeSession)
-
-	if err != nil {
+	if err := json.Unmarshal(event.Data.Raw, &stripeSession); err != nil {
 		logrus.Error("Error parsing stripe webhook JSON", err)
 		return APIErrorBadRequest("Error parsing stripe webhook JSON")
 	}
-
-	params := &stripe.CheckoutSessionParams{}
-	params.AddExpand("line_items")
 
 	orders, err := db.GetStripeOrderById(stripeSession.ID)
 
