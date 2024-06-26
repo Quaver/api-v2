@@ -167,6 +167,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Orders
 	engine.GET("/v2/orders", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserOrders))
+	engine.POST("/v2/orders/checkout", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateOrderCheckoutSession))
 
 	// Orders Steam
 	engine.POST("/v2/orders/steam/initiate/donation", middleware.RequireAuth, handlers.CreateHandler(handlers.InitiateSteamDonatorTransaction))

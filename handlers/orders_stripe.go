@@ -38,12 +38,6 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You cannot do recurring payments for gifted donator.")
 	}
 
-	orderReceiver, apiErr := body.getOrderReceiver(user)
-
-	if apiErr != nil {
-		return apiErr
-	}
-
 	price, err := getDonatorPrice(body.Months, false)
 
 	if err != nil {
@@ -71,16 +65,24 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 	}
 
 	order := &db.Order{
-		UserId:         user.Id,
-		OrderId:        -1,
-		TransactionId:  s.ID,
-		IPAddress:      getIpFromRequest(c),
-		ItemId:         db.OrderItemDonator,
-		Quantity:       body.Months,
-		Amount:         price,
-		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks for %v (Stripe)", body.Months, orderReceiver.Username),
-		ReceiverUserId: body.GiftUserId,
-		Receiver:       orderReceiver,
+		UserId:        user.Id,
+		OrderId:       -1,
+		TransactionId: s.ID,
+		IPAddress:     getIpFromRequest(c),
+		ItemId:        db.OrderItemDonator,
+		Quantity:      body.Months,
+		Amount:        price,
+		Description:   fmt.Sprintf("%v month(s) of Quaver Donator Perks (Stripe)", body.Months),
+	}
+
+	isSet, err := order.SetReceiver(user, body.GiftUserId)
+
+	if err != nil {
+		return APIErrorServerError("Error setting order receiver in db", err)
+	}
+
+	if !isSet {
+		return APIErrorBadRequest("You are gifting donator to a user who doesn't exist.")
 	}
 
 	if err := order.Insert(); err != nil {
@@ -146,6 +148,53 @@ func FinalizeStripeOrder(event *stripe.Event) *APIError {
 	if err := webhooks.SendOrderWebhook(orders); err != nil {
 		logrus.Error("Error sending order webhook: ", err)
 	}
+
+	return nil
+}
+
+// Creates a new stripe checkout session with a list of orders
+func createStripeCheckoutSession(c *gin.Context, orders []*db.Order) *APIError {
+	var lineItems []*stripe.CheckoutSessionLineItemParams
+
+	for _, order := range orders {
+		order.OrderId = -1
+		order.Amount = float32(order.Item.PriceStripe) / 100
+
+		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
+			Price:    stripe.String("PRICE ID HERE"),
+			Quantity: stripe.Int64(int64(order.Quantity)),
+		})
+	}
+
+	params := &stripe.CheckoutSessionParams{
+		LineItems:    lineItems,
+		Mode:         stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL:   stripe.String("https://quavergame.com/donate?status=success"),
+		CancelURL:    stripe.String("https://quavergame.com/donate?status=cancelled"),
+		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{Enabled: stripe.Bool(true)},
+	}
+
+	stripe.Key = config.Instance.Stripe.APIKey
+	s, err := session.New(params)
+
+	if err != nil {
+		return APIErrorServerError("Error creating stripe checkout session", err)
+	}
+
+	for _, order := range orders {
+		// Make sure the ids are properly set
+		order.OrderId = -1
+		order.TransactionId = s.ID
+
+		if err := order.Insert(); err != nil {
+			return APIErrorServerError("Error inserting order into db", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Stripe checkout session successfully created.",
+		"url":     s.URL,
+	})
 
 	return nil
 }

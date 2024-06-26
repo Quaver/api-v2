@@ -44,6 +44,30 @@ func (order *Order) AfterFind(*gorm.DB) (err error) {
 	return nil
 }
 
+// SetReceiver Sets the receiver of the order. Checks if the user they are attempting to gift to exist.
+// Returns if the receiver was successfully set and if there was a db error
+func (order *Order) SetReceiver(payer *User, giftUserId int) (bool, error) {
+	if giftUserId != 0 {
+		receiver, err := GetUserById(giftUserId)
+
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return false, nil
+			}
+
+			return false, err
+		}
+
+		order.ReceiverUserId = giftUserId
+		order.Receiver = receiver
+		return true, nil
+	}
+
+	order.ReceiverUserId = payer.Id
+	order.Receiver = payer
+	return true, nil
+}
+
 // Insert Inserts a new order into the database
 func (order *Order) Insert() error {
 	order.Status = OrderStatusWaiting

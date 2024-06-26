@@ -36,12 +36,6 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Recurring payments are not available for Steam.")
 	}
 
-	orderReceiver, apiErr := body.getOrderReceiver(user)
-
-	if apiErr != nil {
-		return apiErr
-	}
-
 	price, err := getDonatorPrice(body.Months, true)
 
 	if err != nil {
@@ -49,36 +43,26 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 	}
 
 	order := &db.Order{
-		UserId:         user.Id,
-		OrderId:        generateSteamOrderId(),
-		IPAddress:      getSteamTransactionIp(c),
-		ItemId:         db.OrderItemDonator,
-		Quantity:       body.Months,
-		Amount:         price,
-		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks for %v", body.Months, orderReceiver.Username),
-		ReceiverUserId: body.GiftUserId,
-		Receiver:       orderReceiver,
+		UserId:      user.Id,
+		OrderId:     generateSteamOrderId(),
+		IPAddress:   getSteamTransactionIp(c),
+		ItemId:      db.OrderItemDonator,
+		Quantity:    body.Months,
+		Amount:      price,
+		Description: fmt.Sprintf("%v month(s) of Quaver Donator Perks (Steam)", body.Months),
 	}
 
-	parsed, apiErr := steamInitTransaction(user, []*db.Order{order})
+	isSet, err := order.SetReceiver(user, body.GiftUserId)
 
-	if apiErr != nil {
-		return apiErr
+	if err != nil {
+		return APIErrorServerError("Error setting order receiver in db", err)
 	}
 
-	if err := order.Insert(); err != nil {
-		return APIErrorServerError("Error saving order to db", err)
+	if !isSet {
+		return APIErrorBadRequest("You are gifting donator to a user who doesn't exist.")
 	}
 
-	returnUrl := fmt.Sprintf("%v/v2/orders/steam/finalize?order_id=%v%%26transaction_id=%v",
-		config.Instance.APIUrl, order.OrderId, order.TransactionId)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message":   "The transaction has been successfully initiated.",
-		"steam_url": fmt.Sprintf("%v?returnurl=%v", parsed.Response.Params.SteamURL, returnUrl),
-	})
-
-	return nil
+	return createSteamCheckoutSession(c, user, []*db.Order{order})
 }
 
 // FinalizeSteamTransaction Finalizes a Steam transaction
@@ -111,11 +95,11 @@ func FinalizeSteamTransaction(c *gin.Context) *APIError {
 		return APIErrorForbidden("This order was already completed.")
 	}
 
-	if _, apiErr := steamQueryTransaction(orderId, transactionId); apiErr != nil {
+	if _, apiErr := requestSteamApiQueryTxn(orderId, transactionId); apiErr != nil {
 		return apiErr
 	}
 
-	if _, apiErr := steamFinalizeTransaction(orderId); apiErr != nil {
+	if _, apiErr := requestSteamApiFinalizeTxn(orderId); apiErr != nil {
 		return apiErr
 	}
 
@@ -137,21 +121,29 @@ func FinalizeSteamTransaction(c *gin.Context) *APIError {
 	return nil
 }
 
-// Generates a random 8 digit steam order id
-func generateSteamOrderId() int {
-	minimum := 10000000
-	maximum := 99999999
+// Responsible for creating a steam checkout session.
+func createSteamCheckoutSession(c *gin.Context, user *db.User, orders []*db.Order) *APIError {
+	parsed, apiErr := requestSteamApiInitTxn(user, orders)
 
-	return rand.Intn(maximum-minimum+1) + minimum
-}
-
-// Returns the transaction ip address for steam
-func getSteamTransactionIp(c *gin.Context) string {
-	if config.Instance.IsProduction {
-		return getIpFromRequest(c)
+	if apiErr != nil {
+		return apiErr
 	}
 
-	return "1.1.1.1"
+	for _, order := range orders {
+		if err := order.Insert(); err != nil {
+			return APIErrorServerError("Error saving order to db", err)
+		}
+	}
+
+	returnUrl := fmt.Sprintf("%v/v2/orders/steam/finalize?order_id=%v%%26transaction_id=%v",
+		config.Instance.APIUrl, orders[0].OrderId, orders[0].TransactionId)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "The transaction has been successfully initiated.",
+		"steam_url": fmt.Sprintf("%v?returnurl=%v", parsed.Response.Params.SteamURL, returnUrl),
+	})
+
+	return nil
 }
 
 // Response from Steam InitTxn API Call
@@ -170,7 +162,7 @@ type steamInitTxnResponse struct {
 	} `json:"response"`
 }
 
-func steamInitTransaction(user *db.User, orders []*db.Order) (*steamInitTxnResponse, *APIError) {
+func requestSteamApiInitTxn(user *db.User, orders []*db.Order) (*steamInitTxnResponse, *APIError) {
 	var endpoint string
 
 	if config.Instance.IsProduction {
@@ -262,7 +254,7 @@ type steamQueryTxnResponse struct {
 }
 
 // Requests the endpoint to query a steam transaction
-func steamQueryTransaction(orderId string, transactionId string) (*steamQueryTxnResponse, *APIError) {
+func requestSteamApiQueryTxn(orderId string, transactionId string) (*steamQueryTxnResponse, *APIError) {
 	var endpoint string
 
 	if config.Instance.IsProduction {
@@ -314,7 +306,7 @@ type steamFinalizeTxnResponse struct {
 }
 
 // Requests the Steam endpoint to finalize a transaction
-func steamFinalizeTransaction(orderId string) (*steamFinalizeTxnResponse, *APIError) {
+func requestSteamApiFinalizeTxn(orderId string) (*steamFinalizeTxnResponse, *APIError) {
 	var endpoint string
 
 	if config.Instance.IsProduction {
@@ -348,4 +340,21 @@ func steamFinalizeTransaction(orderId string) (*steamFinalizeTxnResponse, *APIEr
 	}
 
 	return &parsed, nil
+}
+
+// Generates a random 8 digit steam order id
+func generateSteamOrderId() int {
+	minimum := 10000000
+	maximum := 99999999
+
+	return rand.Intn(maximum-minimum+1) + minimum
+}
+
+// Returns the transaction ip address for steam
+func getSteamTransactionIp(c *gin.Context) string {
+	if config.Instance.IsProduction {
+		return getIpFromRequest(c)
+	}
+
+	return "1.1.1.1"
 }
