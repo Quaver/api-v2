@@ -41,6 +41,7 @@ require (
 	github.com/redis/go-redis/v9 v9.4.0 // indirect
 	github.com/sasha-s/go-csync v0.0.0-20240107134140-fcbab37b09ad // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/stripe/stripe-go/v79 v79.0.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	golang.org/x/arch v0.5.0 // indirect

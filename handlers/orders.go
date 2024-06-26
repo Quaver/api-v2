@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -57,4 +58,33 @@ func getDonatorPrice(months int, isSteam bool) (float32, error) {
 	}
 
 	return 0, errors.New("invalid donator months provided")
+}
+
+// Common request body when initiating a donator
+type donationRequestBody struct {
+	Months     int  `form:"months" json:"months" binding:"required"`
+	GiftUserId int  `form:"gift_user_id" json:"gift_user_id"`
+	Recurring  bool `form:"recurring" json:"recurring"`
+}
+
+// Gets the receiver of the order and makes sure donationRequestBody.GiftUserId is set properly
+func (body *donationRequestBody) getOrderReceiver(user *db.User) (*db.User, *APIError) {
+	// User is gifting to someone else
+	if body.GiftUserId != 0 {
+		receiver, err := db.GetUserById(body.GiftUserId)
+
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, APIErrorBadRequest("The user you are trying to gift to doesn't exist.")
+			}
+
+			return nil, APIErrorServerError("Error retrieving donator gift user id", err)
+		}
+
+		return receiver, nil
+	}
+
+	// User is purchasing for themselves.
+	body.GiftUserId = user.Id
+	return user, nil
 }
