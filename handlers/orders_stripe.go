@@ -194,6 +194,11 @@ func FinalizePaidStripeInvoice(event *stripe.Event) *APIError {
 		return nil
 	}
 
+	// Event is sent when subscription is initially created, so ignore it
+	if invoice.BillingReason != stripe.InvoiceBillingReasonSubscriptionCreate {
+		return nil
+	}
+
 	subscription, err := db.GetOrderSubscriptionById(invoice.Subscription.ID)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
