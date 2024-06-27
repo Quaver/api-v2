@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 	"io"
 	"net/http"
+	"time"
 )
 
 // InitiateStripeDonatorCheckoutSession Initiates a stripe checkout session for donator
@@ -113,6 +114,9 @@ func HandleStripeWebhook(c *gin.Context) *APIError {
 		}
 		break
 	case "invoice.paid":
+		if apiErr := FinalizePaidStripeInvoice(&event); apiErr != nil {
+			return apiErr
+		}
 		break
 	default:
 		break
@@ -172,6 +176,63 @@ func FinalizeStripeOrder(event *stripe.Event) *APIError {
 
 	if err := webhooks.SendOrderWebhook(orders); err != nil {
 		logrus.Error("Error sending order webhook: ", err)
+	}
+
+	return nil
+}
+
+// FinalizePaidStripeInvoice Handles when a user pays their Stripe invoice
+func FinalizePaidStripeInvoice(event *stripe.Event) *APIError {
+	var invoice stripe.Invoice
+
+	if err := json.Unmarshal(event.Data.Raw, &invoice); err != nil {
+		logrus.Error("Error parsing stripe webhook JSON", err)
+		return APIErrorBadRequest("Error parsing stripe webhook JSON")
+	}
+
+	if invoice.Status != stripe.InvoiceStatusPaid || invoice.Subscription == nil {
+		return nil
+	}
+
+	subscription, err := db.GetOrderSubscriptionById(invoice.Subscription.ID)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error getting order subscription in FinalizePaidStripeInvoice()", err)
+	}
+
+	if subscription == nil {
+		return nil
+	}
+
+	order := &db.Order{
+		UserId:         subscription.UserId,
+		OrderId:        -1,
+		TransactionId:  invoice.ID,
+		IPAddress:      "1.1.1.1",
+		ItemId:         1,
+		Quantity:       int(invoice.Lines.Data[0].Quantity),
+		Amount:         float32(invoice.AmountPaid) / 100,
+		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks (Stripe)", int(invoice.Lines.Data[0].Quantity)),
+		ReceiverUserId: subscription.UserId,
+		Status:         db.OrderStatusCompleted,
+		SubscriptionId: &subscription.Id,
+		Timestamp:      time.Now().UnixMilli(),
+	}
+
+	if order.Receiver, err = db.GetUserById(subscription.UserId); err != nil {
+		return APIErrorServerError("Error retrieving subscription order receiver", err)
+	}
+
+	if order.Item, err = db.GetOrderItemById(int(db.OrderItemDonator)); err != nil {
+		return APIErrorServerError("Error retrieving subscription order item (donator)", err)
+	}
+
+	if err := order.Finalize(); err != nil {
+		return APIErrorServerError("Error finalizing subscription order", err)
+	}
+
+	if err := webhooks.SendOrderWebhook([]*db.Order{order}); err != nil {
+		logrus.Error("Error sending subscription order webhook: ", err)
 	}
 
 	return nil
