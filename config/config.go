@@ -19,8 +19,10 @@ type Config struct {
 	} `json:"server"`
 
 	Steam struct {
-		AppId        int    `json:"app_id"`
-		PublisherKey string `json:"publisher_key"`
+		AppId                   int    `json:"app_id"`
+		PublisherKey            string `json:"publisher_key"`
+		DonateRedirectUrl       string `json:"donate_redirect_url"`
+		StorePaymentRedirectUrl string `json:"store_payment_redirect_url"`
 	} `json:"steam"`
 
 	SQL struct {
@@ -61,8 +63,10 @@ type Config struct {
 	OrdersWebhook string `json:"orders_webhook"`
 
 	Stripe struct {
-		APIKey               string `json:"api_key"`
-		WebhookSigningSecret string `json:"webhook_signing_secret"`
+		APIKey                  string `json:"api_key"`
+		WebhookSigningSecret    string `json:"webhook_signing_secret"`
+		DonateRedirectUrl       string `json:"donate_redirect_url"`
+		StorePaymentRedirectUrl string `json:"store_payment_redirect_url"`
 	} `json:"stripe"`
 }
 

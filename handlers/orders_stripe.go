@@ -52,8 +52,7 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 			},
 		},
 		Mode:         stripe.String(string(getStripeCheckoutMode(body.Recurring))),
-		SuccessURL:   stripe.String("https://quavergame.com/donate?status=success"),
-		CancelURL:    stripe.String("https://quavergame.com/donate?status=cancelled"),
+		SuccessURL:   stripe.String(config.Instance.Stripe.DonateRedirectUrl),
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{Enabled: stripe.Bool(true)},
 	}
 
@@ -166,8 +165,7 @@ func createStripeCheckoutSession(c *gin.Context, orders []*db.Order) *APIError {
 	params := &stripe.CheckoutSessionParams{
 		LineItems:    lineItems,
 		Mode:         stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL:   stripe.String("https://quavergame.com/donate?status=success"),
-		CancelURL:    stripe.String("https://quavergame.com/donate?status=cancelled"),
+		SuccessURL:   stripe.String(config.Instance.Stripe.StorePaymentRedirectUrl),
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{Enabled: stripe.Bool(true)},
 	}
 

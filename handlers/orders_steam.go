@@ -135,8 +135,18 @@ func createSteamCheckoutSession(c *gin.Context, user *db.User, orders []*db.Orde
 		}
 	}
 
-	returnUrl := fmt.Sprintf("%v/v2/orders/steam/finalize?order_id=%v%%26transaction_id=%v",
-		config.Instance.APIUrl, orders[0].OrderId, orders[0].TransactionId)
+	var returnUrl string
+
+	var url string
+
+	if orders[0].ItemId == db.OrderItemDonator {
+		url = config.Instance.Steam.DonateRedirectUrl
+	} else {
+		url = config.Instance.Steam.StorePaymentRedirectUrl
+	}
+
+	returnUrl = fmt.Sprintf("%v?order_id=%v%%26transaction_id=%v", url, orders[0].OrderId,
+		orders[0].TransactionId)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "The transaction has been successfully initiated.",

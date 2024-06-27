@@ -7,7 +7,9 @@
   },
   "steam": {
     "app_id": 980610,
-    "publisher_key": ""
+    "publisher_key": "",
+    "donate_redirect_url": "http://localhost:8080/v2/orders/steam/finalize",
+    "store_payment_redirect_url": "http://localhost:8080/v2/orders/steam/finalize"
   },
   "sql": {
     "host": "",
@@ -40,6 +42,8 @@
   "orders_webhook": "",
   "stripe": {
     "api_key": "",
-    "webhook_signing_secret": ""
+    "webhook_signing_secret": "",
+    "donate_redirect_url": "https://quavergame.com/donate?status=success",
+    "store_payment_redirect_url": "https://quavergame.com/donate?status=success"
   }
 }
