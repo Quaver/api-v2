@@ -43,6 +43,11 @@ func GetUserOrders(c *gin.Context) *APIError {
 	return nil
 }
 
+//// GetActiveSubscriptions Returns a user's active subscriptions
+//func GetActiveSubscriptions(c *gin.Context) *APIError {
+//	retu
+//}
+
 // CreateOrderCheckoutSession Creates a checkout session for a given order (store items)
 // Endpoint: POST /v2/orders/checkout
 func CreateOrderCheckoutSession(c *gin.Context) *APIError {

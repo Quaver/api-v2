@@ -9,6 +9,7 @@ type OrderSubscriptionStripe struct {
 	StripeSubscriptionId string `gorm:"column:subscription_id"`
 	TimeCreated          int64  `gorm:"time_created"`
 	TimeLastUpdated      int64  `gorm:"time_last_updated"`
+	IsActive             bool   `gorm:"column:is_active"`
 }
 
 func (*OrderSubscriptionStripe) TableName() string {
@@ -16,6 +17,7 @@ func (*OrderSubscriptionStripe) TableName() string {
 }
 
 func (sub *OrderSubscriptionStripe) Insert() error {
+	sub.IsActive = true
 	sub.TimeCreated = time.Now().UnixMilli()
 	sub.TimeLastUpdated = time.Now().UnixMilli()
 
