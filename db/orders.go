@@ -18,21 +18,23 @@ const (
 )
 
 type Order struct {
-	Id             int         `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	UserId         int         `gorm:"column:user_id" json:"user_id"`
-	OrderId        int         `gorm:"column:order_id" json:"-"`
-	TransactionId  string      `gorm:"column:transaction_id" json:"-"`
-	IPAddress      string      `gorm:"column:ip_address" json:"-"`
-	ItemId         OrderItemId `gorm:"column:item_id" json:"item_id"`
-	Quantity       int         `gorm:"column:quantity" json:"quantity"`
-	Amount         float32     `gorm:"column:amount" json:"amount"`
-	Description    string      `gorm:"column:description" json:"description"`
-	ReceiverUserId int         `gorm:"column:gifted_to" json:"-"`
-	Receiver       *User       `gorm:"foreignKey:ReceiverUserId" json:"receiver"`
-	Timestamp      int64       `gorm:"column:timestamp" json:"-"`
-	TimestampJSON  time.Time   `gorm:"-:all" json:"timestamp"`
-	Status         OrderStatus `gorm:"column:status" json:"status"`
-	Item           *OrderItem  `gorm:"foreignKey:ItemId" json:"item"`
+	Id             int                      `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	UserId         int                      `gorm:"column:user_id" json:"user_id"`
+	OrderId        int                      `gorm:"column:order_id" json:"-"`
+	TransactionId  string                   `gorm:"column:transaction_id" json:"-"`
+	IPAddress      string                   `gorm:"column:ip_address" json:"-"`
+	ItemId         OrderItemId              `gorm:"column:item_id" json:"item_id"`
+	Quantity       int                      `gorm:"column:quantity" json:"quantity"`
+	Amount         float32                  `gorm:"column:amount" json:"amount"`
+	Description    string                   `gorm:"column:description" json:"description"`
+	ReceiverUserId int                      `gorm:"column:gifted_to" json:"-"`
+	Receiver       *User                    `gorm:"foreignKey:ReceiverUserId" json:"receiver"`
+	Timestamp      int64                    `gorm:"column:timestamp" json:"-"`
+	TimestampJSON  time.Time                `gorm:"-:all" json:"timestamp"`
+	Status         OrderStatus              `gorm:"column:status" json:"status"`
+	SubscriptionId *int                     `gorm:"column:subscription_id" json:"-"`
+	Item           *OrderItem               `gorm:"foreignKey:ItemId" json:"item"`
+	Subscription   *OrderSubscriptionStripe `gorm:"foreignKey:SubscriptionId" json:"-"`
 }
 
 func (*Order) TableName() string {
@@ -186,6 +188,7 @@ func GetUserOrders(userId int) ([]*Order, error) {
 	result := SQL.
 		Preload("Receiver").
 		Preload("Item").
+		Preload("Subscription").
 		Where("orders.user_id = ? AND orders.status = ?", userId, "Completed").
 		Find(&orders)
 
@@ -204,6 +207,7 @@ func GetSteamOrdersByIds(steamOrderId string, transactionId string) ([]*Order, e
 	result := SQL.
 		Preload("Receiver").
 		Preload("Item").
+		Preload("Subscription").
 		Where("orders.order_id = ? AND orders.transaction_id = ?", steamOrderId, transactionId).
 		Find(&orders)
 
@@ -221,6 +225,7 @@ func GetStripeOrderById(transactionId string) ([]*Order, error) {
 	result := SQL.
 		Preload("Receiver").
 		Preload("Item").
+		Preload("Subscription").
 		Where("orders.transaction_id = ?", transactionId).
 		Find(&orders)
 

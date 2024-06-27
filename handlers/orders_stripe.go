@@ -11,6 +11,7 @@ import (
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/checkout/session"
 	"github.com/stripe/stripe-go/v79/webhook"
+	"gorm.io/gorm"
 	"io"
 	"net/http"
 )
@@ -30,11 +31,7 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	if body.Recurring {
-		return APIErrorBadRequest("Recurring payments are not available.")
-	}
-
-	if body.Recurring && body.GiftUserId == user.Id {
+	if body.Recurring && body.GiftUserId != user.Id {
 		return APIErrorBadRequest("You cannot do recurring payments for gifted donator.")
 	}
 
@@ -115,6 +112,8 @@ func HandleStripeWebhook(c *gin.Context) *APIError {
 			return apiErr
 		}
 		break
+	case "invoice.paid":
+		break
 	default:
 		break
 	}
@@ -138,7 +137,34 @@ func FinalizeStripeOrder(event *stripe.Event) *APIError {
 		return APIErrorServerError("Error retrieving stripe order by id", err)
 	}
 
+	// Handle new incoming subscription
+	var subscription *db.OrderSubscriptionStripe
+
+	if stripeSession.Subscription != nil {
+		existingSubscription, err := db.GetOrderSubscriptionById(stripeSession.Subscription.ID)
+
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return APIErrorServerError("Error retrieving existing user stripe subscription", err)
+		}
+
+		if existingSubscription == nil {
+			subscription = &db.OrderSubscriptionStripe{
+				UserId:               orders[0].UserId,
+				StripeCustomerId:     stripeSession.Customer.ID,
+				StripeSubscriptionId: stripeSession.Subscription.ID,
+			}
+
+			if err := subscription.Insert(); err != nil {
+				return APIErrorServerError("Error inserting new subscription", err)
+			}
+		}
+	}
+
 	for _, order := range orders {
+		if subscription != nil {
+			order.SubscriptionId = &subscription.Id
+		}
+
 		if err := order.Finalize(); err != nil {
 			return APIErrorServerError("Error finalizing order", err)
 		}
