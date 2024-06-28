@@ -32,8 +32,20 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	if body.Recurring && body.GiftUserId != user.Id {
-		return APIErrorBadRequest("You cannot do recurring payments for gifted donator.")
+	if body.Recurring {
+		if body.GiftUserId != user.Id {
+			return APIErrorBadRequest("You cannot do recurring payments for gifted donator.")
+		}
+
+		activeSubs, err := db.GetUserStripeSubscriptions(user.Id)
+
+		if err != nil {
+			return APIErrorServerError("Error getting user active subs", err)
+		}
+
+		if len(activeSubs) > 0 {
+			return APIErrorBadRequest("You already have an active donator subscription.")
+		}
 	}
 
 	price, err := getDonatorPrice(body.Months, false)
