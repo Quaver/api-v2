@@ -39,11 +39,27 @@ func InitializeElasticSearch() {
 
 	defer resp.Body.Close()
 
-	if _, err := ElasticSearch.Indices.Create(elasticMapsetIndex); err != nil {
+	if err := CreateElasticIndex(elasticMapsetIndex); err != nil {
 		panic(err)
 	}
 
 	logrus.Info("Successfully initialized ElasticSearch")
+}
+
+// CreateElasticIndex Creates a new elastic search index by a given name
+func CreateElasticIndex(index string) error {
+	resp, err := ElasticSearch.Indices.Create(index)
+	defer resp.Body.Close()
+
+	return err
+}
+
+// DeleteElasticIndices Deletes one or many elastic search indices
+func DeleteElasticIndices(indices ...string) error {
+	resp, err := ElasticSearch.Indices.Delete(indices)
+	defer resp.Body.Close()
+
+	return err
 }
 
 // IndexElasticSearchMapset Indexes an individual mapset in elastic
