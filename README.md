@@ -13,6 +13,7 @@ As endpoints are made available in v2, it is recommended to use them instead of 
 - Go 1.22
 - MariaDB / MySQL
 - Redis
+- ElasticSearch 8.14.1
 - Steam Publisher API Key
 - Compiled [Quaver.Tools Executable](https://github.com/Quaver/Quaver.API)
 - Stripe CLI (for donations/store item development/testing)
