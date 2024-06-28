@@ -167,7 +167,6 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Orders
 	engine.GET("/v2/orders", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserOrders))
-	engine.GET("/v2/orders/subscriptions", middleware.RequireAuth, handlers.CreateHandler(handlers.GetActiveSubscriptions))
 	engine.POST("/v2/orders/checkout", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateOrderCheckoutSession))
 
 	// Orders Steam
@@ -175,6 +174,8 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/orders/steam/finalize", handlers.CreateHandler(handlers.FinalizeSteamTransaction))
 
 	// Orders Stripe
+	engine.GET("/v2/orders/stripe/subscriptions", middleware.RequireAuth, handlers.CreateHandler(handlers.GetActiveSubscriptions))
+	engine.GET("/v2/orders/stripe/subscriptions/modify", middleware.RequireAuth, handlers.CreateHandler(handlers.ModifyStripeSubscription))
 	engine.POST("/v2/orders/stripe/initiate/donation", middleware.RequireAuth, handlers.CreateHandler(handlers.InitiateStripeDonatorCheckoutSession))
 	engine.POST("/v2/orders/stripe/webhook", handlers.CreateHandler(handlers.HandleStripeWebhook))
 

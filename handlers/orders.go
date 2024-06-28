@@ -3,8 +3,11 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
+	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v79/billingportal/session"
 	"gorm.io/gorm"
 	"net/http"
 	"slices"
@@ -44,6 +47,7 @@ func GetUserOrders(c *gin.Context) *APIError {
 }
 
 // GetActiveSubscriptions Returns a user's active subscriptions
+// GET /v2/orders/stripe/subscriptions
 func GetActiveSubscriptions(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 
@@ -154,6 +158,40 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 	}
 
 	return APIErrorBadRequest("Invalid payment method provided")
+}
+
+// ModifySubscription Returns a link so the user can modify their subscription
+// Endpoint: GET /v2/orders/stripe/subscriptions/modify
+func ModifyStripeSubscription(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	activeSubs, err := db.GetUserStripeSubscriptions(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error getting user active stripe subscriptions", err)
+	}
+
+	if len(activeSubs) == 0 {
+		return APIErrorNotFound("Subscription")
+	}
+
+	params := &stripe.BillingPortalSessionParams{
+		Customer:  stripe.String(activeSubs[0].Customer.ID),
+		ReturnURL: stripe.String(config.Instance.Stripe.DonateRedirectUrl),
+	}
+
+	result, err := session.New(params)
+
+	if err != nil {
+		return APIErrorServerError("Error creating stripe billing portal session", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"url": result.URL})
+	return nil
 }
 
 // Gets the donator price.
