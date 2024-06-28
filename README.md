@@ -13,8 +13,9 @@ As endpoints are made available in v2, it is recommended to use them instead of 
 - Go 1.22
 - MariaDB / MySQL
 - Redis
-- Steam API Key
 - Steam Publisher API Key
+- Compiled [Quaver.Tools Executable](https://github.com/Quaver/Quaver.API)
+- Stripe CLI (for donations/store item development/testing)
 - Postman (for testing)
   
 ## Setup
@@ -23,6 +24,7 @@ As endpoints are made available in v2, it is recommended to use them instead of 
 - Clone the repository.
 - Copy `config.example.json` and make a file named `config.json`
 - Fill out the config file with the appropriate details.
+  - **Note:** `quaver_tools_path` is the path to the Quaver.Tools executable, not the directory.
 - Navigate to the `/cmd/api/` directory.
 - Start the server with `go run .` or your method of choice.
 - The server is now available at `http://localhost:8080` (or your desired port).
