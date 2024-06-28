@@ -96,8 +96,10 @@ func GetUserStripeSubscriptions(userId int) ([]*stripe.Subscription, error) {
 			continue
 		}
 
-		if result.Subscription() != nil {
-			activeSubs = append(activeSubs, result.Subscription())
+		activeSub := result.Subscription()
+
+		if activeSub != nil && activeSub.ID == sub.StripeSubscriptionId {
+			activeSubs = append(activeSubs, activeSub)
 		}
 	}
 
