@@ -167,6 +167,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Orders
 	engine.GET("/v2/orders", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserOrders))
+	engine.GET("/v2/orders/subscriptions", middleware.RequireAuth, handlers.CreateHandler(handlers.GetActiveSubscriptions))
 	engine.POST("/v2/orders/checkout", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateOrderCheckoutSession))
 
 	// Orders Steam

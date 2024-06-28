@@ -43,10 +43,23 @@ func GetUserOrders(c *gin.Context) *APIError {
 	return nil
 }
 
-//// GetActiveSubscriptions Returns a user's active subscriptions
-//func GetActiveSubscriptions(c *gin.Context) *APIError {
-//	retu
-//}
+// GetActiveSubscriptions Returns a user's active subscriptions
+func GetActiveSubscriptions(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	activeSubs, err := db.GetUserStripeSubscriptions(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error getting user stripe subscriptions", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"subscriptions": activeSubs})
+	return nil
+}
 
 // CreateOrderCheckoutSession Creates a checkout session for a given order (store items)
 // Endpoint: POST /v2/orders/checkout

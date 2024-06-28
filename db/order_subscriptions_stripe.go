@@ -1,6 +1,11 @@
 package db
 
-import "time"
+import (
+	"github.com/Quaver/api2/config"
+	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v79/subscription"
+	"time"
+)
 
 type OrderSubscriptionStripe struct {
 	Id                   int    `gorm:"column:id; PRIMARY_KEY"`
@@ -37,4 +42,59 @@ func GetOrderSubscriptionById(subscriptionId string) (*OrderSubscriptionStripe, 
 	}
 
 	return sub, nil
+}
+
+// GetUserActiveSubscriptions Retrieves a user's active stripe subscriptions
+func GetUserActiveSubscriptions(userId int) ([]*OrderSubscriptionStripe, error) {
+	var subscriptions []*OrderSubscriptionStripe
+
+	result := SQL.
+		Where("user_id = ? AND is_active = 1", userId).
+		Find(&subscriptions)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return subscriptions, nil
+}
+
+// GetUserStripeSubscriptions Gets a user's active stripe subscriptions
+func GetUserStripeSubscriptions(userId int) ([]*stripe.Subscription, error) {
+	var activeSubs []*stripe.Subscription
+
+	subscriptions, err := GetUserActiveSubscriptions(userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(subscriptions) == 0 {
+		return []*stripe.Subscription{}, nil
+	}
+
+	for _, sub := range subscriptions {
+		stripe.Key = config.Instance.Stripe.APIKey
+
+		params := &stripe.SubscriptionListParams{Customer: stripe.String(sub.StripeCustomerId)}
+		result := subscription.List(params)
+
+		if result.Err() != nil {
+			return nil, result.Err()
+		}
+
+		for result.Next() {
+			if result.Subscription() != nil {
+				activeSubs = append(activeSubs, result.Subscription())
+			}
+
+			sub.IsActive = result.Subscription() != nil
+
+			if err := SQL.Save(sub).Error; err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return activeSubs, nil
 }
