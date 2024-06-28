@@ -24,6 +24,7 @@ func main() {
 
 	db.ConnectMySQL()
 	db.InitializeRedis()
+	db.InitializeElasticSearch()
 	db.CacheTotalUsersInRedis()
 	db.CacheTotalMapsetsInRedis()
 

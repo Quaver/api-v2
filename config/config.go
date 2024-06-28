@@ -38,6 +38,10 @@ type Config struct {
 		Database int    `json:"database"`
 	} `json:"redis"`
 
+	ElasticSearch struct {
+		Host string `json:"host"`
+	} `json:"elasticsearch"`
+
 	Azure struct {
 		AccountName string `json:"account_name"`
 		AccountKey  string `json:"account_key"`

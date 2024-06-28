@@ -22,6 +22,9 @@
     "password": "",
     "database": 0
   },
+  "elasticsearch": {
+    "host": "http://localhost:9200"
+  },
   "azure": {
     "account_name": "",
     "account_key": ""
