@@ -83,16 +83,21 @@ func GetUserStripeSubscriptions(userId int) ([]*stripe.Subscription, error) {
 			return nil, result.Err()
 		}
 
-		for result.Next() {
-			if result.Subscription() != nil {
-				activeSubs = append(activeSubs, result.Subscription())
-			}
+		exists := result.Next()
 
-			sub.IsActive = result.Subscription() != nil
+		sub.IsActive = exists
+		sub.TimeLastUpdated = time.Now().UnixMilli()
 
-			if err := SQL.Save(sub).Error; err != nil {
-				return nil, err
-			}
+		if err := SQL.Save(sub).Error; err != nil {
+			return nil, err
+		}
+
+		if !exists {
+			continue
+		}
+
+		if result.Subscription() != nil {
+			activeSubs = append(activeSubs, result.Subscription())
 		}
 	}
 
