@@ -49,16 +49,24 @@ func InitializeElasticSearch() {
 // CreateElasticIndex Creates a new elastic search index by a given name
 func CreateElasticIndex(index string) error {
 	resp, err := ElasticSearch.Indices.Create(index)
-	defer resp.Body.Close()
 
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
 	return err
 }
 
 // DeleteElasticIndices Deletes one or many elastic search indices
 func DeleteElasticIndices(indices ...string) error {
 	resp, err := ElasticSearch.Indices.Delete(indices)
-	defer resp.Body.Close()
 
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
 	return err
 }
 
@@ -74,12 +82,11 @@ func IndexElasticSearchMapset(mapset Mapset) error {
 	resp, err := ElasticSearch.Create(elasticMapsetIndex,
 		fmt.Sprintf("%v", mapset.Id), bytes.NewReader(data))
 
-	defer resp.Body.Close()
-
 	if err != nil {
 		return err
 	}
 
+	defer resp.Body.Close()
 	return nil
 }
 
