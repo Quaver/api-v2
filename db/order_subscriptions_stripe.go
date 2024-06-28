@@ -8,13 +8,13 @@ import (
 )
 
 type OrderSubscriptionStripe struct {
-	Id                   int    `gorm:"column:id; PRIMARY_KEY"`
-	UserId               int    `gorm:"column:user_id"`
-	StripeCustomerId     string `gorm:"column:customer_id"`
-	StripeSubscriptionId string `gorm:"column:subscription_id"`
-	TimeCreated          int64  `gorm:"time_created"`
-	TimeLastUpdated      int64  `gorm:"time_last_updated"`
-	IsActive             bool   `gorm:"column:is_active"`
+	Id                   int    `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	UserId               int    `gorm:"column:user_id" json:"user_id" json:"-"`
+	StripeCustomerId     string `gorm:"column:customer_id" json:"stripe_customer_id"`
+	StripeSubscriptionId string `gorm:"column:subscription_id" json:"stripe_subscription_id"`
+	TimeCreated          int64  `gorm:"time_created" json:"-"`
+	TimeLastUpdated      int64  `gorm:"time_last_updated" json:"-"`
+	IsActive             bool   `gorm:"column:is_active" json:"-"`
 }
 
 func (*OrderSubscriptionStripe) TableName() string {

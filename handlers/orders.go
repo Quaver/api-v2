@@ -160,7 +160,7 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 	return APIErrorBadRequest("Invalid payment method provided")
 }
 
-// ModifySubscription Returns a link so the user can modify their subscription
+// ModifyStripeSubscription Returns a link so the user can modify their subscription
 // Endpoint: GET /v2/orders/stripe/subscriptions/modify
 func ModifyStripeSubscription(c *gin.Context) *APIError {
 	user := getAuthedUser(c)

@@ -34,7 +34,7 @@ type Order struct {
 	Status         OrderStatus              `gorm:"column:status" json:"status"`
 	SubscriptionId *int                     `gorm:"column:subscription_id" json:"-"`
 	Item           *OrderItem               `gorm:"foreignKey:ItemId" json:"item"`
-	Subscription   *OrderSubscriptionStripe `gorm:"foreignKey:SubscriptionId" json:"-"`
+	Subscription   *OrderSubscriptionStripe `gorm:"foreignKey:SubscriptionId" json:"subscription,omitempty"`
 }
 
 func (*Order) TableName() string {
