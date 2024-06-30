@@ -193,7 +193,7 @@ func GetFriendScoresForMap(c *gin.Context) *APIError {
 	scores, err := db.GetFriendScoresForMap(dbMap.MD5, user.Id, friends, limit, 0)
 
 	if err != nil {
-		return APIErrorServerError("Error retrieving global scoreboard", err)
+		return APIErrorServerError("Error retrieving friend scoreboard", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
