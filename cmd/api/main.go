@@ -25,12 +25,9 @@ func main() {
 	db.ConnectMySQL()
 	db.InitializeRedis()
 	db.InitializeElasticSearch()
-	db.CacheTotalUsersInRedis()
-	db.CacheTotalMapsetsInRedis()
-
-	if config.Instance.IsProduction {
-		db.CacheTotalScoresInRedis()
-	}
+	go db.CacheTotalUsersInRedis()
+	go db.CacheTotalMapsetsInRedis()
+	go db.CacheTotalScoresInRedis()
 
 	azure.InitializeClient()
 	webhooks.InitializeWebhooks()
