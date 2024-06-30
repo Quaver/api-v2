@@ -34,7 +34,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Clans
 	engine.POST("/v2/clan", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateClan))
 	engine.GET("/v2/clan/:id", handlers.CreateHandler(handlers.GetClan))
-	engine.PATCH("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateClan))
+	engine.POST("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateClan))
 	engine.DELETE("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteClan))
 
 	// Clan Members
@@ -70,7 +70,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/user/team/members", handlers.CreateHandler(handlers.GetTeamMembers))
 
 	// User Profile
-	engine.PATCH("/v2/user/profile/aboutme", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateUserAboutMe))
+	engine.POST("/v2/user/profile/aboutme", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateUserAboutMe))
 	engine.POST("/v2/user/profile/cover", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadUserProfileCover))
 	engine.GET("/v2/user/profile/username/eligible", middleware.RequireAuth, handlers.CreateHandler(handlers.GetCanUserChangeUsername))
 	engine.GET("/v2/user/profile/username/available", middleware.RequireAuth, handlers.CreateHandler(handlers.IsUsernameAvailable))
@@ -96,7 +96,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/mapset/:id/delete", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteMapset))
 	engine.GET("/v2/mapset/ranked", handlers.CreateHandler(handlers.GetRankedMapsetIds))
 	engine.GET("/v2/mapset/offsets", handlers.CreateHandler(handlers.GetMapsetOnlineOffsets))
-	engine.PATCH("/v2/mapset/:id/description", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMapsetDescription))
+	engine.POST("/v2/mapset/:id/description", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMapsetDescription))
 
 	// Chat
 	engine.GET("/v2/chat/:channel/history", middleware.RequireAuth, handlers.CreateHandler(handlers.GetChatHistory))
