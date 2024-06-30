@@ -381,7 +381,7 @@ func GetFriendScoresForMap(md5 string, userId int, friends []*UserFriend, limit 
 		Where("scores.map_md5 = ? "+
 			"AND scores.personal_best = 1 "+
 			friendLookup+
-			"AND user.allowed = 1", md5).
+			"AND User.allowed = 1", md5).
 		Order("scores.performance_rating DESC").
 		Limit(limit).
 		Offset(page * limit).
@@ -402,8 +402,8 @@ func GetUserPersonalBestScoreGlobal(userId int, md5 string) (*Score, error) {
 		Joins("User").
 		Where("scores.map_md5 = ? "+
 			"AND scores.personal_best = 1 "+
-			"AND user.id =  ? "+
-			"AND user.allowed = 1", md5, userId).
+			"AND User.id =  ? "+
+			"AND User.allowed = 1", md5, userId).
 		First(&score)
 
 	if result.Error != nil {
@@ -421,8 +421,8 @@ func GetUserPersonalBestScoreAll(userId int, md5 string) (*Score, error) {
 		Joins("User").
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
-			"AND user.id =  ? "+
-			"AND user.allowed = 1", md5, userId).
+			"AND User.id =  ? "+
+			"AND User.allowed = 1", md5, userId).
 		Order("scores.performance_rating DESC").
 		First(&score)
 
@@ -450,8 +450,8 @@ func GetUserPersonalBestScoreMods(userId int, md5 string, mods int64) (*Score, e
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
 			modsQueryStr+
-			"AND user.id = ? "+
-			"AND user.allowed = 1", md5, mods, userId).
+			"AND User.id = ? "+
+			"AND User.allowed = 1", md5, mods, userId).
 		Order("scores.performance_rating DESC").
 		First(&score)
 
@@ -480,8 +480,8 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
 			modsQuery+
-			"AND user.id = ? "+
-			"AND user.allowed = 1", md5, mods, userId).
+			"AND User.id = ? "+
+			"AND User.allowed = 1", md5, mods, userId).
 		Order("scores.performance_rating DESC").
 		First(&score)
 

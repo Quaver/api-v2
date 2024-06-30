@@ -87,7 +87,7 @@ func getLeaderboardUsers(key string, page int, limit int) ([]*User, error) {
 	result := SQL.
 		Joins("StatsKeys4").
 		Joins("StatsKeys7").
-		Where(fmt.Sprintf("Users.id IN (%v) AND allowed = 1", strings.Join(userIds, ","))).
+		Where(fmt.Sprintf("users.id IN (%v) AND allowed = 1", strings.Join(userIds, ","))).
 		Find(&users)
 
 	if result.Error != nil {
