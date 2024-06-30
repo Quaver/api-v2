@@ -69,8 +69,12 @@ func UpdateMapsetDescription(c *gin.Context) *APIError {
 
 	mapset, err := db.GetMapsetById(id)
 
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return APIErrorServerError("Failed to retrieve mapset from database", err)
+	}
+
+	if mapset == nil {
+		return APIErrorNotFound("Mapset")
 	}
 
 	if mapset.CreatorID != user.Id {
