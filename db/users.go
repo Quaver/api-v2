@@ -96,7 +96,8 @@ func (u *User) AfterFind(*gorm.DB) (err error) {
 
 	if u.Information != nil {
 		if err := json.Unmarshal([]byte(*u.Information), &u.MiscInformation); err != nil {
-			return err
+			logrus.Errorf("Error unmarshalling misc user info for user: %v", u.Id)
+			return nil
 		}
 	}
 
