@@ -190,7 +190,7 @@ func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*S
 		Joins("User").
 		Where("scores.map_md5 = ? "+
 			"AND scores.personal_best = 1 "+
-			"AND user.allowed = 1", md5).
+			"AND User.allowed = 1", md5).
 		Order("scores.performance_rating DESC").
 		Limit(limit).
 		Offset(page * limit).
@@ -264,7 +264,7 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
 			"AND (scores.mods & ?) != 0 "+
-			"AND user.allowed = 1", md5, mods).
+			"AND User.allowed = 1", md5, mods).
 		Group("User.id").
 		Order("scores.performance_rating DESC").
 		Limit(limit).
@@ -310,7 +310,7 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
 			modsQuery+
-			"AND user.allowed = 1", md5, mods).
+			"AND User.allowed = 1", md5, mods).
 		Group("User.id").
 		Order("scores.performance_rating DESC").
 		Limit(limit).
@@ -346,7 +346,7 @@ func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 		Joins("User").
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
-			"AND user.allowed = 1", md5).
+			"AND User.allowed = 1", md5).
 		Order("scores.performance_rating DESC").
 		Group("User.id").
 		Limit(limit).
