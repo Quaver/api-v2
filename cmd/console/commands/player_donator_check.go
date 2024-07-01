@@ -52,9 +52,5 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 
 			offset += batchSize
 		}
-
-		if err != nil {
-			logrus.Println(err)
-		}
 	},
 }
