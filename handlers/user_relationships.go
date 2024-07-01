@@ -84,7 +84,7 @@ func GetFriendsList(c *gin.Context) *APIError {
 	friends, err := db.GetUserFriends(user.Id)
 
 	if err != nil {
-		return APIErrorServerError("Error retreiving friends list", err)
+		return APIErrorServerError("Error retrieving friends list", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"friends": friends})
