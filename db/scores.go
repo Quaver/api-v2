@@ -67,6 +67,7 @@ func GetUserBestScoresForMode(id int, mode enums.GameMode, limit int, page int) 
 	var scores []*Score
 
 	result := SQL.
+		Joins("User").
 		InnerJoins("Map").
 		Where("scores.personal_best = 1 AND "+
 			"scores.user_id = ? AND "+
@@ -95,6 +96,7 @@ func GetUserRecentScoresForMode(id int, mode enums.GameMode, isDonator bool, lim
 	}
 
 	result := SQL.
+		Joins("User").
 		InnerJoins("Map").
 		Where("scores.user_id = ? AND "+
 			"scores.mode = ?"+
@@ -116,6 +118,7 @@ func GetUserFirstPlaceScoresForMode(id int, mode enums.GameMode, limit int, page
 	var scores []*Score
 
 	result := SQL.
+		Joins("User").
 		Joins("FirstPlace").
 		Joins("Map").
 		Where("FirstPlace.user_id = ? AND Map.game_mode = ?", id, mode).
@@ -136,6 +139,7 @@ func GetUserGradeScoresForMode(id int, mode enums.GameMode, grade string, limit 
 	var scores []*Score
 
 	result := SQL.
+		Joins("User").
 		Joins("Map").
 		Where("scores.user_id = ? "+
 			"AND Map.game_mode = ? "+
