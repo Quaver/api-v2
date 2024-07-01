@@ -22,7 +22,7 @@ func GetUserActivity(c *gin.Context) *APIError {
 		page = 0
 	}
 
-	if _, apiErr := getUserById(id); apiErr != nil {
+	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 

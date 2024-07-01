@@ -56,6 +56,10 @@ func GetUser(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving user from database", dbError)
 	}
 
+	if !user.Allowed && !canAuthedUserViewBannedUsers(c) {
+		return APIErrorNotFound("User")
+	}
+
 	c.JSON(http.StatusOK, gin.H{"user": user})
 	return nil
 }

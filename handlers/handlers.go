@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -54,7 +55,7 @@ func getIpFromRequest(c *gin.Context) string {
 }
 
 // Gets a user by id and checks if they exist
-func getUserById(id int) (*db.User, *APIError) {
+func getUserById(id int, displayBannedUser bool) (*db.User, *APIError) {
 	user, err := db.GetUserById(id)
 
 	if err != nil {
@@ -65,5 +66,23 @@ func getUserById(id int) (*db.User, *APIError) {
 		return nil, APIErrorServerError("Error retrieving user from db", err)
 	}
 
+	if !user.Allowed && !displayBannedUser {
+		return nil, APIErrorNotFound("User")
+	}
+
 	return user, nil
+}
+
+// Returns if the authed user can view banned users
+func canAuthedUserViewBannedUsers(c *gin.Context) bool {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return false
+	}
+
+	return enums.HasUserGroup(user.UserGroups, enums.UserGroupSwan) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupAdmin) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupModerator)
 }

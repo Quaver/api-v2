@@ -215,7 +215,7 @@ func GetUserPersonalBestScoreGlobal(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide a valid user id")
 	}
 
-	if _, apiErr := getUserById(userId); apiErr != nil {
+	if _, apiErr := getUserById(userId, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 
@@ -244,7 +244,7 @@ func GetUserPersonalBestScoreAll(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide a valid user id")
 	}
 
-	if _, apiErr := getUserById(userId); apiErr != nil {
+	if _, apiErr := getUserById(userId, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 
@@ -279,7 +279,7 @@ func GetUserPersonalBestScoreMods(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide a valid user id")
 	}
 
-	if _, apiErr := getUserById(userId); apiErr != nil {
+	if _, apiErr := getUserById(userId, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 
@@ -314,7 +314,7 @@ func GetUserPersonalBestScoreRate(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide a valid user id")
 	}
 
-	if _, apiErr := getUserById(userId); apiErr != nil {
+	if _, apiErr := getUserById(userId, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 

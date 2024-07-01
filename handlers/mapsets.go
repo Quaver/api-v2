@@ -42,7 +42,7 @@ func GetUserMapsets(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
-	if _, apiErr := getUserById(id); apiErr != nil {
+	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 
