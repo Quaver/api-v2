@@ -18,7 +18,7 @@ func (s *ScoreFirstPlace) TableName() string {
 
 // GetUserFirstPlaces Retrieves all of a user's first place scores
 func GetUserFirstPlaces(userId int) ([]*ScoreFirstPlace, error) {
-	var firstPlaces []*ScoreFirstPlace
+	var firstPlaces = make([]*ScoreFirstPlace, 0)
 
 	result := SQL.
 		Where("user_id = ?", userId).

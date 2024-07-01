@@ -26,14 +26,14 @@ func (*UserAchievement) TableName() string {
 
 // GetUserAchievements Gets a user's unlocked achievements
 func GetUserAchievements(id int) ([]*Achievement, error) {
-	var achievements []*Achievement
+	var achievements = make([]*Achievement, 0)
 	result := SQL.Order("id ASC").Find(&achievements)
 
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	var userAchievements []*UserAchievement
+	var userAchievements = make([]*UserAchievement, 0)
 	result = SQL.Where("user_id = ?", id).Find(&userAchievements)
 
 	if result.Error != nil && result.Error != gorm.ErrRecordNotFound {

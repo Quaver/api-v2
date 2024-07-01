@@ -43,7 +43,7 @@ func (mod *MapMod) AfterFind(*gorm.DB) (err error) {
 
 // GetMapMods Retrieves map mods for a given map
 func GetMapMods(id int) ([]*MapMod, error) {
-	var mods []*MapMod
+	var mods = make([]*MapMod, 0)
 
 	result := SQL.
 		Joins("Author").

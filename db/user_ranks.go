@@ -26,7 +26,7 @@ func (ur *UserRankKeys7) TableName() string {
 
 // GetUserRankStatisticsForMode Retrieves a users rank statistics for a given game mode
 func GetUserRankStatisticsForMode(id int, mode enums.GameMode) ([]*UserRank, error) {
-	var ranks []*UserRank
+	var ranks = make([]*UserRank, 0)
 
 	// Invalid mode
 	if mode < enums.GameModeKeys4 || mode > enums.GameModeKeys7 {

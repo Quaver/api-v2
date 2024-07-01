@@ -52,7 +52,7 @@ func (mapset *RankingQueueMapset) Insert() error {
 
 // GetRankingQueue Retrieves the ranking queue for a given game mode
 func GetRankingQueue(mode enums.GameMode, limit int, page int) ([]*RankingQueueMapset, error) {
-	var mapsets []*RankingQueueMapset
+	var mapsets = make([]*RankingQueueMapset, 0)
 
 	result := SQL.
 		Joins("Mapset").
@@ -96,7 +96,7 @@ func GetRankingQueueMapset(mapsetId int) (*RankingQueueMapset, error) {
 
 // GetUserMapsetsInRankingQueue Retrieves the mapsets the user has in the ranking queue
 func GetUserMapsetsInRankingQueue(userId int) ([]*RankingQueueMapset, error) {
-	var mapsets []*RankingQueueMapset
+	var mapsets = make([]*RankingQueueMapset, 0)
 
 	result := SQL.
 		Joins("Mapset").

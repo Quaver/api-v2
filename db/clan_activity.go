@@ -68,7 +68,7 @@ func (a *ClanActivity) Insert() error {
 
 // GetClanActivity Retrieves clan activity from the database
 func GetClanActivity(clanId int, limit int, page int) ([]*ClanActivity, error) {
-	var activities []*ClanActivity
+	var activities = make([]*ClanActivity, 0)
 
 	result := SQL.
 		Joins("User").

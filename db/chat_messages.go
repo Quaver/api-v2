@@ -36,7 +36,7 @@ func (m *ChatMessage) AfterFind(*gorm.DB) (err error) {
 
 // GetPublicChatMessageHistory Gets the last 50 messages of a public chat
 func GetPublicChatMessageHistory(channel string) ([]*ChatMessage, error) {
-	var messages []*ChatMessage
+	var messages = make([]*ChatMessage, 0)
 
 	result := SQL.
 		Joins("User").
@@ -54,7 +54,7 @@ func GetPublicChatMessageHistory(channel string) ([]*ChatMessage, error) {
 
 // GetPrivateChatMessageHistory Gets the last 50 messages of a private chat
 func GetPrivateChatMessageHistory(userId int, otherUser int) ([]*ChatMessage, error) {
-	var messages []*ChatMessage
+	var messages = make([]*ChatMessage, 0)
 
 	result := SQL.
 		Joins("User").

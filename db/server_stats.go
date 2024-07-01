@@ -120,7 +120,7 @@ func CacheCountryPlayersInRedis() (map[string]string, error) {
 		Total       int    `gorm:"column:total" json:"total"`
 	}
 
-	var countries []*CountryPlayers
+	var countries = make([]*CountryPlayers, 0)
 
 	// Total user count does match the amount of country players we have cached, so re-cache.
 	if totalUserCount != countryPlayerCount {

@@ -49,7 +49,7 @@ func DeletePlaylistMapset(playlistId int, mapsetId int) error {
 
 // GetPlaylistMapsetsByMapsetId Gets all the playlist mapsets that have a particular mapset id
 func GetPlaylistMapsetsByMapsetId(mapsetId int) ([]*PlaylistMapset, error) {
-	var playlistMapsets []*PlaylistMapset
+	var playlistMapsets = make([]*PlaylistMapset, 0)
 
 	result := SQL.
 		Preload("Maps").

@@ -73,7 +73,7 @@ func GetClanInviteById(id int) (*ClanInvite, error) {
 
 // GetUserClanInvites Retrieves a list of pending clan invites for the user
 func GetUserClanInvites(userId int) ([]*ClanInvite, error) {
-	var invites []*ClanInvite
+	var invites = make([]*ClanInvite, 0)
 
 	result := SQL.
 		Joins("Clan").

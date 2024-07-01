@@ -19,7 +19,7 @@ type UserMostPlayedMap struct {
 
 // GetUserMostPlayedMaps Returns a user's most played maps
 func GetUserMostPlayedMaps(id int, limit int, page int) ([]*UserMostPlayedMap, error) {
-	var maps []*UserMostPlayedMap
+	var maps = make([]*UserMostPlayedMap, 0)
 	redisKey := fmt.Sprintf("quaver:most_played:%v:%v:%v", id, limit, page)
 
 	if err := cacheJsonInRedis(redisKey, &maps, time.Hour*24, func() error {
@@ -53,7 +53,7 @@ type WeeklyMostPlayedMapsets struct {
 
 // GetWeeklyMostPlayedMapsets Retrieves the most played mapsets in the past week
 func GetWeeklyMostPlayedMapsets() ([]*WeeklyMostPlayedMapsets, error) {
-	var mapsets []*WeeklyMostPlayedMapsets
+	var mapsets = make([]*WeeklyMostPlayedMapsets, 0)
 	redisKey := "quaver:weekly_most_played"
 
 	// Convert bundled mapset int slice to string slice, so we can use strings.Join

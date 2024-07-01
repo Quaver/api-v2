@@ -47,7 +47,7 @@ func (ua *UserActivity) AfterFind(*gorm.DB) (err error) {
 
 // GetRecentUserActivity Gets the most recent user activity
 func GetRecentUserActivity(id int, limit int, page int) ([]*UserActivity, error) {
-	var activity []*UserActivity
+	var activity = make([]*UserActivity, 0)
 
 	result := SQL.
 		Where("user_id = ?", id).

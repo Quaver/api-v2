@@ -12,7 +12,7 @@ type Team struct {
 
 // GetTeamMembers Returns users in the Quaver team
 func GetTeamMembers() (*Team, error) {
-	var users []*User
+	var users = make([]*User, 0)
 
 	result := SQL.
 		Joins("StatsKeys4").

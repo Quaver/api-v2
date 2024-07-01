@@ -31,7 +31,7 @@ func (ub *UserBadge) Insert() error {
 
 // GetUserBadges Retrieves a user's badges from the database
 func GetUserBadges(id int) ([]*Badge, error) {
-	var badges []*Badge
+	var badges = make([]*Badge, 0)
 
 	result := SQL.
 		Joins("JOIN user_badges ON badges.id = user_badges.badge_id").

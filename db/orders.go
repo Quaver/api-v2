@@ -183,7 +183,7 @@ func (order *Order) FinalizeBadge() error {
 
 // GetUserOrders Gets a user's orders
 func GetUserOrders(userId int) ([]*Order, error) {
-	var orders []*Order
+	var orders = make([]*Order, 0)
 
 	result := SQL.
 		Preload("Receiver").
@@ -202,7 +202,7 @@ func GetUserOrders(userId int) ([]*Order, error) {
 // GetSteamOrdersByIds Retrieves orders by their steam order id & transaction id.
 // Multiple orders in the database can have them if a user has multiple items in their cart.
 func GetSteamOrdersByIds(steamOrderId string, transactionId string) ([]*Order, error) {
-	var orders []*Order
+	var orders = make([]*Order, 0)
 
 	result := SQL.
 		Preload("Receiver").
@@ -220,7 +220,7 @@ func GetSteamOrdersByIds(steamOrderId string, transactionId string) ([]*Order, e
 
 // GetStripeOrderById Gets Stripe orders by id
 func GetStripeOrderById(transactionId string) ([]*Order, error) {
-	var orders []*Order
+	var orders = make([]*Order, 0)
 
 	result := SQL.
 		Preload("Receiver").

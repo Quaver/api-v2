@@ -82,7 +82,7 @@ func getLeaderboardUsers(key string, page int, limit int) ([]*User, error) {
 		return []*User{}, nil
 	}
 
-	var users []*User
+	var users = make([]*User, 0)
 
 	result := SQL.
 		Joins("StatsKeys4").

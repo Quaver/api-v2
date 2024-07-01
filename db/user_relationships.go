@@ -61,7 +61,7 @@ type UserFriend struct {
 
 // GetUserFriends Returns a user's friends list
 func GetUserFriends(userId int) ([]*UserFriend, error) {
-	var relationships []*UserRelationship
+	var relationships = make([]*UserRelationship, 0)
 
 	result := SQL.
 		Joins("User").
@@ -72,7 +72,7 @@ func GetUserFriends(userId int) ([]*UserFriend, error) {
 		return nil, result.Error
 	}
 
-	var friends []*UserFriend
+	var friends = make([]*UserFriend, 0)
 
 	for _, relationship := range relationships {
 		friend := &UserFriend{

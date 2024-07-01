@@ -53,7 +53,7 @@ func (c *MapsetRankingQueueComment) Insert() error {
 
 // GetRankingQueueComments Retrieves the ranking queue comments for a given mapset
 func GetRankingQueueComments(mapsetId int) ([]*MapsetRankingQueueComment, error) {
-	var comments []*MapsetRankingQueueComment
+	var comments = make([]*MapsetRankingQueueComment, 0)
 
 	result := SQL.
 		Joins("User").
@@ -104,7 +104,7 @@ func DeactivateRankingQueueActions(mapsetId int) error {
 
 // GetRankingQueueVotes Retrieves the active votes for a given mapset in the ranking queue
 func GetRankingQueueVotes(mapsetId int) ([]*MapsetRankingQueueComment, error) {
-	var votes []*MapsetRankingQueueComment
+	var votes = make([]*MapsetRankingQueueComment, 0)
 
 	result := SQL.
 		Joins("User").
@@ -126,7 +126,7 @@ func GetRankingQueueVotes(mapsetId int) ([]*MapsetRankingQueueComment, error) {
 
 // GetRankingQueueDenies Retrieves the active denies for a given mapset in the ranking queue
 func GetRankingQueueDenies(mapsetId int) ([]*MapsetRankingQueueComment, error) {
-	var votes []*MapsetRankingQueueComment
+	var votes = make([]*MapsetRankingQueueComment, 0)
 
 	result := SQL.
 		Joins("User").

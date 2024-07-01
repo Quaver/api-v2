@@ -260,7 +260,7 @@ func GetUserByUsername(username string) (*User, error) {
 
 // GetUsersInClan Retrieves all the users that are in a given clan
 func GetUsersInClan(clanId int) ([]*User, error) {
-	var users []*User
+	var users = make([]*User, 0)
 
 	result := SQL.
 		Joins("StatsKeys4").
@@ -277,7 +277,7 @@ func GetUsersInClan(clanId int) ([]*User, error) {
 
 // SearchUsersByName Searches for users that have a similar name to the query
 func SearchUsersByName(searchQuery string) ([]*User, error) {
-	var users []*User
+	var users = make([]*User, 0)
 
 	result := SQL.
 		Joins("StatsKeys4").

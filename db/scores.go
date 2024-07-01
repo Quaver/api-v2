@@ -64,7 +64,7 @@ func (s *Score) AfterFind(*gorm.DB) (err error) {
 
 // GetUserBestScoresForMode Retrieves a user's best scores for a given game mode
 func GetUserBestScoresForMode(id int, mode enums.GameMode, limit int, page int) ([]*Score, error) {
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	result := SQL.
 		InnerJoins("Map").
@@ -86,7 +86,7 @@ func GetUserBestScoresForMode(id int, mode enums.GameMode, limit int, page int) 
 
 // GetUserRecentScoresForMode Retrieves a user's recent scores for a given mode
 func GetUserRecentScoresForMode(id int, mode enums.GameMode, isDonator bool, limit int, page int) ([]*Score, error) {
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	donatorScore := " AND scores.is_donator_score = 0"
 
@@ -113,7 +113,7 @@ func GetUserRecentScoresForMode(id int, mode enums.GameMode, isDonator bool, lim
 
 // GetUserFirstPlaceScoresForMode Retrieves a user's first place scores for a given mode
 func GetUserFirstPlaceScoresForMode(id int, mode enums.GameMode, limit int, page int) ([]*Score, error) {
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	result := SQL.
 		Joins("FirstPlace").
@@ -133,7 +133,7 @@ func GetUserFirstPlaceScoresForMode(id int, mode enums.GameMode, limit int, page
 
 // GetUserGradeScoresForMode Retrieves a user's scores for a particular grade
 func GetUserGradeScoresForMode(id int, mode enums.GameMode, grade string, limit int, page int) ([]*Score, error) {
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	result := SQL.
 		Joins("Map").
@@ -184,7 +184,7 @@ func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*S
 		}
 	}
 
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	result := SQL.
 		Joins("User").
@@ -221,7 +221,7 @@ func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]
 		return cached, nil
 	}
 
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	result := SQL.
 		Joins("User").
@@ -257,7 +257,7 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 		return cached, nil
 	}
 
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	result := SQL.
 		Joins("User").
@@ -294,7 +294,7 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 		return cached, nil
 	}
 
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	modsQuery := ""
 
@@ -340,7 +340,7 @@ func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 		return cached, nil
 	}
 
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	result := SQL.
 		Joins("User").
@@ -374,7 +374,7 @@ func GetFriendScoresForMap(md5 string, userId int, friends []*UserFriend, limit 
 
 	friendLookup += ") "
 
-	var scores []*Score
+	var scores = make([]*Score, 0)
 
 	result := SQL.
 		Joins("User").

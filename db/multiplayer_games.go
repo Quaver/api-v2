@@ -26,7 +26,7 @@ func (mg *MultiplayerGame) AfterFind(*gorm.DB) (err error) {
 
 // GetRecentMultiplayerGames Retrieves recently played multiplayer games from the DB
 func GetRecentMultiplayerGames(limit int, page int) ([]*MultiplayerGame, error) {
-	var games []*MultiplayerGame
+	var games = make([]*MultiplayerGame, 0)
 
 	result := SQL.
 		Preload("Matches").

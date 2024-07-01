@@ -66,7 +66,7 @@ func UpdatePlaylistMapCount(id int, count int) error {
 
 // GetAllPlaylists Returns all the playlists in the db
 func GetAllPlaylists() ([]*Playlist, error) {
-	var playlists []*Playlist
+	var playlists = make([]*Playlist, 0)
 
 	result := SQL.
 		Preload("Maps").
@@ -118,7 +118,7 @@ func GetPlaylistFull(id int) (*Playlist, error) {
 
 // GetUserPlaylists Gets a user's created playlists
 func GetUserPlaylists(userId int) ([]*Playlist, error) {
-	var playlists []*Playlist
+	var playlists = make([]*Playlist, 0)
 
 	result := SQL.
 		Where("user_id = ? AND visible = 1", userId).
@@ -133,7 +133,7 @@ func GetUserPlaylists(userId int) ([]*Playlist, error) {
 
 // SearchPlaylists Returns playlists that meet a particular search query
 func SearchPlaylists(query string, limit int, page int) ([]*Playlist, error) {
-	var playlists []*Playlist
+	var playlists = make([]*Playlist, 0)
 
 	likeQuery := fmt.Sprintf("%%%s%%", query)
 

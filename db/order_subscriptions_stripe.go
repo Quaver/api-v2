@@ -46,7 +46,7 @@ func GetOrderSubscriptionById(subscriptionId string) (*OrderSubscriptionStripe, 
 
 // GetUserActiveSubscriptions Retrieves a user's active stripe subscriptions
 func GetUserActiveSubscriptions(userId int) ([]*OrderSubscriptionStripe, error) {
-	var subscriptions []*OrderSubscriptionStripe
+	var subscriptions = make([]*OrderSubscriptionStripe, 0)
 
 	result := SQL.
 		Where("user_id = ? AND is_active = 1", userId).
@@ -61,7 +61,7 @@ func GetUserActiveSubscriptions(userId int) ([]*OrderSubscriptionStripe, error) 
 
 // GetUserStripeSubscriptions Gets a user's active stripe subscriptions
 func GetUserStripeSubscriptions(userId int) ([]*stripe.Subscription, error) {
-	var activeSubs []*stripe.Subscription
+	var activeSubs = make([]*stripe.Subscription, 0)
 
 	subscriptions, err := GetUserActiveSubscriptions(userId)
 

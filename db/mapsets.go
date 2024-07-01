@@ -69,7 +69,7 @@ func GetMapsetById(id int) (*Mapset, error) {
 
 // GetUserMapsets Retrieves a user's uploaded mapsets
 func GetUserMapsets(userId int) ([]*Mapset, error) {
-	var mapsets []*Mapset
+	var mapsets = make([]*Mapset, 0)
 
 	result := SQL.
 		Preload("Maps").
@@ -98,7 +98,7 @@ func UpdateMapsetDescription(id int, description string) error {
 
 // GetRankedMapsetIds Retrieves a list of ranked mapset ids
 func GetRankedMapsetIds() ([]int, error) {
-	var ids []int
+	var ids = make([]int, 0)
 
 	result := SQL.Raw("SELECT DISTINCT ms.id FROM mapsets AS ms " +
 		"INNER JOIN maps AS m ON m.mapset_id = ms.id " +
@@ -119,7 +119,7 @@ func GetMapsetOnlineOffsets() (interface{}, error) {
 		OnlineOffset int `gorm:"column:online_offset" json:"offset"`
 	}
 
-	var offsets []*onlineOffset
+	var offsets = make([]*onlineOffset, 0)
 
 	result := SQL.Raw("SELECT m.id, m.online_offset FROM maps m " +
 		"INNER JOIN mapsets ms ON m.mapset_id = ms.id " +
