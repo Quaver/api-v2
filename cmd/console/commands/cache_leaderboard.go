@@ -88,7 +88,15 @@ func processUsers(users []*db.User) {
 			})
 		}
 
-		// ToDo Total Hits Leaderboard
+		var userKeys4Hits = user.StatsKeys4.TotalMarvelous + user.StatsKeys4.TotalPerfect +
+			user.StatsKeys4.TotalGreat + user.StatsKeys4.TotalGood + user.StatsKeys4.TotalOkay
+		var userKeys7Hits = user.StatsKeys7.TotalMarvelous + user.StatsKeys7.TotalPerfect +
+			user.StatsKeys7.TotalGreat + user.StatsKeys7.TotalGood + user.StatsKeys7.TotalOkay
+
+		db.Redis.ZAdd(db.RedisCtx, fmt.Sprintf("quaver:leaderboard:total_hits_global"), redis.Z{
+			Score:  float64(userKeys4Hits) + float64(userKeys7Hits),
+			Member: strconv.Itoa(user.Id),
+		})
 	}
 }
 
