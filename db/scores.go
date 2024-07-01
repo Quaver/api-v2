@@ -43,8 +43,8 @@ type Score struct {
 	IsDonatorScore              bool             `gorm:"column:is_donator_score" json:"is_donator_score"`
 	TournamentGameId            *int             `gorm:"column:tournament_game_id" json:"tournament_game_id"`
 	ClanId                      *int             `gorm:"column:clan_id" json:"clan_id"`
-	Map                         *MapQua          `gorm:"foreignKey:MapMD5; references:MD5" json:"map"`
-	User                        *User            `gorm:"foreignKey:UserId; references:Id" json:"user"`
+	Map                         *MapQua          `gorm:"foreignKey:MapMD5; references:MD5" json:"map,omitempty"`
+	User                        *User            `gorm:"foreignKey:UserId; references:Id" json:"user,omitempty"`
 	FirstPlace                  *ScoreFirstPlace `gorm:"foreignKey:Id; references:ScoreId" json:"-"`
 }
 
