@@ -173,7 +173,7 @@ func GetScoreById(id int) (*Score, error) {
 // GetGlobalScoresForMap Retrieves the global scores for a map
 func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*Score, error) {
 	if useCache {
-		cached, err := getCachedScoreboard(scoreboardGlobal, md5)
+		cached, err := getCachedScoreboard(scoreboardGlobal, md5, 0)
 
 		if err != nil {
 			return nil, err
@@ -201,7 +201,7 @@ func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*S
 	}
 
 	if useCache {
-		if err := cacheScoreboard(scoreboardGlobal, md5, scores); err != nil {
+		if err := cacheScoreboard(scoreboardGlobal, md5, scores, 0); err != nil {
 			return nil, err
 		}
 	}
@@ -211,7 +211,7 @@ func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*S
 
 // GetCountryScoresForMap Retrieves the country scores for a map
 func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]*Score, error) {
-	cached, err := getCachedScoreboard(scoreboardCountry, md5)
+	cached, err := getCachedScoreboard(scoreboardCountry, md5, 0)
 
 	if err != nil {
 		return nil, err
@@ -238,7 +238,7 @@ func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]
 		return nil, result.Error
 	}
 
-	if err := cacheScoreboard(scoreboardCountry, md5, scores); err != nil {
+	if err := cacheScoreboard(scoreboardCountry, md5, scores, 0); err != nil {
 		return nil, err
 	}
 
@@ -247,7 +247,7 @@ func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]
 
 // GetModifierScoresForMap Retrieves the modifier scores for a map
 func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score, error) {
-	cached, err := getCachedScoreboard(scoreboardMods, md5)
+	cached, err := getCachedScoreboard(scoreboardMods, md5, mods)
 
 	if err != nil {
 		return nil, err
@@ -265,7 +265,7 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 			"AND scores.failed = 0 "+
 			"AND (scores.mods & ?) != 0 "+
 			"AND User.allowed = 1", md5, mods).
-		Distinct("scores.id").
+		Distinct("scores.user_id").
 		Select("scores.*, User.*").
 		Order("scores.performance_rating DESC").
 		Limit(limit).
@@ -276,7 +276,7 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 		return nil, result.Error
 	}
 
-	if err := cacheScoreboard(scoreboardMods, md5, scores); err != nil {
+	if err := cacheScoreboard(scoreboardMods, md5, scores, mods); err != nil {
 		return nil, err
 	}
 
@@ -285,7 +285,7 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 
 // GetRateScoresForMap Retrieves the rate scores for a map
 func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score, error) {
-	cached, err := getCachedScoreboard(scoreboardRate, md5)
+	cached, err := getCachedScoreboard(scoreboardRate, md5, mods)
 
 	if err != nil {
 		return nil, err
@@ -312,7 +312,7 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 			"AND scores.failed = 0 "+
 			modsQuery+
 			"AND User.allowed = 1", md5, mods).
-		Distinct("scores.id").
+		Distinct("scores.user_id").
 		Select("scores.*, User.*").
 		Order("scores.performance_rating DESC").
 		Limit(limit).
@@ -323,7 +323,7 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 		return nil, result.Error
 	}
 
-	if err := cacheScoreboard(scoreboardRate, md5, scores); err != nil {
+	if err := cacheScoreboard(scoreboardRate, md5, scores, mods); err != nil {
 		return nil, err
 	}
 
@@ -332,7 +332,7 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 
 // GetAllScoresForMap Retrieves all scores for a map
 func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
-	cached, err := getCachedScoreboard(scoreboardAll, md5)
+	cached, err := getCachedScoreboard(scoreboardAll, md5, 0)
 
 	if err != nil {
 		return nil, err
@@ -350,7 +350,7 @@ func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 			"AND scores.failed = 0 "+
 			"AND User.allowed = 1", md5).
 		Order("scores.performance_rating DESC").
-		Distinct("scores.id").
+		Distinct("scores.user_id").
 		Select("scores.*, User.*").
 		Limit(limit).
 		Offset(page * limit).
@@ -360,7 +360,7 @@ func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 		return nil, result.Error
 	}
 
-	if err := cacheScoreboard(scoreboardAll, md5, scores); err != nil {
+	if err := cacheScoreboard(scoreboardAll, md5, scores, 0); err != nil {
 		return nil, err
 	}
 
@@ -507,12 +507,17 @@ const (
 )
 
 // Returns the redis key for a scoreboard
-func scoreboardRedisKey(md5 string, scoreboard scoreboardType) string {
-	return fmt.Sprintf("quaver:scoreboard:%v:%v", md5, scoreboard)
+func scoreboardRedisKey(md5 string, scoreboard scoreboardType, mods int64) string {
+	switch scoreboard {
+	case scoreboardMods, scoreboardRate:
+		return fmt.Sprintf("quaver:scoreboard:%v:%v:%v", md5, scoreboard, mods)
+	default:
+		return fmt.Sprintf("quaver:scoreboard:%v:%v", md5, scoreboard)
+	}
 }
 
 // Caches a scoreboard to Redis
-func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score) error {
+func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score, mods int64) error {
 	if len(scores) == 0 {
 		return nil
 	}
@@ -523,12 +528,12 @@ func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score) err
 		return err
 	}
 
-	return Redis.Set(RedisCtx, scoreboardRedisKey(md5, scoreboard), scoresJson, time.Hour*24*3).Err()
+	return Redis.Set(RedisCtx, scoreboardRedisKey(md5, scoreboard, mods), scoresJson, time.Hour*24*3).Err()
 }
 
 // Retrieves a cached scoreboard from redis
-func getCachedScoreboard(scoreboard scoreboardType, md5 string) ([]*Score, error) {
-	result, err := Redis.Get(RedisCtx, scoreboardRedisKey(md5, scoreboard)).Result()
+func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*Score, error) {
+	result, err := Redis.Get(RedisCtx, scoreboardRedisKey(md5, scoreboard, mods)).Result()
 
 	if err != nil {
 		if err == redis.Nil {
