@@ -35,6 +35,10 @@ func parseUserScoreParams(c *gin.Context) (*userScoreParams, *APIError) {
 		page = 0
 	}
 
+	if _, apiErr := getUserById(id); apiErr != nil {
+		return nil, apiErr
+	}
+
 	return &userScoreParams{
 		Id:   id,
 		Mode: enums.GameMode(mode),

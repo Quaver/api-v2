@@ -179,6 +179,10 @@ func GetUserPlaylists(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
+	if _, apiErr := getUserById(id); apiErr != nil {
+		return apiErr
+	}
+
 	playlists, err := db.GetUserPlaylists(id)
 
 	if err != nil {

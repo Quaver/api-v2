@@ -16,6 +16,10 @@ func GetUserBadges(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
+	if _, apiErr := getUserById(id); apiErr != nil {
+		return apiErr
+	}
+
 	badges, err := db.GetUserBadges(id)
 
 	if err != nil {

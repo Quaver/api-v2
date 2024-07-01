@@ -22,6 +22,10 @@ func GetUserActivity(c *gin.Context) *APIError {
 		page = 0
 	}
 
+	if _, apiErr := getUserById(id); apiErr != nil {
+		return apiErr
+	}
+
 	activities, err := db.GetRecentUserActivity(id, 50, page)
 
 	if err != nil {

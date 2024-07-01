@@ -22,6 +22,10 @@ func GetUserMostPlayedMaps(c *gin.Context) *APIError {
 		page = 0
 	}
 
+	if _, apiErr := getUserById(id); apiErr != nil {
+		return apiErr
+	}
+
 	maps, err := db.GetUserMostPlayedMaps(id, 10, page)
 
 	if err != nil {

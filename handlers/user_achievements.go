@@ -16,6 +16,10 @@ func GetUserAchievements(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
+	if _, apiErr := getUserById(id); apiErr != nil {
+		return apiErr
+	}
+
 	achievements, err := db.GetUserAchievements(id)
 
 	if err != nil {

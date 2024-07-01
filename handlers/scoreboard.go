@@ -215,6 +215,10 @@ func GetUserPersonalBestScoreGlobal(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide a valid user id")
 	}
 
+	if _, apiErr := getUserById(userId); apiErr != nil {
+		return apiErr
+	}
+
 	score, err := db.GetUserPersonalBestScoreGlobal(userId, dbMap.MD5)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -238,6 +242,10 @@ func GetUserPersonalBestScoreAll(c *gin.Context) *APIError {
 
 	if err != nil {
 		return APIErrorBadRequest("You must provide a valid user id")
+	}
+
+	if _, apiErr := getUserById(userId); apiErr != nil {
+		return apiErr
 	}
 
 	score, err := db.GetUserPersonalBestScoreAll(userId, dbMap.MD5)
@@ -271,6 +279,10 @@ func GetUserPersonalBestScoreMods(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide a valid user id")
 	}
 
+	if _, apiErr := getUserById(userId); apiErr != nil {
+		return apiErr
+	}
+
 	score, err := db.GetUserPersonalBestScoreMods(userId, dbMap.MD5, mods)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -300,6 +312,10 @@ func GetUserPersonalBestScoreRate(c *gin.Context) *APIError {
 
 	if err != nil {
 		return APIErrorBadRequest("You must provide a valid user id")
+	}
+
+	if _, apiErr := getUserById(userId); apiErr != nil {
+		return apiErr
 	}
 
 	score, err := db.GetUserPersonalBestScoreRate(userId, dbMap.MD5, mods)

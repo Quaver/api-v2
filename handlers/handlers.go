@@ -4,6 +4,7 @@ import (
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -50,4 +51,19 @@ func getIpFromRequest(c *gin.Context) string {
 	}
 
 	return "::1"
+}
+
+// Gets a user by id and checks if they exist
+func getUserById(id int) (*db.User, *APIError) {
+	user, err := db.GetUserById(id)
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, APIErrorNotFound("User")
+		}
+
+		return nil, APIErrorServerError("Error retrieving user from db", err)
+	}
+
+	return user, nil
 }
