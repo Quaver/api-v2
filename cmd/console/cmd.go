@@ -25,4 +25,5 @@ func init() {
 	db.InitializeRedis()
 
 	RootCmd.AddCommand(commands.CacheClearCmd)
+	RootCmd.AddCommand(commands.CacheLeaderboardCmd)
 }
