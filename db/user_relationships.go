@@ -64,8 +64,10 @@ func GetUserFriends(userId int) ([]*UserFriend, error) {
 	var relationships = make([]*UserRelationship, 0)
 
 	result := SQL.
-		Joins("User").
-		Where("user_id = ? AND relationship = 1", userId).
+		Preload("User").
+		Preload("User.StatsKeys4").
+		Preload("User.StatsKeys7").
+		Where("user_relationships.user_id = ? AND user_relationships.relationship = 1", userId).
 		Find(&relationships)
 
 	if result.Error != nil {
