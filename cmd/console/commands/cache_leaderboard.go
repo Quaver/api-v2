@@ -6,7 +6,6 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
-	"log"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -106,7 +105,7 @@ func deleteOldLeaderboards() error {
 		_, err := db.Redis.Del(db.RedisCtx, keys...).Result()
 
 		if err != nil {
-			log.Fatalf("Failed to DELETE keys: %v", err)
+			logrus.Fatalf("Failed to DELETE keys: %v", err)
 		}
 	}
 

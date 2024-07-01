@@ -5,8 +5,6 @@ import (
 	"github.com/Quaver/api2/db"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
-	"log"
-
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +26,7 @@ var CacheClearCmd = &cobra.Command{
 			delCount, err := db.Redis.Del(db.RedisCtx, keys...).Result()
 
 			if err != nil {
-				log.Fatalf("Failed to DELETE keys: %v", err)
+				logrus.Fatalf("Failed to DELETE keys: %v", err)
 			}
 
 			logrus.Printf("Deleted %d keys\n", delCount)
