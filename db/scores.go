@@ -265,7 +265,8 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 			"AND scores.failed = 0 "+
 			"AND (scores.mods & ?) != 0 "+
 			"AND User.allowed = 1", md5, mods).
-		Group("User.id").
+		Distinct("scores.id").
+		Select("scores.*, User.*").
 		Order("scores.performance_rating DESC").
 		Limit(limit).
 		Offset(page * limit).
@@ -311,7 +312,8 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 			"AND scores.failed = 0 "+
 			modsQuery+
 			"AND User.allowed = 1", md5, mods).
-		Group("User.id").
+		Distinct("scores.id").
+		Select("scores.*, User.*").
 		Order("scores.performance_rating DESC").
 		Limit(limit).
 		Offset(page * limit).
@@ -348,7 +350,8 @@ func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 			"AND scores.failed = 0 "+
 			"AND User.allowed = 1", md5).
 		Order("scores.performance_rating DESC").
-		Group("User.id").
+		Distinct("scores.id").
+		Select("scores.*, User.*").
 		Limit(limit).
 		Offset(page * limit).
 		Find(&scores)
