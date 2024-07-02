@@ -43,7 +43,7 @@ func IndexElasticSearchMapset(mapset Mapset) error {
 	return nil
 }
 
-// UpdateElasticSearchMapset Updates individual mapset in elastic
+// UpdateElasticSearchMapset Updates an individual mapset in elastic
 func UpdateElasticSearchMapset(mapset Mapset) error {
 	mapset.User = nil
 	data, _ := json.Marshal(&mapset)
