@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Quaver/api2/cmd/console/commands"
+	"github.com/Quaver/api2/cmd/console/migrations"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/sirupsen/logrus"
@@ -25,8 +26,12 @@ func init() {
 	db.InitializeRedis()
 	db.InitializeElasticSearch()
 
+	// Commands
 	RootCmd.AddCommand(commands.CacheClearCmd)
 	RootCmd.AddCommand(commands.CacheLeaderboardCmd)
 	RootCmd.AddCommand(commands.PlayerDonatorCheckCmd)
 	RootCmd.AddCommand(commands.ElasticIndexMapsets)
+
+	// Migrations
+	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)
 }
