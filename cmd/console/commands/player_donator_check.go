@@ -57,7 +57,7 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 								logrus.Println(err)
 							}
 
-							if err := user.UpdateDonatorEndTime(3600000); err != nil {
+							if err := user.UpdateDonatorEndTime(time.Now().UnixMilli() + 3600000); err != nil {
 								logrus.Println(err)
 							}
 						}
@@ -71,6 +71,10 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 }
 
 func userIsDiscordPremiumUser(user *db.User) bool {
+	if user.DiscordId == nil {
+		return false
+	}
+
 	resp, err := resty.New().R().Get(fmt.Sprintf("%v/donator/discord/check/%v", config.Instance.Discord.BotAPI, user.DiscordId))
 
 	if err != nil {
