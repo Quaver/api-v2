@@ -194,5 +194,9 @@ func DeleteMapset(id int) error {
 		return result.Error
 	}
 
+	if err := DeleteElasticSearchMapset(id); err != nil {
+		return err
+	}
+
 	return nil
 }

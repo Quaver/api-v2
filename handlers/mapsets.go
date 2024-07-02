@@ -103,6 +103,10 @@ func UpdateMapsetDescription(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating mapset description", err)
 	}
 
+	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
+		return APIErrorServerError("Failed to index ranked mapset in elastic search", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Your mapset description was successfully updated!"})
 	return nil
 }
