@@ -138,7 +138,7 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 			return APIErrorServerError("Failed to add new ranked user activity", err)
 		}
 
-		if err := db.IndexElasticSearchMapset(*data.QueueMapset.Mapset); err != nil {
+		if err := db.UpdateElasticSearchMapset(*data.QueueMapset.Mapset); err != nil {
 			return APIErrorServerError("Failed to index ranked mapset in elastic search", err)
 		}
 

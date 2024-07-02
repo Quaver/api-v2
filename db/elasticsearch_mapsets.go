@@ -43,6 +43,21 @@ func IndexElasticSearchMapset(mapset Mapset) error {
 	return nil
 }
 
+// UpdateElasticSearchMapset Updates individual mapset in elastic
+func UpdateElasticSearchMapset(mapset Mapset) error {
+	mapset.User = nil
+	data, _ := json.Marshal(&mapset)
+
+	resp, err := ElasticSearch.Update(elasticMapsetIndex, fmt.Sprintf("%v", mapset.Id), bytes.NewReader(data))
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	return nil
+}
+
 // DeleteElasticSearchMapset Deletes an individual mapset in elastic
 func DeleteElasticSearchMapset(id int) error {
 	resp, err := ElasticSearch.Delete(elasticMapsetIndex, fmt.Sprintf("%v", id))
