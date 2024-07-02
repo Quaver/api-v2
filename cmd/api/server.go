@@ -96,6 +96,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/mapset/:id/delete", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteMapset))
 	engine.GET("/v2/mapset/ranked", handlers.CreateHandler(handlers.GetRankedMapsetIds))
 	engine.GET("/v2/mapset/offsets", handlers.CreateHandler(handlers.GetMapsetOnlineOffsets))
+	engine.GET("/v2/mapset/:id/elastic", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateElasticSearchMapset))
 	engine.POST("/v2/mapset/:id/description", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMapsetDescription))
 
 	// Chat

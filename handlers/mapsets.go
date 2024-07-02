@@ -226,3 +226,48 @@ func DeleteMapset(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully deleted your mapset!"})
 	return nil
 }
+
+// UpdateElasticSearchMapset Updates a mapset in elastic search
+// Endpoint: GET /v2/mapset/:id/elastic
+func UpdateElasticSearchMapset(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	const quaverBotId int = 2
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupSwan) &&
+		!enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) &&
+		user.Id != quaverBotId {
+		return APIErrorForbidden("You do not have permission to access this route.")
+	}
+
+	mapset, err := db.GetMapsetById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving mapset in database", err)
+	}
+
+	if mapset == nil {
+		return APIErrorNotFound("Mapset")
+	}
+
+	if !mapset.IsVisible {
+		return APIErrorBadRequest("This mapset has been deleted, so you cannot update it.")
+	}
+
+	if err := db.UpdateElasticSearchMapset(*mapset); err != nil {
+		return APIErrorServerError("Error updating mapset in elastic search", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The mapset has been successfully updated in ElasticSearch."})
+	return nil
+}
