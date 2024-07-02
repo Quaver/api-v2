@@ -12,6 +12,17 @@ import (
 	"time"
 )
 
+type ElasticMapsetSearchOptions struct {
+	Limit int // The amount of mapsets to retrieve
+}
+
+// NewMapsetSearchOptions Returns a new search options object with default values
+func NewMapsetSearchOptions() *ElasticMapsetSearchOptions {
+	return &ElasticMapsetSearchOptions{
+		Limit: 50,
+	}
+}
+
 // IndexElasticSearchMapset Indexes an individual mapset in elastic
 func IndexElasticSearchMapset(mapset Mapset) error {
 	if err := DeleteElasticSearchMapset(mapset.Id); err != nil {
@@ -42,48 +53,6 @@ func DeleteElasticSearchMapset(id int) error {
 
 	defer resp.Body.Close()
 	return nil
-}
-
-// SearchElasticMapsets Searches ElasticSearch for mapsets
-func SearchElasticMapsets() ([]*Mapset, error) {
-	query := `{ "size" : 50, "query": { "match_all": {} } }`
-
-	resp, err := ElasticSearch.Search(
-		ElasticSearch.Search.WithIndex(elasticMapsetIndex),
-		ElasticSearch.Search.WithBody(strings.NewReader(query)),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-
-	if err != nil {
-		return nil, err
-	}
-
-	data := struct {
-		Hits struct {
-			Hits []struct {
-				Source Mapset `json:"_source"`
-			} `json:"hits"`
-		} `json:"hits"`
-	}{}
-
-	if err := json.Unmarshal(body, &data); err != nil {
-		return nil, err
-	}
-
-	var mapsets []*Mapset
-
-	for _, hit := range data.Hits.Hits {
-		mapsets = append(mapsets, &hit.Source)
-	}
-
-	return mapsets, nil
 }
 
 // IndexAllElasticSearchMapsets Indexes all mapsets in the DB in ElasticSearch
@@ -147,4 +116,57 @@ func IndexAllElasticSearchMapsets(deletePrevious bool, workers int) error {
 	}
 
 	return nil
+}
+
+// SearchElasticMapsets Searches ElasticSearch for mapsets
+func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error) {
+	query := map[string]interface{}{
+		"size": options.Limit,
+		"query": map[string]interface{}{
+			"match_all": map[string]interface{}{},
+		},
+	}
+
+	jsonData, err := json.Marshal(query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := ElasticSearch.Search(
+		ElasticSearch.Search.WithIndex(elasticMapsetIndex),
+		ElasticSearch.Search.WithBody(strings.NewReader(string(jsonData))),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	data := struct {
+		Hits struct {
+			Hits []struct {
+				Source Mapset `json:"_source"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}{}
+
+	if err := json.Unmarshal(body, &data); err != nil {
+		return nil, err
+	}
+
+	var mapsets []*Mapset
+
+	for _, hit := range data.Hits.Hits {
+		mapsets = append(mapsets, &hit.Source)
+	}
+
+	return mapsets, nil
 }
