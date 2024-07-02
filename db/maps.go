@@ -1,6 +1,9 @@
 package db
 
-import "github.com/Quaver/api2/enums"
+import (
+	"github.com/Quaver/api2/enums"
+	"gorm.io/gorm"
+)
 
 type MapQua struct {
 	Id                   int                `gorm:"column:id; PRIMARY_KEY" json:"id"`
@@ -22,8 +25,11 @@ type MapQua struct {
 	DifficultyRating     float64            `gorm:"column:difficulty_rating" json:"difficulty_rating"`
 	CountHitObjectNormal int                `gorm:"column:count_hitobject_normal" json:"count_hitobject_normal"`
 	CountHitObjectLong   int                `gorm:"column:count_hitobject_long" json:"count_hit_object_long"`
+	LongNotePercentage   float32            `gorm:"-:all" json:"long_note_percentage"`
+	MaxCombo             int                `gorm:"-:all" json:"max_combo"`
 	PlayCount            int                `gorm:"column:play_count" json:"play_count"`
 	FailCount            int                `gorm:"column:fail_count" json:"fail_count"`
+	PlayAttempts         int                `gorm:"-:all" json:"play_attempts"`
 	ModsPending          int                `gorm:"column:mods_pending" json:"mods_pending"`
 	ModsAccepted         int                `gorm:"column:mods_accepted" json:"mods_accepted"`
 	ModsDenied           int                `gorm:"column:mods_denied" json:"mods_denied"`
@@ -34,6 +40,18 @@ type MapQua struct {
 
 func (m *MapQua) TableName() string {
 	return "maps"
+}
+
+func (m *MapQua) AfterFind(*gorm.DB) error {
+	m.MaxCombo = m.CountHitObjectLong*2 + m.CountHitObjectNormal
+	m.PlayAttempts = m.PlayCount + m.FailCount
+
+	if m.CountHitObjectLong != 0 {
+		m.LongNotePercentage = float32(m.CountHitObjectLong) /
+			float32(m.CountHitObjectNormal+m.CountHitObjectLong) * 100
+	}
+
+	return nil
 }
 
 // GetMapById Retrieves a map from the database by id

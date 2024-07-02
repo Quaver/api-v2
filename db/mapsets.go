@@ -85,6 +85,22 @@ func GetUserMapsets(userId int) ([]*Mapset, error) {
 	return mapsets, nil
 }
 
+// GetAllMapsets Retrieves all the mapsets in the database
+func GetAllMapsets() ([]*Mapset, error) {
+	var mapsets = make([]*Mapset, 0)
+
+	result := SQL.
+		Preload("Maps").
+		Where("mapsets.visible = 1").
+		Find(&mapsets)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return mapsets, nil
+}
+
 // UpdateMapsetDescription Updates a given mapset's description
 func UpdateMapsetDescription(id int, description string) error {
 	result := SQL.Model(&Mapset{}).Where("id = ?", id).Update("description", description)
