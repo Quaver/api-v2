@@ -9,8 +9,7 @@ import (
 
 var MigrationPlaylistMapsetCmd = &cobra.Command{
 	Use:   "migration:playlist:mapsets",
-	Short: "Clears the cache",
-	Long:  `Clears the application cache.`,
+	Short: "Migrates playlists from v1 to v2",
 	Run: func(cmd *cobra.Command, args []string) {
 		RunPlaylistMapset()
 	},
