@@ -72,6 +72,10 @@ type Config struct {
 		DonateRedirectUrl       string `json:"donate_redirect_url"`
 		StorePaymentRedirectUrl string `json:"store_payment_redirect_url"`
 	} `json:"stripe"`
+
+	Discord struct {
+		BotAPI string `json:"bot_api"`
+	} `json:"discord"`
 }
 
 var Instance *Config = nil

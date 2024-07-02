@@ -48,5 +48,8 @@
     "webhook_signing_secret": "",
     "donate_redirect_url": "https://quavergame.com/donate?status=success",
     "store_payment_redirect_url": "https://quavergame.com/donate?status=success"
+  },
+  "discord": {
+    "bot_api": ""
   }
 }

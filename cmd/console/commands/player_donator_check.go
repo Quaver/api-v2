@@ -1,8 +1,12 @@
 package commands
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"time"
@@ -21,7 +25,7 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 			var users = make([]*db.User, 0)
 
 			result := db.SQL.
-				Where("allowed = 1 && donator_end_time != 0").
+				Where("? & usergroups != 0", enums.UserGroupDonator).
 				Limit(batchSize).
 				Offset(offset).
 				Find(&users)
@@ -38,13 +42,24 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 				if user.DonatorEndTime < currentTime.UnixMilli() {
 					logrus.Printf("User %s donator expired", user.Username)
 
-					if enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
-						if err := user.UpdateUserGroups(user.UserGroups &^ enums.UserGroupDonator); err != nil {
-							logrus.Println(err)
-						}
+					result := db.SQL.Model(&db.User{}).
+						Where("id = ?", user.Id).
+						Update("usergroups", user.UserGroups&^enums.UserGroupDonator).
+						Update("donator_end_time", 0)
 
-						if err := user.UpdateDonatorEndTime(0); err != nil {
-							logrus.Println(err)
+					if result.Error != nil {
+						logrus.Println(result.Error)
+					}
+
+					// Add back donator if user is discord premium
+					if userIsDiscordPremiumUser(user) {
+						result := db.SQL.Model(&db.User{}).
+							Where("id = ?", user.Id).
+							Update("usergroups", user.UserGroups|enums.UserGroupDonator).
+							Update("donator_end_time", time.Now().UnixMilli()+3600000)
+
+						if result.Error != nil {
+							logrus.Println(result.Error)
 						}
 					}
 				}
@@ -53,4 +68,32 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 			offset += batchSize
 		}
 	},
+}
+
+func userIsDiscordPremiumUser(user *db.User) bool {
+	if user.DiscordId == nil {
+		return false
+	}
+
+	resp, err := resty.New().R().Get(fmt.Sprintf("%v/donator/discord/check/%v", config.Instance.Discord.BotAPI, user.DiscordId))
+
+	if err != nil {
+		return false
+	}
+
+	if resp.IsError() {
+		return false
+	}
+
+	type response struct {
+		HasDonator bool `json:"has_donator"`
+	}
+
+	var parsed response
+
+	if err = json.Unmarshal(resp.Body(), &parsed); err != nil {
+		return false
+	}
+
+	return parsed.HasDonator
 }

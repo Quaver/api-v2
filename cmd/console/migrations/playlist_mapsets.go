@@ -1,20 +1,21 @@
-package commands
+package migrations
 
 import (
-	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"gorm.io/gorm"
 )
 
+var MigrationPlaylistMapsetCmd = &cobra.Command{
+	Use:   "migration:playlist:mapsets",
+	Short: "Migrates playlists from v1 to v2",
+	Run: func(cmd *cobra.Command, args []string) {
+		RunPlaylistMapset()
+	},
+}
+
 func RunPlaylistMapset() {
-	if err := config.Load("../../config.json"); err != nil {
-		logrus.Panic(err)
-	}
-
-	db.ConnectMySQL()
-	defer db.CloseMySQL()
-
 	playlists, err := db.GetAllPlaylists()
 
 	if err != nil {
