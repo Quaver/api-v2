@@ -26,4 +26,5 @@ func init() {
 
 	RootCmd.AddCommand(commands.CacheClearCmd)
 	RootCmd.AddCommand(commands.CacheLeaderboardCmd)
+	RootCmd.AddCommand(commands.PlayerDonatorCheckCmd)
 }
