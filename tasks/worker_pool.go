@@ -14,8 +14,8 @@ type Worker struct {
 // Result The struct that will be published to Worker.ResultChannel when workers complete their task.
 type Result struct {
 	WorkerId int
-	Input    interface{}
-	Data     interface{}
+	Input    interface{} // The input of the worker function
+	Output   interface{} // The output of the worker function
 	Error    error
 }
 
@@ -29,7 +29,7 @@ func (worker *Worker) Start(task Task) {
 			worker.ResultChannel <- Result{
 				WorkerId: worker.Id,
 				Input:    input,
-				Data:     result,
+				Output:   result,
 				Error:    err,
 			}
 		}
