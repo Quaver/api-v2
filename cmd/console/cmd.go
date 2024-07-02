@@ -23,8 +23,10 @@ func init() {
 
 	db.ConnectMySQL()
 	db.InitializeRedis()
+	db.InitializeElasticSearch()
 
 	RootCmd.AddCommand(commands.CacheClearCmd)
 	RootCmd.AddCommand(commands.CacheLeaderboardCmd)
 	RootCmd.AddCommand(commands.PlayerDonatorCheckCmd)
+	RootCmd.AddCommand(commands.ElasticIndexMapsets)
 }
