@@ -1,0 +1,1 @@
+ALTER TABLE `user_rank_keys4` DROP COLUMN `overall_performance_rating`;
