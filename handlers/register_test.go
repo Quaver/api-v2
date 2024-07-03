@@ -23,12 +23,12 @@ func TestCheckFlaggedText(t *testing.T) {
 	}
 
 	isFlagged, err = isTextFlagged("n*gger")
-	
+
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if !isFlagged {
-		t.Fatal("Expected text to not be flagged")
+		t.Fatal("Expected text to be flagged")
 	}
 }
