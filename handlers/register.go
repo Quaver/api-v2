@@ -150,7 +150,7 @@ func authenticateSteamTicket(c *gin.Context) (string, *APIError) {
 
 // Returns the user's country from their ip address
 func getUserCountryFromIP(ip string) (string, error) {
-	resp, err := resty.New().R().Get(fmt.Sprintf("https://ip-api.com/json/%v", ip))
+	resp, err := resty.New().R().Get(fmt.Sprintf("http://ip-api.com/json/%v", ip))
 
 	if err != nil {
 		return "XX", err
