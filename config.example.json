@@ -51,5 +51,6 @@
   },
   "discord": {
     "bot_api": ""
-  }
+  },
+  "openai_api_key": ""
 }

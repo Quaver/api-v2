@@ -2,7 +2,7 @@
 
 > 🌎 The new API server for Quaver.
 
-**api2** is the most up-to-date (v2) and open source version of the Quaver web API.
+**api-v2** is the most up-to-date (v2) and open source version of the Quaver web API.
 
 As endpoints are made available in v2, it is recommended to use them instead of its v1 counterpart, as v1 will be deprecated, as we begin to update usage in-game and on our website.
 
@@ -15,6 +15,7 @@ As endpoints are made available in v2, it is recommended to use them instead of 
 - Redis
 - ElasticSearch 8.14.1
 - Steam Publisher API Key
+- OpenAI API Key
 - Compiled [Quaver.Tools Executable](https://github.com/Quaver/Quaver.API)
 - Stripe CLI (for donations/store item development/testing)
 - Postman (for testing)

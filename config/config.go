@@ -76,6 +76,8 @@ type Config struct {
 	Discord struct {
 		BotAPI string `json:"bot_api"`
 	} `json:"discord"`
+
+	OpenAIAPIKey string `json:"openai_api_key"`
 }
 
 var Instance *Config = nil

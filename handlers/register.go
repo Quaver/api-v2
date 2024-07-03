@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
@@ -54,6 +55,16 @@ func RegisterNewUser(c *gin.Context) *APIError {
 
 	if !usernameAvailable {
 		return APIErrorBadRequest("The username you have chosen is unavailable.")
+	}
+
+	isFlagged, err := isTextFlagged(body.Username)
+
+	if err != nil {
+		logrus.Errorf("Error checking if username is flagged: %v", err)
+	}
+
+	if isFlagged {
+		return APIErrorBadRequest("Your username has been flagged as inappropriate. Please choose another.")
 	}
 
 	country, err := getUserCountryFromIP(c.ClientIP())
@@ -170,4 +181,48 @@ func getUserCountryFromIP(ip string) (string, error) {
 	}
 
 	return parsed.CountryCode, nil
+}
+
+// Checks if the incoming text is flagged by OpenAI
+func isTextFlagged(text string) (bool, error) {
+	body := struct {
+		Input string `json:"input"`
+	}{
+		Input: text,
+	}
+
+	resp, err := resty.New().R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", fmt.Sprintf("Bearer %v", config.Instance.OpenAIAPIKey)).
+		SetBody(body).
+		Post("https://api.openai.com/v1/moderations")
+
+	if err != nil {
+		return false, err
+	}
+
+	if resp.IsError() {
+		return false, errors.New(fmt.Sprintf("Error checking flagged text: %v - %v",
+			resp.StatusCode(), string(resp.Body())))
+	}
+
+	type responseJson struct {
+		Id      string `json:"id"`
+		Model   string `json:"model"`
+		Results []struct {
+			Flagged bool `json:"flagged"`
+		} `json:"results"`
+	}
+
+	var parsed responseJson
+
+	if err := json.Unmarshal(resp.Body(), &parsed); err != nil {
+		return false, err
+	}
+
+	if len(parsed.Results) == 0 {
+		return false, nil
+	}
+
+	return parsed.Results[0].Flagged, nil
 }
