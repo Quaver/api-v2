@@ -29,6 +29,10 @@ var (
 	}
 )
 
+const (
+	__MACOSX string = "__MACOSX"
+)
+
 // HandleMapsetSubmission Handles the uploading/updating of a mapset archive (.qp) file
 // Endpoint: POST /v2/mapset
 func HandleMapsetSubmission(c *gin.Context) *APIError {
@@ -102,7 +106,7 @@ func validateMapsetZipFiles(zip *zip.Reader) *APIError {
 	hasAtleastOneQua := false
 
 	for _, file := range zip.File {
-		if strings.Contains(file.Name, "__MACOSX") {
+		if strings.Contains(file.Name, __MACOSX) {
 			continue
 		}
 
