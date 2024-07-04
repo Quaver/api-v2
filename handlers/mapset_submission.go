@@ -106,23 +106,24 @@ func validateMapsetZipFiles(zip *zip.Reader) *APIError {
 	hasAtleastOneQua := false
 
 	for _, file := range zip.File {
-		if strings.Contains(file.Name, __MACOSX) {
+		if strings.Contains(file.Name, __MACOSX) || strings.Contains(strings.ToLower(file.Name), "thumbs.db") {
 			continue
 		}
 
-		if strings.HasSuffix(file.Name, ".qua") {
-			hasAtleastOneQua = true
-		}
-
+		extension := strings.ToLower(path.Ext(file.Name))
 		invalidErr := APIErrorBadRequest(fmt.Sprintf("Your mapset contains an invalid file: %v", file.Name))
 
-		if !slices.Contains(acceptedFileExtensions, path.Ext(file.Name)) {
+		if !slices.Contains(acceptedFileExtensions, extension) {
 			return invalidErr
 		}
 
 		if err := validateMimetype(file); err != nil {
 			logrus.Errorf("Error detecting mimetype of file %v - %v", file.Name, err)
 			return invalidErr
+		}
+
+		if extension == ".qua" {
+			hasAtleastOneQua = true
 		}
 	}
 
@@ -143,7 +144,7 @@ func validateMimetype(file *zip.File) error {
 
 	defer reader.Close()
 
-	extension := path.Ext(file.Name)
+	extension := strings.ToLower(path.Ext(file.Name))
 
 	switch extension {
 	case ".jpeg", ".jpg", ".png":
