@@ -4,6 +4,7 @@ import (
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -77,6 +78,16 @@ func ChangeUserUsername(c *gin.Context) *APIError {
 
 	if err := c.ShouldBind(&body); err != nil {
 		return APIErrorBadRequest("Invalid request body")
+	}
+
+	isUsernameFlagged, err := isTextFlagged(body.Username)
+
+	if err != nil {
+		logrus.Error("Error checking if username is flagged", err)
+	}
+
+	if isUsernameFlagged {
+		return APIErrorBadRequest("The username you have chosen has been flagged as inappropriate.")
 	}
 
 	changed, reason, err := db.ChangeUserUsername(user.Id, user.Username, body.Username)
