@@ -137,6 +137,8 @@ func validateMimetype(file *zip.File) error {
 		return err
 	}
 
+	defer reader.Close()
+
 	extension := path.Ext(file.Name)
 
 	switch extension {
