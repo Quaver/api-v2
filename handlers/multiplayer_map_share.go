@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -41,7 +40,17 @@ func UploadMultiplayerMapset(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	if apiErr := validateUploadedMultiplayerMapset(c, id); apiErr != nil {
+	zipReader, apiErr := checkValidRequestMapset(c, user)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	if apiErr := validateMapsetZipFiles(zipReader); apiErr != nil {
+		return apiErr
+	}
+
+	if apiErr := writeMultiplayerMapset(c, id); apiErr != nil {
 		return apiErr
 	}
 
@@ -66,16 +75,8 @@ func UploadMultiplayerMapset(c *gin.Context) *APIError {
 }
 
 // Validates and caches multiplayer mapset
-func validateUploadedMultiplayerMapset(c *gin.Context, gameId int) *APIError {
+func writeMultiplayerMapset(c *gin.Context, gameId int) *APIError {
 	fileHeader, _ := c.FormFile("mapset")
-
-	if fileHeader == nil {
-		return APIErrorBadRequest("You must provide a valid `mapset` file.")
-	}
-
-	if !strings.HasSuffix(fileHeader.Filename, ".qp") {
-		return APIErrorBadRequest("You must provide a valid .qp file.")
-	}
 
 	file, err := fileHeader.Open()
 
@@ -85,21 +86,11 @@ func validateUploadedMultiplayerMapset(c *gin.Context, gameId int) *APIError {
 
 	defer file.Close()
 
-	// Read File
 	var fileBytes = make([]byte, fileHeader.Size)
 
 	if _, err = file.Read(fileBytes); err != nil {
 		return APIErrorServerError("Error reading file", err)
 	}
-
-	// Check File Size Limit
-	const fileSizeLimit = 1048576 * 50
-
-	if len(fileBytes) > fileSizeLimit || fileHeader.Size > fileSizeLimit {
-		return APIErrorBadRequest("The file you have uploaded must not exceed 5MB.")
-	}
-
-	// TODO: Validate zip & containing files (IMPORTANT!)
 
 	path := fmt.Sprintf("%v/multiplayer/%v.qp", files.GetTempDirectory(), gameId)
 
