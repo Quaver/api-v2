@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/qua"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
+	"io"
 	"net/http"
 	"path"
 	"slices"
@@ -52,6 +54,13 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return apiErr
 	}
 
+	quaFiles, apiErr := readQuaFilesFromZip(zipReader)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	fmt.Println(quaFiles)
 	c.JSON(http.StatusOK, gin.H{"message": "Your mapset has been successfully uploaded."})
 	return nil
 }
@@ -166,6 +175,43 @@ func validateMimetype(file *zip.File) error {
 	}
 
 	return nil
+}
+
+// Reads all .qua files from a mapset archive
+func readQuaFilesFromZip(archive *zip.Reader) (map[*zip.File]*qua.Qua, *APIError) {
+	quaFiles := map[*zip.File]*qua.Qua{}
+
+	for _, file := range archive.File {
+		if strings.Contains(file.Name, __MACOSX) || strings.ToLower(path.Ext(file.Name)) != ".qua" {
+			continue
+		}
+
+		reader, err := file.Open()
+
+		if err != nil {
+			logrus.Error("Error opening file: ", file.Name, err)
+			return nil, APIErrorBadRequest(fmt.Sprintf("Error reading file: %v", file.Name))
+		}
+
+		fileBytes, err := io.ReadAll(reader)
+		reader.Close()
+
+		if err != nil {
+			logrus.Error("Error reading file: ", file.Name, err)
+			return nil, APIErrorBadRequest(fmt.Sprintf("Error reading file: %v", file.Name))
+		}
+
+		quaFile, err := qua.Parse(fileBytes)
+
+		if err != nil {
+			logrus.Error("Error parsing qua file: ", file.Name, err)
+			return nil, APIErrorBadRequest(fmt.Sprintf("Error reading file: %v", file.Name))
+		}
+
+		quaFiles[file] = quaFile
+	}
+
+	return quaFiles, nil
 }
 
 // Returns a mapsets file size limit in MB
