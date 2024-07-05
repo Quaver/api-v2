@@ -271,6 +271,23 @@ func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.M
 	return nil, nil
 }
 
+// Checks if a user is eligible to upload an existing mapset
+func checkUserUploadEligibility(user *db.User) *APIError {
+	mapsets, err := db.GetUserMonthlyUploadMapsets(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving user monthly mapset uploads in db", err)
+	}
+
+	maxUploads := getUserMaxUploadsPerMonth(user)
+
+	if len(mapsets) >= maxUploads {
+		return APIErrorForbidden(fmt.Sprintf("You can only upload %v mapsets per month.", maxUploads))
+	}
+
+	return nil
+}
+
 // Returns a mapsets file size limit in MB
 func getMapsetFileSizeLimitMB(user *db.User) int64 {
 	if enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
@@ -291,21 +308,4 @@ func getUserMaxUploadsPerMonth(user *db.User) int {
 	} else {
 		return 10
 	}
-}
-
-// Checks if a user is eligible to upload an existing mapset
-func checkUserUploadEligibility(user *db.User) *APIError {
-	mapsets, err := db.GetUserMonthlyUploadMapsets(user.Id)
-
-	if err != nil {
-		return APIErrorServerError("Error retrieving user monthly mapset uploads in db", err)
-	}
-
-	maxUploads := getUserMaxUploadsPerMonth(user)
-
-	if len(mapsets) >= maxUploads {
-		return APIErrorForbidden(fmt.Sprintf("You can only upload %v mapsets per month.", maxUploads))
-	}
-
-	return nil
 }
