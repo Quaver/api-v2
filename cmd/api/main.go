@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
@@ -12,7 +13,10 @@ import (
 )
 
 func main() {
-	if err := config.Load("../../config.json"); err != nil {
+	configPath := flag.String("config", "../../config.json", "path to config file")
+	flag.Parse()
+
+	if err := config.Load(*configPath); err != nil {
 		logrus.Panic(err)
 	}
 
