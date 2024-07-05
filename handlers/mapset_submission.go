@@ -60,7 +60,10 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	fmt.Println(quaFiles)
+	if apiErr := validateQuaFiles(user, quaFiles); apiErr != nil {
+		return apiErr
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Your mapset has been successfully uploaded."})
 	return nil
 }
@@ -212,6 +215,21 @@ func readQuaFilesFromZip(archive *zip.Reader) (map[*zip.File]*qua.Qua, *APIError
 	}
 
 	return quaFiles, nil
+}
+
+// Goes through a map of qua files and makes sure they are valid
+func validateQuaFiles(user *db.User, quaFiles map[*zip.File]*qua.Qua) *APIError {
+	for _, quaFile := range quaFiles {
+		if quaFile.Artist == "" || quaFile.Title == "" || quaFile.DifficultyName == "" || quaFile.Creator == "" {
+			return APIErrorBadRequest("Your .qua files must contain filled in metadata.")
+		}
+
+		if quaFile.Creator != user.Username {
+			return APIErrorBadRequest("The username in your .qua files must match your username.")
+		}
+	}
+
+	return nil
 }
 
 // Returns a mapsets file size limit in MB
