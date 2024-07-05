@@ -8,6 +8,7 @@ import (
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/qua"
+	"github.com/Quaver/api2/sliceutil"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"math"
 	"net/http"
 	"path"
 	"slices"
@@ -64,7 +66,28 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Your mapset has been successfully uploaded."})
+	// If all qua files contain -1 for the mapset id and map id, then we're uploading a new set.
+	isUploadingNewMapset := sliceutil.All(sliceutil.Values(quaFiles), func(q *qua.Qua) bool {
+		return q.MapSetId == -1 && q.MapId == -1
+	})
+
+	var mapset *db.Mapset
+
+	if isUploadingNewMapset {
+		mapset, apiErr = uploadNewMapset(user, quaFiles)
+	} else {
+		mapset, apiErr = updateExistingMapset(user, quaFiles)
+	}
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Your mapset has been successfully uploaded.",
+		"mapset":  mapset,
+	})
+
 	return nil
 }
 
@@ -232,6 +255,22 @@ func validateQuaFiles(user *db.User, quaFiles map[*zip.File]*qua.Qua) *APIError 
 	return nil
 }
 
+// Handles the uploading of a brand new mapset
+func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset, *APIError) {
+	if apiErr := checkUserUploadEligibility(user); apiErr != nil {
+		return nil, apiErr
+	}
+
+	logrus.Debug("UPLOAD NEW MAPSET")
+	return nil, nil
+}
+
+// Handles the updating of an existing mapset
+func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset, *APIError) {
+	logrus.Debug("UPDATE EXISTING MAPSET")
+	return nil, nil
+}
+
 // Returns a mapsets file size limit in MB
 func getMapsetFileSizeLimitMB(user *db.User) int64 {
 	if enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
@@ -239,4 +278,34 @@ func getMapsetFileSizeLimitMB(user *db.User) int64 {
 	}
 
 	return 50
+}
+
+// Gets the maximum amount of mapsets a user can upload per month
+func getUserMaxUploadsPerMonth(user *db.User) int {
+	if enums.HasUserGroup(user.UserGroups, enums.UserGroupSwan) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupContributor) {
+		return math.MaxInt32
+	} else if enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return 20
+	} else {
+		return 10
+	}
+}
+
+// Checks if a user is eligible to upload an existing mapset
+func checkUserUploadEligibility(user *db.User) *APIError {
+	mapsets, err := db.GetUserMonthlyUploadMapsets(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving user monthly mapset uploads in db", err)
+	}
+
+	maxUploads := getUserMaxUploadsPerMonth(user)
+
+	if len(mapsets) >= maxUploads {
+		return APIErrorForbidden(fmt.Sprintf("You can only upload %v mapsets per month.", maxUploads))
+	}
+
+	return nil
 }

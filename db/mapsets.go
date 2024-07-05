@@ -85,6 +85,26 @@ func GetUserMapsets(userId int) ([]*Mapset, error) {
 	return mapsets, nil
 }
 
+// GetUserMonthlyUploadMapsets Retrieves a user's mapsets that they've uploaded in the past month
+func GetUserMonthlyUploadMapsets(userId int) ([]*Mapset, error) {
+	var mapsets = make([]*Mapset, 0)
+
+	thirtyDays := int64(1000 * 60 * 60 * 24 * 30)
+	monthAgo := time.Now().UnixMilli() - thirtyDays
+
+	result := SQL.
+		Preload("Maps").
+		Where("mapsets.creator_id = ? AND "+
+			"mapsets.date_submitted > ?", userId, monthAgo).
+		Find(&mapsets)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return mapsets, nil
+}
+
 // GetAllMapsets Retrieves all the mapsets in the database
 func GetAllMapsets() ([]*Mapset, error) {
 	var mapsets = make([]*Mapset, 0)
