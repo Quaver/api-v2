@@ -107,3 +107,12 @@ func InsertMap(m *MapQua) error {
 
 	return nil
 }
+
+// UpdateMapDifficultyRating Updates the difficulty rating of a map
+func UpdateMapDifficultyRating(id int, difficultyRating float64) error {
+	result := SQL.Model(&MapQua{}).
+		Where("id = ?", id).
+		Update("difficulty_rating", difficultyRating)
+
+	return result.Error
+}

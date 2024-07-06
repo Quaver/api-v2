@@ -304,32 +304,26 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 			return nil, APIErrorServerError("Error inserting map into db", err)
 		}
 
-		filePath := fmt.Sprintf("%v/%v.qua", files.GetTempDirectory(), songMap.Id)
 		quaFile.ReplaceIds(mapset.Id, songMap.Id)
+		songMap.MD5 = files.GetByteSliceMD5(quaFile.RawBytes)
+
+		filePath := fmt.Sprintf("%v/%v.qua", files.GetTempDirectory(), songMap.Id)
 
 		if err := quaFile.Write(filePath); err != nil {
 			return nil, APIErrorServerError("Error writing .qua file to disk", err)
 		}
 
-		calculator, err := tools.RunDifficultyCalculator(filePath, 0)
-
-		if err != nil {
-			return nil, APIErrorServerError("Error calculating calculator for map", err)
-		}
-
-		songMap.MD5 = files.GetByteSliceMD5(quaFile.RawBytes)
-		songMap.DifficultyRating = calculator.Difficulty.OverallDifficulty
-
 		if err := db.SQL.Save(&songMap).Error; err != nil {
 			return nil, APIErrorServerError("Error saving map in db", err)
 		}
 
-		err = azure.Client.UploadFile("maps", fmt.Sprintf("%v.qua", songMap.Id), quaFile.RawBytes)
+		err := azure.Client.UploadFile("maps", fmt.Sprintf("%v.qua", songMap.Id), quaFile.RawBytes)
 
 		if err != nil {
 			return nil, APIErrorServerError("Error uploading .qua file to azure", err)
 		}
 
+		go calcMapDifficulty(songMap, filePath)
 		mapset.Maps = append(mapset.Maps, songMap)
 	}
 
@@ -393,4 +387,21 @@ func getUserMaxUploadsPerMonth(user *db.User) int {
 	} else {
 		return 10
 	}
+}
+
+// Calculates a map's difficulty rating
+func calcMapDifficulty(songMap *db.MapQua, filePath string) {
+	calc, err := tools.RunDifficultyCalculator(filePath, 0)
+
+	if err != nil {
+		logrus.Error("Error calculating difficulty for map: ", err)
+		return
+	}
+
+	if err := db.UpdateMapDifficultyRating(songMap.Id, calc.Difficulty.OverallDifficulty); err != nil {
+		logrus.Error("Error updating map difficulty rating in DB: ", err)
+		return
+	}
+
+	logrus.Debugf("Updated difficulty for map: %v (%v)", songMap.Id, calc.Difficulty.OverallDifficulty)
 }
