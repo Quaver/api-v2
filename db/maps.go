@@ -108,6 +108,15 @@ func InsertMap(m *MapQua) error {
 	return nil
 }
 
+// UpdateMapMD5 Updates the md5 hash of a map
+func UpdateMapMD5(id int, md5 string) error {
+	result := SQL.Model(&MapQua{}).
+		Where("id = ?", id).
+		Update("md5", md5)
+
+	return result.Error
+}
+
 // UpdateMapDifficultyRating Updates the difficulty rating of a map
 func UpdateMapDifficultyRating(id int, difficultyRating float64) error {
 	result := SQL.Model(&MapQua{}).

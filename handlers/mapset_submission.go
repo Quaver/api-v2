@@ -86,6 +86,13 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return apiErr
 	}
 
+	// Create Mapset
+	// Update Mapset Package MD5
+	// Upload Mapset Package to Azure
+
+	// Create Banner
+	// Upload Banner To Azure
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Your mapset has been successfully uploaded.",
 		"mapset":  mapset,
@@ -307,31 +314,23 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 		quaFile.ReplaceIds(mapset.Id, songMap.Id)
 		songMap.MD5 = files.GetByteSliceMD5(quaFile.RawBytes)
 
+		if err := db.UpdateMapMD5(songMap.Id, songMap.MD5); err != nil {
+			return nil, APIErrorServerError("Error saving map in db", err)
+		}
+
 		filePath := fmt.Sprintf("%v/%v.qua", files.GetTempDirectory(), songMap.Id)
 
 		if err := quaFile.Write(filePath); err != nil {
 			return nil, APIErrorServerError("Error writing .qua file to disk", err)
 		}
 
-		if err := db.SQL.Save(&songMap).Error; err != nil {
-			return nil, APIErrorServerError("Error saving map in db", err)
-		}
-
-		err := azure.Client.UploadFile("maps", fmt.Sprintf("%v.qua", songMap.Id), quaFile.RawBytes)
-
-		if err != nil {
+		if err := azure.Client.UploadFile("maps", quaFile.FileName(), quaFile.RawBytes); err != nil {
 			return nil, APIErrorServerError("Error uploading .qua file to azure", err)
 		}
 
 		go calcMapDifficulty(songMap, filePath)
 		mapset.Maps = append(mapset.Maps, songMap)
 	}
-
-	// Create Mapset Package
-	// Update Mapset Package MD5
-	// Upload Mapset Package to Azure
-	// Create Banner
-	// Upload Banner To Azure
 
 	if err := db.AddUserActivity(user.Id, db.UserActivityUploadedMapset, mapset.String(), mapset.Id); err != nil {
 		return nil, APIErrorServerError("Error inserting user activity for uploading mapset", err)

@@ -77,3 +77,7 @@ func (q *Qua) ReplaceIds(mapsetId int, mapId int) string {
 func (q *Qua) Write(path string) error {
 	return os.WriteFile(path, q.RawBytes, 0644)
 }
+
+func (q *Qua) FileName() string {
+	return fmt.Sprintf("%v.qua", q.MapId)
+}
