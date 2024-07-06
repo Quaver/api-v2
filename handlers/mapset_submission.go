@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/files"
@@ -303,8 +304,8 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 			return nil, APIErrorServerError("Error inserting map into db", err)
 		}
 
-		quaFile.ReplaceIds(mapset.Id, songMap.Id)
 		filePath := fmt.Sprintf("%v/%v.qua", files.GetTempDirectory(), songMap.Id)
+		quaFile.ReplaceIds(mapset.Id, songMap.Id)
 
 		if err := quaFile.Write(filePath); err != nil {
 			return nil, APIErrorServerError("Error writing .qua file to disk", err)
@@ -321,6 +322,12 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 
 		if err := db.SQL.Save(&songMap).Error; err != nil {
 			return nil, APIErrorServerError("Error saving map in db", err)
+		}
+
+		err = azure.Client.UploadFile("maps", fmt.Sprintf("%v.qua", songMap.Id), quaFile.RawBytes)
+
+		if err != nil {
+			return nil, APIErrorServerError("Error uploading .qua file to azure", err)
 		}
 
 		mapset.Maps = append(mapset.Maps, songMap)
