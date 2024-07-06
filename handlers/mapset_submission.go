@@ -333,7 +333,20 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 		mapset.Maps = append(mapset.Maps, songMap)
 	}
 
-	logrus.Debug("UPLOAD NEW MAPSET")
+	// Create Mapset Package
+	// Update Mapset Package MD5
+	// Upload Mapset Package to Azure
+	// Create Banner
+	// Upload Banner To Azure
+
+	if err := db.AddUserActivity(user.Id, db.UserActivityUploadedMapset, mapset.String(), mapset.Id); err != nil {
+		return nil, APIErrorServerError("Error inserting user activity for uploading mapset", err)
+	}
+
+	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
+		return nil, APIErrorServerError("Error updating elastic search", err)
+	}
+
 	return mapset, nil
 }
 
