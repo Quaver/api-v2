@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/files"
 	"github.com/Quaver/api2/qua"
 	"github.com/Quaver/api2/sliceutil"
 	"github.com/gabriel-vasile/mimetype"
@@ -301,8 +302,13 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 			return nil, APIErrorServerError("Error inserting map into db", err)
 		}
 
-		fileBytes := quaFile.ReplaceIds(mapset.Id, songMap.Id)
-		logrus.Debug(fileBytes)
+		_ = quaFile.ReplaceIds(mapset.Id, songMap.Id)
+		songMap.MD5 = files.GetByteSliceMD5(quaFile.RawBytes)
+
+		if err := db.SQL.Save(&songMap).Error; err != nil {
+			return nil, APIErrorServerError("Error saving map in db", err)
+		}
+
 		mapset.Maps = append(mapset.Maps, songMap)
 	}
 
