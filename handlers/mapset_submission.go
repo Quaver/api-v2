@@ -14,8 +14,10 @@ import (
 	"github.com/Quaver/api2/tools"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
+	"github.com/oliamb/cutter"
 	"github.com/sirupsen/logrus"
 	"image"
+	"image/jpeg"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
@@ -90,8 +92,11 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 	// Update Mapset Package MD5
 	// Upload Mapset Package to Azure
 
-	// Create Banner
-	// Upload Banner To Azure
+	go func() {
+		if err := createMapsetBanner(zipReader, quaFiles); err != nil {
+			logrus.Error("Error creating mapset banner: ", err)
+		}
+	}()
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Your mapset has been successfully uploaded.",
@@ -401,4 +406,59 @@ func calcMapDifficulty(songMap *db.MapQua, filePath string) {
 		logrus.Error("Error updating map difficulty rating in DB: ", err)
 		return
 	}
+}
+
+// Creates an auto-cropped mapset banner and uploads it to azure
+func createMapsetBanner(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua) error {
+	// Loop through each qua file & try to find a matching background file in the archive.
+	// Both need to exist in order for a banner to get created.
+	for _, quaFile := range quaFiles {
+		for _, zipFile := range zip.File {
+			if strings.Contains(zipFile.Name, __MACOSX) || path.Base(zipFile.Name) != quaFile.BackgroundFile {
+				continue
+			}
+
+			reader, err := zipFile.Open()
+
+			if err != nil {
+				return err
+			}
+
+			img, _, err := image.Decode(reader)
+
+			if err != nil {
+				return err
+			}
+
+			reader.Close()
+
+			cropped, err := cutter.Crop(img, cutter.Config{
+				Width:   900,
+				Height:  250,
+				Anchor:  image.Point{X: 0, Y: 0},
+				Mode:    cutter.Centered,
+				Options: cutter.Copy,
+			})
+
+			if err != nil {
+				return err
+			}
+
+			buf := new(bytes.Buffer)
+
+			if err := jpeg.Encode(buf, cropped, nil); err != nil {
+				return err
+			}
+
+			fileName := fmt.Sprintf("%v_banner.jpg", quaFile.MapSetId)
+
+			if err := azure.Client.UploadFile("banners", fileName, buf.Bytes()); err != nil {
+				return err
+			}
+
+			return nil
+		}
+	}
+
+	return nil
 }
