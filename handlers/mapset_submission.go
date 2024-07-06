@@ -88,9 +88,17 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	// Create Mapset
-	// Update Mapset Package MD5
-	// Upload Mapset Package to Azure
+	archive, err := createMapsetArchive(zipReader, quaFiles)
+
+	if err != nil {
+		return APIErrorServerError("Failed to create mapset archive", err)
+	}
+
+	// TODO: Update Mapset Package MD5
+
+	if err := azure.Client.UploadFile("mapsets", fmt.Sprintf("%v.qp", mapset.Id), archive); err != nil {
+		return APIErrorServerError("Failed to upload mapset archive to azure", err)
+	}
 
 	go func() {
 		if err := createMapsetBanner(zipReader, quaFiles); err != nil {
@@ -406,6 +414,62 @@ func calcMapDifficulty(songMap *db.MapQua, filePath string) {
 		logrus.Error("Error updating map difficulty rating in DB: ", err)
 		return
 	}
+}
+
+// Creates a mapset archive file (.qp)
+func createMapsetArchive(zipReader *zip.Reader, quaFiles map[*zip.File]*qua.Qua) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	zipWriter := zip.NewWriter(buf)
+
+	// Add all files that aren't .qua from the original package into this one.
+	for _, zipFile := range zipReader.File {
+		if strings.Contains(zipFile.Name, __MACOSX) || path.Ext(zipFile.Name) == ".qua" {
+			continue
+		}
+
+		newFile, err := zipWriter.Create(zipFile.Name)
+
+		if err != nil {
+			return nil, err
+		}
+
+		reader, err := zipFile.Open()
+
+		if err != nil {
+			return nil, err
+		}
+
+		fileBytes, err := io.ReadAll(reader)
+
+		if err != nil {
+			return nil, err
+		}
+
+		reader.Close()
+
+		if _, err = newFile.Write(fileBytes); err != nil {
+			return nil, err
+		}
+	}
+
+	// Now add .qua files to the archive.
+	for _, quaFile := range quaFiles {
+		newFile, err := zipWriter.Create(quaFile.FileName())
+
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err = newFile.Write(quaFile.RawBytes); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := zipWriter.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // Creates an auto-cropped mapset banner and uploads it to azure
