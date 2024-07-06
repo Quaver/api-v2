@@ -427,7 +427,9 @@ func createMapsetArchive(zipReader *zip.Reader, quaFiles map[*zip.File]*qua.Qua)
 
 	// Add all files that aren't .qua from the original package into this one.
 	for _, zipFile := range zipReader.File {
-		if strings.Contains(zipFile.Name, __MACOSX) || path.Ext(zipFile.Name) == ".qua" {
+		if strings.Contains(zipFile.Name, __MACOSX) ||
+			strings.Contains(strings.ToLower(zipFile.Name), "thumbs.db") ||
+			path.Ext(zipFile.Name) == ".qua" {
 			continue
 		}
 
