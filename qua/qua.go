@@ -5,6 +5,7 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/goccy/go-yaml"
 	"github.com/sirupsen/logrus"
+	"os"
 	"regexp"
 )
 
@@ -70,4 +71,9 @@ func (q *Qua) ReplaceIds(mapsetId int, mapId int) string {
 
 	q.RawBytes = []byte(fileStr)
 	return fileStr
+}
+
+// Writes the .qua to a file
+func (q *Qua) Write(path string) error {
+	return os.WriteFile(path, q.RawBytes, 0644)
 }

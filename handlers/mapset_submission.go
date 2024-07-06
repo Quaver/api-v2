@@ -10,6 +10,7 @@ import (
 	"github.com/Quaver/api2/files"
 	"github.com/Quaver/api2/qua"
 	"github.com/Quaver/api2/sliceutil"
+	"github.com/Quaver/api2/tools"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -302,8 +303,21 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 			return nil, APIErrorServerError("Error inserting map into db", err)
 		}
 
-		_ = quaFile.ReplaceIds(mapset.Id, songMap.Id)
+		quaFile.ReplaceIds(mapset.Id, songMap.Id)
+		filePath := fmt.Sprintf("%v/%v.qua", files.GetTempDirectory(), songMap.Id)
+
+		if err := quaFile.Write(filePath); err != nil {
+			return nil, APIErrorServerError("Error writing .qua file to disk", err)
+		}
+
+		calculator, err := tools.RunDifficultyCalculator(filePath, 0)
+
+		if err != nil {
+			return nil, APIErrorServerError("Error calculating calculator for map", err)
+		}
+
 		songMap.MD5 = files.GetByteSliceMD5(quaFile.RawBytes)
+		songMap.DifficultyRating = calculator.Difficulty.OverallDifficulty
 
 		if err := db.SQL.Save(&songMap).Error; err != nil {
 			return nil, APIErrorServerError("Error saving map in db", err)
