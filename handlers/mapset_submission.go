@@ -261,8 +261,53 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 		return nil, apiErr
 	}
 
+	referenceMap := sliceutil.Values(quaFiles)[0]
+
+	mapset := &db.Mapset{
+		CreatorID:       user.Id,
+		CreatorUsername: user.Username,
+		Artist:          referenceMap.Artist,
+		Title:           referenceMap.Title,
+		Source:          referenceMap.Source,
+		Tags:            referenceMap.Tags,
+	}
+
+	if err := mapset.Insert(); err != nil {
+		return nil, APIErrorServerError("Error inserting mapset into db", err)
+	}
+
+	for _, quaFile := range quaFiles {
+		songMap := &db.MapQua{
+			MapsetId:             mapset.Id,
+			CreatorId:            user.Id,
+			CreatorUsername:      user.Username,
+			GameMode:             quaFile.Mode,
+			RankedStatus:         enums.RankedStatusUnranked,
+			Artist:               quaFile.Artist,
+			Title:                quaFile.Title,
+			Source:               quaFile.Source,
+			Tags:                 quaFile.Tags,
+			Description:          quaFile.Description,
+			DifficultyName:       quaFile.DifficultyName,
+			Length:               0,
+			BPM:                  0,
+			DifficultyRating:     0,
+			CountHitObjectNormal: 0,
+			CountHitObjectLong:   0,
+			MaxCombo:             0,
+		}
+
+		if err := db.InsertMap(songMap); err != nil {
+			return nil, APIErrorServerError("Error inserting map into db", err)
+		}
+
+		fileBytes := quaFile.ReplaceIds(mapset.Id, songMap.Id)
+		logrus.Debug(fileBytes)
+		mapset.Maps = append(mapset.Maps, songMap)
+	}
+
 	logrus.Debug("UPLOAD NEW MAPSET")
-	return nil, nil
+	return mapset, nil
 }
 
 // Handles the updating of an existing mapset

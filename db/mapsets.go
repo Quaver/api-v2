@@ -46,6 +46,18 @@ func (m *Mapset) AfterFind(*gorm.DB) (err error) {
 	return nil
 }
 
+func (m *Mapset) Insert() error {
+	m.IsVisible = true
+	m.DateSubmittedJSON = time.Now()
+	m.DateLastUpdatedJSON = time.Now()
+
+	if err := SQL.Create(&m).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetMapsetById Retrieves a mapset by its id
 func GetMapsetById(id int) (*Mapset, error) {
 	var mapset *Mapset

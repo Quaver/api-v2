@@ -1,9 +1,11 @@
 package qua
 
 import (
+	"fmt"
 	"github.com/Quaver/api2/enums"
 	"github.com/goccy/go-yaml"
 	"github.com/sirupsen/logrus"
+	"regexp"
 )
 
 type Qua struct {
@@ -26,11 +28,12 @@ type Qua struct {
 	BPMDoesNotAffectScrollVelocity bool    `yaml:"BPMDoesNotAffectScrollVelocity"`
 	InitialScrollVelocity          float32 `yaml:"InitialScrollVelocity"`
 	HasScratchKey                  bool    `yaml:"HasScratchKey"`
+	RawBytes                       []byte  `yaml:"-,omitempty"`
 }
 
 // Parse Parses and returns a Qua file
 func Parse(file []byte) (*Qua, error) {
-	qua := Qua{}
+	qua := Qua{RawBytes: file}
 
 	if err := yaml.Unmarshal(file, &qua); err != nil {
 		logrus.Error(err)
@@ -49,4 +52,22 @@ func Parse(file []byte) (*Qua, error) {
 	}
 
 	return &qua, nil
+}
+
+func (q *Qua) ReplaceIds(mapsetId int, mapId int) string {
+	q.MapSetId = mapsetId
+	q.MapId = mapId
+
+	fileStr := string(q.RawBytes)
+
+	fileStr = regexp.MustCompile(`MapSetId:\s*-?\d+`).ReplaceAllStringFunc(fileStr, func(match string) string {
+		return fmt.Sprintf("MapSetId: %v", mapsetId)
+	})
+
+	fileStr = regexp.MustCompile(`MapId:\s*-?\d+`).ReplaceAllStringFunc(fileStr, func(match string) string {
+		return fmt.Sprintf("MapId: %v", mapId)
+	})
+
+	q.RawBytes = []byte(fileStr)
+	return fileStr
 }
