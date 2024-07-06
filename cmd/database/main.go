@@ -13,12 +13,13 @@ import (
 )
 
 func main() {
+	configPath := flag.String("config", "../../config.json", "path to config file")
 	direction := flag.String("direction", "up", "Direction to run migration: up or down")
 	version := flag.String("version", "", "Target migration version")
 	steps := flag.Int("steps", 0, "Number of migration steps to apply")
 	flag.Parse()
 
-	if err := config.Load("../../config.json"); err != nil {
+	if err := config.Load(*configPath); err != nil {
 		logrus.Panic(err)
 	}
 
