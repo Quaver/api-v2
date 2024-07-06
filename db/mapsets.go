@@ -232,3 +232,12 @@ func DeleteMapset(id int) error {
 
 	return nil
 }
+
+// UpdateMapsetPackageMD5 Updates the package md5 of a mapset
+func UpdateMapsetPackageMD5(id int, md5 string) error {
+	result := SQL.Model(&Mapset{}).
+		Where("id = ?", id).
+		Update("package_md5", md5)
+
+	return result.Error
+}

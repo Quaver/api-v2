@@ -94,7 +94,11 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return APIErrorServerError("Failed to create mapset archive", err)
 	}
 
-	// TODO: Update Mapset Package MD5
+	mapset.PackageMD5 = files.GetByteSliceMD5(archive)
+
+	if err := db.UpdateMapsetPackageMD5(mapset.Id, mapset.PackageMD5); err != nil {
+		return APIErrorServerError("Error updating mapset package md5", err)
+	}
 
 	if err := azure.Client.UploadFile("mapsets", fmt.Sprintf("%v.qp", mapset.Id), archive); err != nil {
 		return APIErrorServerError("Failed to upload mapset archive to azure", err)
