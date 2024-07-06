@@ -42,12 +42,10 @@ func Parse(file []byte) (*Qua, error) {
 	}
 
 	switch qua.RawMode {
-	case "Keys4":
-	case "1":
+	case "Keys4", "1":
 		qua.Mode = enums.GameModeKeys4
 		break
-	case "Keys7":
-	case "2":
+	case "Keys7", "2":
 		qua.Mode = enums.GameModeKeys7
 		break
 	}
