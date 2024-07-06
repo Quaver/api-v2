@@ -401,6 +401,4 @@ func calcMapDifficulty(songMap *db.MapQua, filePath string) {
 		logrus.Error("Error updating map difficulty rating in DB: ", err)
 		return
 	}
-
-	logrus.Debugf("Updated difficulty for map: %v (%v)", songMap.Id, calc.Difficulty.OverallDifficulty)
 }
