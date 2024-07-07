@@ -42,6 +42,12 @@ type ElasticMapsetSearchOptions struct {
 	//MaxLastUpdated      int64   `form:"max_last_updated" json:"max_last_updated"`
 }
 
+type ElasticMap struct {
+	*MapQua
+	DateSubmitted   int64 `json:"date_submitted"`
+	DateLastUpdated int64 `json:"date_last_updated"`
+}
+
 // NewMapsetSearchOptions Returns a new search options object with default values
 func NewMapsetSearchOptions() *ElasticMapsetSearchOptions {
 	return &ElasticMapsetSearchOptions{
@@ -50,15 +56,15 @@ func NewMapsetSearchOptions() *ElasticMapsetSearchOptions {
 }
 
 // IndexElasticSearchMapset Indexes an individual mapset in elastic
-func IndexElasticSearchMapset(mapQua MapQua) error {
+func IndexElasticSearchMapset(elasticMap ElasticMap) error {
 	//if err := DeleteElasticSearchMapset(mapset.Id); err != nil {
 	//	return err
 	//}
 
-	data, _ := json.Marshal(&mapQua)
+	data, _ := json.Marshal(&elasticMap)
 
 	resp, err := ElasticSearch.Create(elasticMapSearchIndex,
-		fmt.Sprintf("%v", mapQua.Id), bytes.NewReader(data))
+		fmt.Sprintf("%v", elasticMap.Id), bytes.NewReader(data))
 
 	if err != nil {
 		return err
@@ -127,7 +133,13 @@ func IndexAllElasticSearchMapsets(deletePrevious bool, workers int) error {
 	// Put all mapsets into the task queue
 	for _, mapset := range mapsets {
 		for _, mapQua := range mapset.Maps {
-			data, err := json.Marshal(&mapQua)
+			elasticMap := ElasticMap{
+				MapQua:          mapQua,
+				DateSubmitted:   mapset.DateSubmitted,
+				DateLastUpdated: mapset.DateLastUpdated,
+			}
+
+			data, err := json.Marshal(&elasticMap)
 
 			if err != nil {
 				return err
