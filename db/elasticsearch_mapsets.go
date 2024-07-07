@@ -111,33 +111,41 @@ func IndexAllElasticSearchMapsets(deletePrevious bool, workers int) error {
 			return false, nil
 		}
 
-		attempts := 0
+		var attempts int
 		const maxAttempts int = 10
 
-		for attempts < maxAttempts {
-			errored := false
+		for _, mapQua := range mapset.Maps {
+			if mapQua.MapsetId == -1 {
+				continue
+			}
 
-			for _, mapQua := range mapset.Maps {
+			attempts = 0
+
+			for attempts < maxAttempts {
 				err := IndexElasticSearchMapset(*mapQua)
 
 				if err != nil {
-					errored = true
+					attempts++
+
+					// Stop trying completely
+					if attempts == maxAttempts {
+						return false, errors.New(fmt.Sprintf("Too many failed attempts on:  #%v", mapQua.Id))
+					}
+
+					// Sleep for a bit then try again
+					logrus.Errorf("Error indexing map %v - Retrying in 10 seconds (%v)", mapQua.Id, err)
+					time.Sleep(time.Second * 10)
 					continue
 				}
 
-				return true, nil
+				// Go to the next map
+				break
 			}
 
-			if errored {
-				attempts++
-
-				logrus.Errorf("Failed to index mapset #%v. Retrying in 10 seconds...", mapset.Id)
-				time.Sleep(time.Second * 10)
-				continue
-			}
+			logrus.Infof("Successfully indexed map #%v", mapQua.Id)
 		}
 
-		return false, errors.New(fmt.Sprintf("too many failed attempts to index: mapset #%v", mapset.Id))
+		return true, nil
 	})
 
 	mapsets, err := GetAllMapsets()
