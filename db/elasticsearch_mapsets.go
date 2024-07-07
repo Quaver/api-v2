@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/enums"
 	"github.com/elastic/go-elasticsearch/v8/esutil"
-	"github.com/sdqri/effdsl"
 	"github.com/sirupsen/logrus"
 	"io"
 	"log"
@@ -46,6 +45,25 @@ type ElasticMap struct {
 	*MapQua
 	DateSubmitted   int64 `json:"date_submitted"`
 	DateLastUpdated int64 `json:"date_last_updated"`
+}
+
+type ElasticAggregation struct {
+	Aggregations struct {
+		ByMapsetID struct {
+			Buckets []struct {
+				GroupedHits struct {
+					Hits struct {
+						Hits []struct {
+							ID     string `json:"_id"`
+							Source MapQua `json:"_source"`
+						} `json:"hits"`
+					} `json:"hits"`
+				} `json:"grouped_hits"`
+				Key      int `json:"key,omitempty"`
+				DocCount int `json:"doc_count,omitempty"`
+			} `json:"buckets"`
+		} `json:"by_mapset_id"`
+	} `json:"aggregations"`
 }
 
 // NewMapsetSearchOptions Returns a new search options object with default values
@@ -230,29 +248,73 @@ func IndexAllElasticSearchMapsets(deletePrevious bool, workers int) error {
 
 // SearchElasticMapsets Searches ElasticSearch for mapsets
 func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error) {
-	searchRequest, err := effdsl.Define(
-		effdsl.WithQuery(
-			effdsl.BoolQuery(
-				effdsl.Should(
-					effdsl.QueryString(options.Search, effdsl.WithFields("title", "artist")),
-					effdsl.QueryString(options.Search, effdsl.WithFields("source")),
-					effdsl.QueryString(options.Search, effdsl.WithFields("creator_username")),
-					effdsl.QueryString(options.Search, effdsl.WithFields("tags")),
-				),
-			),
-		),
-		effdsl.WithPaginate(options.Page, options.Limit),
-	)
+	query := map[string]interface{}{
+		"size": 0,
+		"aggs": map[string]interface{}{
+			"by_mapset_id": map[string]interface{}{
+				"terms": map[string]interface{}{
+					"field": "mapset_id",
+					"size":  10, // How many mapsets to return
+				},
+				"aggs": map[string]interface{}{
+					"grouped_hits": map[string]interface{}{
+						"top_hits": map[string]interface{}{
+							"_source": map[string]interface{}{
+								"includes": []string{"id", "mapset_id", "md5", "alternative_md5",
+									"creator_id", "creator_username", "game_mode",
+									"ranked_status", "artist", "title", "source", "tags",
+									"description", "difficulty_name", "length", "bpm",
+									"difficulty_rating", "long_note_percentage", "max_combo",
+									"play_count", "fail_count", "play_attempts", "date_submitted", "date_last_updated"},
+							},
+							"size": 1,
+						},
+					},
+				},
+			},
+		},
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": map[string]interface{}{
+					"bool": map[string]interface{}{
+						"should": []map[string]interface{}{
+							{
+								"query_string": map[string]interface{}{
+									"query":            options.Search,
+									"fields":           []string{"title", "artist"},
+									"default_operator": "OR",
+									"boost":            1.0,
+								},
+							},
+							//{
+							//	"query_string": map[string]interface{}{
+							//		"query":  options.Search,
+							//		"fields": "source",
+							//		"boost":  0.8,
+							//	},
+							//},
+							//{
+							//	"query_string": map[string]interface{}{
+							//		"query":  options.Search,
+							//		"fields": "creator_username",
+							//		"boost":  0.7,
+							//	},
+							//},
+						},
+					},
+				},
+			},
+		},
+	}
 
-	jsonData, err := json.Marshal(searchRequest)
-
+	queryJSON, err := json.Marshal(query)
 	if err != nil {
-		return nil, err
+		log.Fatalf("Error marshaling the query: %s", err)
 	}
 
 	resp, err := ElasticSearch.Search(
-		ElasticSearch.Search.WithIndex(elasticMapsetIndex),
-		ElasticSearch.Search.WithBody(strings.NewReader(string(jsonData))),
+		ElasticSearch.Search.WithIndex(elasticMapSearchIndex),
+		ElasticSearch.Search.WithBody(strings.NewReader(string(queryJSON))),
 	)
 
 	if err != nil {
@@ -267,23 +329,23 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		return nil, err
 	}
 
-	data := struct {
-		Hits struct {
-			Hits []struct {
-				Source Mapset `json:"_source"`
-			} `json:"hits"`
-		} `json:"hits"`
-	}{}
+	logrus.Info(string(body))
 
-	if err := json.Unmarshal(body, &data); err != nil {
+	var aggregation ElasticAggregation
+
+	if err := json.Unmarshal(body, &aggregation); err != nil {
 		return nil, err
 	}
 
-	var mapsets []*Mapset
+	logrus.Info(aggregation)
 
-	for _, hit := range data.Hits.Hits {
-		mapsets = append(mapsets, &hit.Source)
-	}
+	return nil, nil
 
-	return mapsets, nil
+	//var mapsets []*Mapset
+	//
+	//for _, hit := range data.Hits.Hits {
+	//	mapsets = append(mapsets, &hit.Source)
+	//}
+	//
+	//return mapsets, nil
 }
