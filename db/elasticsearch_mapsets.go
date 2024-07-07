@@ -43,8 +43,9 @@ type ElasticMapsetSearchOptions struct {
 
 type ElasticMap struct {
 	*MapQua
-	DateSubmitted   int64 `json:"date_submitted"`
-	DateLastUpdated int64 `json:"date_last_updated"`
+	PackageMD5      string `json:"package_md5"`
+	DateSubmitted   int64  `json:"date_submitted"`
+	DateLastUpdated int64  `json:"date_last_updated"`
 }
 
 type ElasticAggregation struct {
@@ -54,8 +55,8 @@ type ElasticAggregation struct {
 				GroupedHits struct {
 					Hits struct {
 						Hits []struct {
-							ID     string `json:"_id"`
-							Source MapQua `json:"_source"`
+							ID     string     `json:"_id"`
+							Source ElasticMap `json:"_source"`
 						} `json:"hits"`
 					} `json:"hits"`
 				} `json:"grouped_hits"`
@@ -191,6 +192,7 @@ func IndexAllElasticSearchMapsets(deletePrevious bool, workers int) error {
 		for _, mapQua := range mapset.Maps {
 			elasticMap := ElasticMap{
 				MapQua:          mapQua,
+				PackageMD5:      mapset.PackageMD5,
 				DateSubmitted:   mapset.DateSubmitted,
 				DateLastUpdated: mapset.DateLastUpdated,
 			}
@@ -259,15 +261,8 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 				"aggs": map[string]interface{}{
 					"grouped_hits": map[string]interface{}{
 						"top_hits": map[string]interface{}{
-							"_source": map[string]interface{}{
-								"includes": []string{"id", "mapset_id", "md5", "alternative_md5",
-									"creator_id", "creator_username", "game_mode",
-									"ranked_status", "artist", "title", "source", "tags",
-									"description", "difficulty_name", "length", "bpm",
-									"difficulty_rating", "long_note_percentage", "max_combo",
-									"play_count", "fail_count", "play_attempts", "date_submitted", "date_last_updated"},
-							},
-							"size": 1,
+							"_source": map[string]interface{}{},
+							"size":    50,
 						},
 					},
 				},
@@ -329,23 +324,43 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		return nil, err
 	}
 
-	logrus.Info(string(body))
-
 	var aggregation ElasticAggregation
 
 	if err := json.Unmarshal(body, &aggregation); err != nil {
 		return nil, err
 	}
 
-	logrus.Info(aggregation)
+	var mapsets []*Mapset
 
-	return nil, nil
+	for _, bucket := range aggregation.Aggregations.ByMapsetID.Buckets {
+		if len(bucket.GroupedHits.Hits.Hits) > 0 {
+			firstHit := bucket.GroupedHits.Hits.Hits[0].Source
 
-	//var mapsets []*Mapset
-	//
-	//for _, hit := range data.Hits.Hits {
-	//	mapsets = append(mapsets, &hit.Source)
-	//}
-	//
-	//return mapsets, nil
+			mapset := &Mapset{
+				Id:                  bucket.Key,
+				PackageMD5:          firstHit.PackageMD5,
+				CreatorID:           firstHit.CreatorId,
+				CreatorUsername:     firstHit.CreatorUsername,
+				Artist:              firstHit.Artist,
+				Title:               firstHit.Title,
+				Source:              firstHit.Source,
+				Tags:                firstHit.Tags,
+				Description:         firstHit.Description,
+				Maps:                []*MapQua{firstHit.MapQua},
+				DateSubmitted:       firstHit.DateSubmitted,
+				DateSubmittedJSON:   time.UnixMilli(firstHit.DateSubmitted),
+				DateLastUpdated:     firstHit.DateLastUpdated,
+				DateLastUpdatedJSON: time.UnixMilli(firstHit.DateLastUpdated),
+				IsVisible:           true,
+			}
+
+			for _, hit := range bucket.GroupedHits.Hits.Hits[1:] {
+				mapset.Maps = append(mapset.Maps, hit.Source.MapQua)
+			}
+
+			mapsets = append(mapsets, mapset)
+		}
+	}
+
+	return mapsets, nil
 }
