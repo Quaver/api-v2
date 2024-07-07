@@ -332,7 +332,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 			firstHit := bucket.GroupedHits.Hits.Hits[0].Source
 
 			mapset := &Mapset{
-				Id:                  bucket.Key,
+				Id:                  firstHit.MapsetId,
 				PackageMD5:          firstHit.PackageMD5,
 				CreatorID:           firstHit.CreatorId,
 				CreatorUsername:     firstHit.CreatorUsername,
