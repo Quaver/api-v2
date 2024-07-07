@@ -20,8 +20,8 @@ type ElasticMapsetSearchOptions struct {
 	Search string               `form:"search" json:"search"`
 	Status []enums.RankedStatus `form:"status" json:"status"`
 	Mode   []enums.GameMode     `form:"mode" json:"mode"`
-	Page   uint64               `form:"page" json:"page"`
-	Limit  uint64               `form:"limit" json:"limit"`
+	Page   int                  `form:"page" json:"page"`
+	Limit  int                  `form:"limit" json:"limit"`
 
 	MinDifficultyRating float64 `form:"min_difficulty_rating" json:"min_difficulty_rating"`
 	MaxDifficultyRating float64 `form:"max_difficulty_rating" json:"max_difficulty_rating"`
@@ -70,7 +70,8 @@ type ElasticAggregation struct {
 // NewMapsetSearchOptions Returns a new search options object with default values
 func NewMapsetSearchOptions() *ElasticMapsetSearchOptions {
 	return &ElasticMapsetSearchOptions{
-		Limit: 50,
+		Search: "*",
+		Limit:  50,
 	}
 }
 
@@ -135,10 +136,10 @@ func UpdateElasticSearchMapset(mapset Mapset) error {
 
 // DeleteElasticSearchMapset Deletes an individual mapset in elastic
 func DeleteElasticSearchMapset(id int) error {
-	queryMap := map[string]interface{}{
-		"query": map[string]interface{}{
-			"term": map[string]interface{}{
-				"mapset_id": id,
+	queryMap := TermQuery{
+		Query: Term{
+			Term: Field{
+				MapsetID: id,
 			},
 		},
 	}
@@ -250,62 +251,56 @@ func IndexAllElasticSearchMapsets(deletePrevious bool, workers int) error {
 
 // SearchElasticMapsets Searches ElasticSearch for mapsets
 func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error) {
-	query := map[string]interface{}{
-		"size": 0,
-		"aggs": map[string]interface{}{
-			"by_mapset_id": map[string]interface{}{
-				"terms": map[string]interface{}{
-					"field": "mapset_id",
-					"size":  10, // How many mapsets to return
+	query := Query{
+		Size: 0,
+		From: 1, // Current page
+		Aggs: Aggs{
+			ByMapsetID: ByMapsetID{
+				Terms: Terms{
+					Field: "mapset_id",
+					Size:  options.Limit, // Results per page
 				},
-				"aggs": map[string]interface{}{
-					"grouped_hits": map[string]interface{}{
-						"top_hits": map[string]interface{}{
-							"_source": map[string]interface{}{},
-							"size":    50,
+				Aggs: GroupedHits{
+					GroupedHits: TopHitsAgg{
+						TopHits: TopHits{
+							Source: map[string]interface{}{},
+							Size:   50, // How many maps to group by
 						},
 					},
 				},
 			},
 		},
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": map[string]interface{}{
-					"bool": map[string]interface{}{
-						"should": []map[string]interface{}{
-							{
-								"query_string": map[string]interface{}{
-									"query":            options.Search,
-									"fields":           []string{"title", "artist"},
-									"default_operator": "OR",
-									"boost":            1.0,
-								},
-							},
-							//{
-							//	"query_string": map[string]interface{}{
-							//		"query":  options.Search,
-							//		"fields": "source",
-							//		"boost":  0.8,
-							//	},
-							//},
-							//{
-							//	"query_string": map[string]interface{}{
-							//		"query":  options.Search,
-							//		"fields": "creator_username",
-							//		"boost":  0.7,
-							//	},
-							//},
-						},
+		Query: BoolQuery{
+			Bool: MustBool{
+				Must: MustQuery{
+					Bool: ShouldBool{
+						Should: []QueryString{},
 					},
 				},
 			},
 		},
+		Sort: []map[string]SortOrder{
+			{"date_last_updated": {Order: "desc"}},
+		},
+	}
+
+	if options.Search != "" {
+		query.Query.Bool.Must.Bool.Should = append(query.Query.Bool.Must.Bool.Should, QueryString{
+			QueryString: QueryStringParams{
+				Query:           options.Search,
+				Fields:          []string{"title", "artist"},
+				DefaultOperator: "OR",
+				Boost:           1.0,
+			},
+		})
 	}
 
 	queryJSON, err := json.Marshal(query)
 	if err != nil {
 		log.Fatalf("Error marshaling the query: %s", err)
 	}
+
+	printQueryStructure(string(queryJSON), "")
 
 	resp, err := ElasticSearch.Search(
 		ElasticSearch.Search.WithIndex(elasticMapSearchIndex),
