@@ -36,10 +36,10 @@ type ElasticMapsetSearchOptions struct {
 	MaxPlayCount        int64   `form:"max_play_count" json:"max_play_count"`
 	MinCombo            int64   `form:"min_combo" json:"min_combo"`
 	MaxCombo            int64   `form:"max_combo" json:"max_combo"`
-	//MinDateSubmitted    int64   `form:"min_date_submitted" json:"min_date_submitted"`
-	//MaxDateSubmitted    int64   `form:"max_date_submitted" json:"max_date_submitted"`
-	//MinLastUpdated      int64   `form:"min_last_updated" json:"min_last_updated"`
-	//MaxLastUpdated      int64   `form:"max_last_updated" json:"max_last_updated"`
+	MinDateSubmitted    int64   `form:"min_date_submitted" json:"min_date_submitted"`
+	MaxDateSubmitted    int64   `form:"max_date_submitted" json:"max_date_submitted"`
+	MinLastUpdated      int64   `form:"min_last_updated" json:"min_last_updated"`
+	MaxLastUpdated      int64   `form:"max_last_updated" json:"max_last_updated"`
 }
 
 type ElasticMap struct {
@@ -56,49 +56,87 @@ func NewMapsetSearchOptions() *ElasticMapsetSearchOptions {
 }
 
 // IndexElasticSearchMapset Indexes an individual mapset in elastic
-func IndexElasticSearchMapset(elasticMap ElasticMap) error {
-	//if err := DeleteElasticSearchMapset(mapset.Id); err != nil {
-	//	return err
-	//}
-
-	data, _ := json.Marshal(&elasticMap)
-
-	resp, err := ElasticSearch.Create(elasticMapSearchIndex,
-		fmt.Sprintf("%v", elasticMap.Id), bytes.NewReader(data))
-
-	if err != nil {
+func IndexElasticSearchMapset(mapset Mapset) error {
+	if err := DeleteElasticSearchMapset(mapset.Id); err != nil {
 		return err
 	}
 
-	defer resp.Body.Close()
+	for _, mapQua := range mapset.Maps {
+		elasticMap := ElasticMap{
+			MapQua:          mapQua,
+			DateSubmitted:   mapset.DateSubmitted,
+			DateLastUpdated: mapset.DateLastUpdated,
+		}
+
+		data, err := json.Marshal(&elasticMap)
+
+		if err != nil {
+			return err
+		}
+
+		resp, err := ElasticSearch.Create(elasticMapSearchIndex,
+			fmt.Sprintf("%v", mapQua.Id), bytes.NewReader(data))
+
+		if err != nil {
+			return err
+		}
+
+		defer resp.Body.Close()
+	}
+
 	return nil
 }
 
 // UpdateElasticSearchMapset Updates an individual mapset in elastic
 func UpdateElasticSearchMapset(mapset Mapset) error {
-	mapset.User = nil
-	data, _ := json.Marshal(&mapset)
+	for _, mapQua := range mapset.Maps {
+		elasticMap := ElasticMap{
+			MapQua:          mapQua,
+			DateSubmitted:   mapset.DateSubmitted,
+			DateLastUpdated: mapset.DateLastUpdated,
+		}
 
-	resp, err := ElasticSearch.Update(elasticMapsetIndex, fmt.Sprintf("%v", mapset.Id), bytes.NewReader(data))
+		data, err := json.Marshal(&elasticMap)
+
+		if err != nil {
+			return err
+		}
+
+		resp, err := ElasticSearch.Update(elasticMapsetIndex, fmt.Sprintf("%v", mapQua.Id), bytes.NewReader(data))
+
+		if err != nil {
+			return err
+		}
+
+		defer resp.Body.Close()
+	}
+
+	return nil
+}
+
+// DeleteElasticSearchMapset Deletes an individual mapset in elastic
+func DeleteElasticSearchMapset(id int) error {
+	queryMap := map[string]interface{}{
+		"query": map[string]interface{}{
+			"term": map[string]interface{}{
+				"mapset_id": id,
+			},
+		},
+	}
+
+	queryJSON, err := json.Marshal(queryMap)
+
+	if err != nil {
+		log.Fatalf("Error marshalling query to JSON: %s", err)
+	}
+
+	resp, err := ElasticSearch.DeleteByQuery([]string{elasticMapSearchIndex}, strings.NewReader(string(queryJSON)))
 
 	if err != nil {
 		return err
 	}
 
 	defer resp.Body.Close()
-	return nil
-}
-
-// DeleteElasticSearchMapset Deletes an individual mapset in elastic
-func DeleteElasticSearchMapset(id int) error {
-	// ToDo - needs to use delete by query API
-	//resp, err := ElasticSearch.Delete(elasticMapsetIndex, fmt.Sprintf("%v", id))
-	//
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//defer resp.Body.Close()
 	return nil
 }
 
