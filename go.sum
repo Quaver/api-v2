@@ -162,6 +162,8 @@ github.com/redis/go-redis/v9 v9.4.0/go.mod h1:hdY0cQFCN4fnSYT6TkisLufl/4W5UIXyv0
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/sasha-s/go-csync v0.0.0-20240107134140-fcbab37b09ad h1:qIQkSlF5vAUHxEmTbaqt1hkJ/t6skqEGYiMag343ucI=
 github.com/sasha-s/go-csync v0.0.0-20240107134140-fcbab37b09ad/go.mod h1:/pA7k3zsXKdjjAiUhB5CjuKib9KJGCaLvZwtxGC8U0s=
+github.com/sdqri/effdsl v1.2.0 h1:aKqO9lPhpxpDVPI7bQa6pJwFerpomOlQgOVqoFk37cg=
+github.com/sdqri/effdsl v1.2.0/go.mod h1:kCeH77qX10I2/pPsLBskxoe6YYIPLFaA/nE/JnJRHsc=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
 github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/spf13/cobra v1.8.1 h1:e5/vxKd/rZsfSJMUX1agtjeTDf+qv1/JdBF8gg5k9ZM=
