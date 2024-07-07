@@ -2,15 +2,18 @@ package db
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/Quaver/api2/enums"
-	"github.com/Quaver/api2/tasks"
+	"github.com/elastic/go-elasticsearch/v8/esutil"
 	"github.com/sdqri/effdsl"
 	"github.com/sirupsen/logrus"
 	"io"
+	"log"
+	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -101,78 +104,76 @@ func IndexAllElasticSearchMapsets(deletePrevious bool, workers int) error {
 		}
 	}
 
-	pool := tasks.NewWorkerPool(workers)
-
-	// Takes in a mapset and returns a bool if it was indexed successfully.
-	pool.Start(func(input ...interface{}) (interface{}, error) {
-		mapset := input[0].(*Mapset)
-
-		if len(mapset.Maps) == 0 {
-			return false, nil
-		}
-
-		var attempts int
-		const maxAttempts int = 10
-
-		for _, mapQua := range mapset.Maps {
-			if mapQua.MapsetId == -1 {
-				continue
-			}
-
-			attempts = 0
-
-			for attempts < maxAttempts {
-				err := IndexElasticSearchMapset(*mapQua)
-
-				if err != nil {
-					attempts++
-
-					// Stop trying completely
-					if attempts == maxAttempts {
-						return false, errors.New(fmt.Sprintf("Too many failed attempts on:  #%v", mapQua.Id))
-					}
-
-					// Sleep for a bit then try again
-					logrus.Errorf("Error indexing map %v - Retrying in 10 seconds (%v)", mapQua.Id, err)
-					time.Sleep(time.Second * 10)
-					continue
-				}
-
-				// Go to the next map
-				break
-			}
-
-			logrus.Infof("Successfully indexed map #%v", mapQua.Id)
-		}
-
-		return true, nil
-	})
-
 	mapsets, err := GetAllMapsets()
 
 	if err != nil {
 		return err
 	}
 
-	// Handle results in goroutine before adding tasks to prevent hanging
-	go func() {
-		for i := 0; i < len(mapsets); i++ {
-			result := pool.GetResult()
-			mapset := result.Input.(*Mapset)
+	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
+		Index:         elasticMapSearchIndex, // The default index name
+		Client:        ElasticSearch,         // The Elasticsearch client
+		NumWorkers:    5,                     // The number of worker goroutines
+		FlushBytes:    int(5e+6),             // The flush threshold in bytes
+		FlushInterval: 30 * time.Second,      // The periodic flush interval
+	})
 
-			if result.Error != nil {
-				logrus.Errorf("Error indexing mapset #%v: %v", mapset.Id, result.Error)
-				continue
-			}
+	if err != nil {
+		log.Fatalf("Error creating the indexer: %s", err)
+	}
 
-			logrus.Infof("Successfully indexed mapset #%v", mapset.Id)
-		}
-	}()
+	var countSuccessful uint64
 
 	// Put all mapsets into the task queue
 	for _, mapset := range mapsets {
-		pool.AddTask(mapset)
+		for _, mapQua := range mapset.Maps {
+			data, err := json.Marshal(&mapQua)
+
+			if err != nil {
+				return err
+			}
+
+			err = bi.Add(
+				context.Background(),
+				esutil.BulkIndexerItem{
+					Action: "index",
+
+					// DocumentID is the (optional) document ID
+					DocumentID: strconv.Itoa(mapQua.Id),
+
+					// Body is an `io.Reader` with the payload
+					Body: bytes.NewReader(data),
+
+					// OnSuccess is called for each successful operation
+					OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem) {
+						atomic.AddUint64(&countSuccessful, 1)
+					},
+
+					// OnFailure is called for each failed operation
+					OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem, err error) {
+						if err != nil {
+							logrus.Errorf("ERROR: %s", err)
+						} else {
+							logrus.Errorf("ERROR: %s: %s", res.Error.Type, res.Error.Reason)
+						}
+					},
+				},
+			)
+
+			if err != nil {
+				log.Fatalf("Unexpected error: %s", err)
+			}
+		}
 	}
+
+	if err := bi.Close(context.Background()); err != nil {
+		logrus.Fatalf("Unexpected error: %s", err)
+	}
+
+	biStats := bi.Stats()
+
+	logrus.Info("Successfully Indexed: ", biStats.NumFlushed)
+	logrus.Info("Failed: ", biStats.NumFailed)
 
 	return nil
 }
