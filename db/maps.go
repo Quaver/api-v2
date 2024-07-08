@@ -117,6 +117,12 @@ func UpdateMapMD5(id int, md5 string) error {
 	return result.Error
 }
 
+// Deletes a map from the DB
+func DeleteMap(id int) error {
+	result := SQL.Delete(&MapQua{}, "id = ?", id)
+	return result.Error
+}
+
 // UpdateMapDifficultyRating Updates the difficulty rating of a map
 func UpdateMapDifficultyRating(id int, difficultyRating float64) error {
 	result := SQL.Model(&MapQua{}).

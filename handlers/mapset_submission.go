@@ -16,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/oliamb/cutter"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"image"
 	"image/jpeg"
 	_ "image/jpeg"
@@ -75,6 +76,10 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 	isUploadingNewMapset := sliceutil.All(sliceutil.Values(quaFiles), func(q *qua.Qua) bool {
 		return q.MapSetId == -1 && q.MapId == -1
 	})
+
+	if apiErr := checkDuplicateQuaData(quaFiles); apiErr != nil {
+		return apiErr
+	}
 
 	var mapset *db.Mapset
 
@@ -304,47 +309,12 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 	}
 
 	for _, quaFile := range quaFiles {
-		songMap := &db.MapQua{
-			MapsetId:             mapset.Id,
-			CreatorId:            user.Id,
-			CreatorUsername:      user.Username,
-			GameMode:             quaFile.Mode,
-			RankedStatus:         enums.RankedStatusUnranked,
-			Artist:               quaFile.Artist,
-			Title:                quaFile.Title,
-			Source:               quaFile.Source,
-			Tags:                 quaFile.Tags,
-			Description:          quaFile.Description,
-			DifficultyName:       quaFile.DifficultyName,
-			Length:               quaFile.MapLength(),
-			BPM:                  quaFile.CommonBPM(),
-			CountHitObjectNormal: quaFile.CountHitObjectNormal(),
-			CountHitObjectLong:   quaFile.CountHitObjectLong(),
-			MaxCombo:             quaFile.MaxCombo(),
+		songMap, apiErr := InsertOrUpdateMap(user, mapset, quaFile)
+
+		if apiErr != nil {
+			return nil, apiErr
 		}
 
-		if err := db.InsertMap(songMap); err != nil {
-			return nil, APIErrorServerError("Error inserting map into db", err)
-		}
-
-		quaFile.ReplaceIds(mapset.Id, songMap.Id)
-		songMap.MD5 = files.GetByteSliceMD5(quaFile.RawBytes)
-
-		if err := db.UpdateMapMD5(songMap.Id, songMap.MD5); err != nil {
-			return nil, APIErrorServerError("Error saving map in db", err)
-		}
-
-		filePath := fmt.Sprintf("%v/%v.qua", files.GetTempDirectory(), songMap.Id)
-
-		if err := quaFile.Write(filePath); err != nil {
-			return nil, APIErrorServerError("Error writing .qua file to disk", err)
-		}
-
-		if err := azure.Client.UploadFile("maps", quaFile.FileName(), quaFile.RawBytes); err != nil {
-			return nil, APIErrorServerError("Error uploading .qua file to azure", err)
-		}
-
-		go calcMapDifficulty(songMap, filePath)
 		mapset.Maps = append(mapset.Maps, songMap)
 	}
 
@@ -361,8 +331,127 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 
 // Handles the updating of an existing mapset
 func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset, *APIError) {
-	logrus.Debug("UPDATE EXISTING MAPSET")
-	return nil, nil
+	quaSlice := sliceutil.Values(quaFiles)
+
+	if !sliceutil.All(quaSlice, func(q *qua.Qua) bool {
+		return q.MapSetId == quaSlice[0].MapSetId
+	}) {
+		return nil, APIErrorBadRequest("Your .qua files have conflicting `MapSetId`s.")
+	}
+
+	mapset, err := db.GetMapsetById(quaSlice[0].MapSetId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, APIErrorServerError("Error retrieving mapset from database during update", err)
+	}
+
+	if mapset == nil || len(mapset.Maps) == 0 {
+		return nil, APIErrorBadRequest("The mapset you are trying to update does not exist.")
+	}
+
+	if mapset.CreatorID != user.Id {
+		return nil, APIErrorForbidden("You cannot update a mapset that you do not own.")
+	}
+
+	if mapset.Maps[0].RankedStatus == enums.RankedStatusRanked {
+		return nil, APIErrorBadRequest("You cannot update an already ranked mapset.")
+	}
+
+	// Check to see if all non -1 files actually exist in the mapset.
+	for _, quaFile := range quaFiles {
+		if quaFile.MapId == -1 {
+			continue
+		}
+
+		if !slices.ContainsFunc(mapset.Maps, func(mapQua *db.MapQua) bool {
+			return quaFile.MapId == mapQua.Id
+		}) {
+			return nil, APIErrorBadRequest("One of your .qua files has a non -1 MapId that does not exist.")
+		}
+	}
+
+	var newMaps []*db.MapQua
+
+	// Insert new maps & update existing ones
+	for _, quaFile := range quaFiles {
+		songMap, apiErr := InsertOrUpdateMap(user, mapset, quaFile)
+
+		if apiErr != nil {
+			return nil, apiErr
+		}
+
+		newMaps = append(newMaps, songMap)
+	}
+
+	// Delete old maps that are no longer in the set.
+	for _, mapQua := range mapset.Maps {
+		if !slices.ContainsFunc(quaSlice, func(q *qua.Qua) bool {
+			return q.MapId == mapQua.Id
+		}) {
+			if err := db.DeleteMap(mapQua.Id); err != nil {
+				return nil, APIErrorServerError("Error deleting map from database", err)
+			}
+		}
+	}
+
+	if err = db.UpdateMapsetMetadata(mapset.Id, user.Username, quaSlice[0].Artist,
+		quaSlice[0].Title, quaSlice[0].Source, quaSlice[0].Tags); err != nil {
+		return nil, APIErrorServerError("Error updating mapset metadata", err)
+	}
+
+	mapset.User = nil
+	mapset.Maps = newMaps
+	return mapset, nil
+}
+
+// InsertOrUpdateMap Inserts/Updates a map in the database
+func InsertOrUpdateMap(user *db.User, mapset *db.Mapset, quaFile *qua.Qua) (*db.MapQua, *APIError) {
+	songMap := &db.MapQua{
+		MapsetId:             mapset.Id,
+		CreatorId:            user.Id,
+		CreatorUsername:      user.Username,
+		GameMode:             quaFile.Mode,
+		RankedStatus:         enums.RankedStatusUnranked,
+		Artist:               quaFile.Artist,
+		Title:                quaFile.Title,
+		Source:               quaFile.Source,
+		Tags:                 quaFile.Tags,
+		Description:          quaFile.Description,
+		DifficultyName:       quaFile.DifficultyName,
+		Length:               quaFile.MapLength(),
+		BPM:                  quaFile.CommonBPM(),
+		CountHitObjectNormal: quaFile.CountHitObjectNormal(),
+		CountHitObjectLong:   quaFile.CountHitObjectLong(),
+		MaxCombo:             quaFile.MaxCombo(),
+	}
+
+	if quaFile.MapId != -1 {
+		songMap.Id = quaFile.MapId
+	}
+
+	if err := db.SQL.Save(&songMap).Error; err != nil {
+		return nil, APIErrorServerError("Error inserting map into db", err)
+	}
+
+	quaFile.ReplaceIds(mapset.Id, songMap.Id)
+	songMap.MD5 = files.GetByteSliceMD5(quaFile.RawBytes)
+
+	if err := db.UpdateMapMD5(songMap.Id, songMap.MD5); err != nil {
+		return nil, APIErrorServerError("Error saving map in db", err)
+	}
+
+	filePath := fmt.Sprintf("%v/%v.qua", files.GetTempDirectory(), songMap.Id)
+
+	if err := quaFile.Write(filePath); err != nil {
+		return nil, APIErrorServerError("Error writing .qua file to disk", err)
+	}
+
+	if err := azure.Client.UploadFile("maps", quaFile.FileName(), quaFile.RawBytes); err != nil {
+		return nil, APIErrorServerError("Error uploading .qua file to azure", err)
+	}
+
+	go calcMapDifficulty(songMap, filePath)
+	return songMap, nil
 }
 
 // Checks if a user is eligible to upload an existing mapset
@@ -377,6 +466,30 @@ func checkUserUploadEligibility(user *db.User) *APIError {
 
 	if len(mapsets) >= maxUploads {
 		return APIErrorForbidden(fmt.Sprintf("You can only upload %v mapsets per month.", maxUploads))
+	}
+
+	return nil
+}
+
+// Checks if .qua files in a mapset have duplicate map ids or difficulty names
+func checkDuplicateQuaData(quaFiles map[*zip.File]*qua.Qua) *APIError {
+	var duplicateMapIds []int
+	var duplicateDifficultyNames []string
+
+	for _, quaFile := range quaFiles {
+		if slices.Contains(duplicateMapIds, quaFile.MapId) {
+			return APIErrorBadRequest("Your .qua files have duplicate `MapId`s.")
+		}
+
+		if slices.Contains(duplicateDifficultyNames, quaFile.DifficultyName) {
+			return APIErrorBadRequest("Your .qua files have duplicate `DifficultyName`s.")
+		}
+
+		if quaFile.MapId != -1 {
+			duplicateMapIds = append(duplicateMapIds, quaFile.MapId)
+		}
+
+		duplicateDifficultyNames = append(duplicateDifficultyNames, quaFile.DifficultyName)
 	}
 
 	return nil
