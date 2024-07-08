@@ -2,8 +2,7 @@ package db
 
 type Query struct {
 	From  int                    `json:"from,omitempty"`
-	Limit int                    `json:"limit,omitempty"`
-	Size  int                    `json:"size,omitempty"`
+	Size  int                    `json:"size"`
 	Aggs  Aggs                   `json:"aggs,omitempty"`
 	Query BoolQuery              `json:"query,omitempty"`
 	Sort  []map[string]SortOrder `json:"sort,omitempty"`

@@ -312,7 +312,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	}
 
 	query := Query{
-		Size: 0,
+		Size: 0, // How many hits to return (we don't care about those)
 		From: 0, // Current page
 		Aggs: Aggs{
 			ByMapsetID: ByMapsetID{
