@@ -72,12 +72,28 @@ func (q *Qua) CommonBPM() float32 {
 
 // CountHitObjectNormal Returns the count of normal hit objects in the map
 func (q *Qua) CountHitObjectNormal() int {
-	return 0
+	var count int
+
+	for _, hitObject := range q.HitObjects {
+		if !hitObject.IsLongNote() {
+			count++
+		}
+	}
+
+	return count
 }
 
 // CountHitObjectLong Returns the count of long notes in the map
 func (q *Qua) CountHitObjectLong() int {
-	return 0
+	var count int
+
+	for _, hitObject := range q.HitObjects {
+		if hitObject.IsLongNote() {
+			count++
+		}
+	}
+
+	return count
 }
 
 // MaxCombo Returns the max combo achievable in the map
