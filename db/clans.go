@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 	"regexp"
 	"time"
@@ -156,4 +157,50 @@ func IsValidClanName(name string) bool {
 func IsValidClanTag(tag string) bool {
 	result, _ := regexp.MatchString("^[a-zA-Z0-9]{1,4}$", tag)
 	return result
+}
+
+// UpdateOwner Updates the owner of a clan
+func (clan *Clan) UpdateOwner(ownerId int) error {
+	result := SQL.Model(&Clan{}).
+		Where("id = ?", clan.Id).
+		Update("owner_id", ownerId)
+
+	return result.Error
+}
+
+// UpdateName Updates the name of a clan
+func (clan *Clan) UpdateName(name string) error {
+	result := SQL.Model(&Clan{}).
+		Where("id = ?", clan.Id).
+		Update("name", name).
+		Update("lasT_name_change_time", time.Now().UnixMilli())
+
+	return result.Error
+}
+
+// UpdateTag Updates the tag of a clan
+func (clan *Clan) UpdateTag(tag string) error {
+	result := SQL.Model(&Clan{}).
+		Where("id = ?", clan.Id).
+		Update("tag", tag)
+
+	return result.Error
+}
+
+// UpdateFavoriteMode Updates the favorite mode of a clan
+func (clan *Clan) UpdateFavoriteMode(mode enums.GameMode) error {
+	result := SQL.Model(&Clan{}).
+		Where("id = ?", clan.Id).
+		Update("favorite_mode", mode)
+
+	return result.Error
+}
+
+// UpdateAboutMe Updates a clan's about me
+func (clan *Clan) UpdateAboutMe(aboutMe string) error {
+	result := SQL.Model(&Clan{}).
+		Where("id = ?", clan.Id).
+		Update("about_me", aboutMe)
+
+	return result.Error
 }

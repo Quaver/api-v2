@@ -103,10 +103,8 @@ func TransferClanOwnership(c *gin.Context) *APIError {
 		return target.Error
 	}
 
-	target.Clan.OwnerId = target.TargetUser.Id
-
-	if result := db.SQL.Save(target.Clan); result.Error != nil {
-		return APIErrorServerError("Error updating clan in the database", result.Error)
+	if err := target.Clan.UpdateOwner(target.TargetUser.Id); err != nil {
+		return APIErrorServerError("Error updating clan owner in database", err)
 	}
 
 	if err := db.NewClanActivity(target.Clan.Id, db.ClanActivityOwnershipTransferred, target.TargetUser.Id).Insert(); err != nil {
