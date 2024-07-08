@@ -128,7 +128,7 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		}
 
 		if err := createAudioPreviewFromZip(zipReader, quaFiles); err != nil {
-			logrus.Error("Error creating mapset banner: ", err)
+			logrus.Error("Error creating audio file: ", err)
 		}
 	}()
 
@@ -757,7 +757,13 @@ func createAudioPreviewFromZip(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua)
 
 // Uses FFMPEG to create an audio preview from a file path
 func createAudioPreviewFromFile(filePath string, outputPath string, previewTimeSeconds int) error {
-	cmd := exec.Command("ffmpeg",
+	originalOutputPath := outputPath
+
+	if path.Ext(filePath) == ".ogg" {
+		outputPath = strings.Replace(outputPath, ".mp3", ".ogg", -1)
+	}
+
+	trimCmd := exec.Command("ffmpeg",
 		"-i",
 		fmt.Sprintf("%v", filePath),
 		"-ss",
@@ -768,15 +774,36 @@ func createAudioPreviewFromFile(filePath string, outputPath string, previewTimeS
 		"copy",
 		fmt.Sprintf("%v", outputPath))
 
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
+	var trimStdout bytes.Buffer
+	var trimStderr bytes.Buffer
+	trimCmd.Stdout = &trimStdout
+	trimCmd.Stderr = &trimStderr
 
-	err := cmd.Run()
+	if err := trimCmd.Run(); err != nil {
+		return fmt.Errorf("%v\n\n```%v```", err, trimStderr.String())
+	}
 
-	if err != nil {
-		return fmt.Errorf("%v\n\n```%v```", err, stderr.String())
+	if path.Ext(filePath) != ".ogg" {
+		return nil
+	}
+
+	// Convert .ogg to mp3
+	convertCmd := exec.Command("ffmpeg",
+		"-i",
+		fmt.Sprintf("%v", outputPath),
+		originalOutputPath)
+
+	var convertStdout bytes.Buffer
+	var convertStderr bytes.Buffer
+	convertCmd.Stdout = &convertStdout
+	convertCmd.Stderr = &convertStderr
+
+	if err := convertCmd.Run(); err != nil {
+		return fmt.Errorf("%v\n\n```%v```", err, convertStderr.String())
+	}
+
+	if err := os.Remove(outputPath); err != nil {
+		return err
 	}
 
 	return nil
