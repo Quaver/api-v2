@@ -13,6 +13,7 @@ const (
 	RankingQueueActionBlacklist
 	RankingQueueActionOnHold
 	RankingQueueActionVote
+	RankingQueueActionResolved
 )
 
 type MapsetRankingQueueComment struct {

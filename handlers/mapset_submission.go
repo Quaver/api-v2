@@ -12,6 +12,7 @@ import (
 	"github.com/Quaver/api2/qua"
 	"github.com/Quaver/api2/sliceutil"
 	"github.com/Quaver/api2/tools"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
 	"github.com/oliamb/cutter"
@@ -27,6 +28,7 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"time"
 )
 
 var (
@@ -93,10 +95,6 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
-		return APIErrorServerError("Error updating elastic search", err)
-	}
-
 	archive, err := createMapsetArchive(zipReader, quaFiles)
 
 	if err != nil {
@@ -113,10 +111,20 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return APIErrorServerError("Failed to upload mapset archive to azure", err)
 	}
 
+	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
+		return APIErrorServerError("Error updating elastic search", err)
+	}
+
+	if apiErr := resolveMapsetInRankingQueue(user, mapset); apiErr != nil {
+		return apiErr
+	}
+
 	go func() {
 		if err := createMapsetBanner(zipReader, quaFiles); err != nil {
 			logrus.Error("Error creating mapset banner: ", err)
 		}
+
+		// TODO: Create Audio Preview
 	}()
 
 	c.JSON(http.StatusOK, gin.H{
@@ -651,5 +659,45 @@ func createMapsetBanner(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua) error 
 		}
 	}
 
+	return nil
+}
+
+// Sets a mapset's ranking queue status to resolved. This is usually done when a user updates their map
+// while on hold.
+func resolveMapsetInRankingQueue(user *db.User, mapset *db.Mapset) *APIError {
+	rankingQueueMapset, err := db.GetRankingQueueMapset(mapset.Id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving mapset in the ranking queue", err)
+	}
+
+	if rankingQueueMapset == nil {
+		return nil
+	}
+
+	if rankingQueueMapset.Status != db.RankingQueueOnHold {
+		return nil
+	}
+
+	resolvedAction := &db.MapsetRankingQueueComment{
+		UserId:     mapset.CreatorID,
+		MapsetId:   mapset.Id,
+		ActionType: db.RankingQueueActionResolved,
+		IsActive:   true,
+		Comment:    "I have just updated my mapset, and its status has been changed back to Resolved.",
+	}
+
+	if err := resolvedAction.Insert(); err != nil {
+		return APIErrorServerError("Error inserting new ranking queue on hold action.", err)
+	}
+
+	rankingQueueMapset.Status = db.RankingQueueResolved
+	rankingQueueMapset.DateLastUpdated = time.Now().UnixMilli()
+
+	if result := db.SQL.Save(rankingQueueMapset); result.Error != nil {
+		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	}
+
+	_ = webhooks.SendQueueWebhook(user, mapset, db.RankingQueueActionResolved)
 	return nil
 }
