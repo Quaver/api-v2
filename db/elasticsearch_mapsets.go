@@ -67,11 +67,13 @@ type ElasticAggregation struct {
 	} `json:"aggregations"`
 }
 
-// NewMapsetSearchOptions Returns a new search options object with default values
-func NewMapsetSearchOptions() *ElasticMapsetSearchOptions {
+// DefaultSearchOptions Returns a new search options object with default values
+func DefaultSearchOptions() *ElasticMapsetSearchOptions {
 	return &ElasticMapsetSearchOptions{
-		Search: "*",
 		Limit:  50,
+		Page:   1,
+		Mode:   []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7},
+		Status: []enums.RankedStatus{enums.RankedStatusRanked},
 	}
 }
 
@@ -136,10 +138,10 @@ func UpdateElasticSearchMapset(mapset Mapset) error {
 
 // DeleteElasticSearchMapset Deletes an individual mapset in elastic
 func DeleteElasticSearchMapset(id int) error {
-	queryMap := TermQuery{
-		Query: Term{
-			Term: Field{
-				MapsetID: id,
+	queryMap := map[string]interface{}{
+		"query": map[string]interface{}{
+			"term": map[string]interface{}{
+				"mapset_id": id,
 			},
 		},
 	}
@@ -251,9 +253,40 @@ func IndexAllElasticSearchMapsets(deletePrevious bool, workers int) error {
 
 // SearchElasticMapsets Searches ElasticSearch for mapsets
 func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error) {
+	// ToDo - check if any options are provided
+
+	boolQuery := BoolQuery{}
+
+	if options.Search != "" {
+		qs := QueryString{}
+
+		qs.QueryString.Query = options.Search
+		qs.QueryString.Fields = []string{"title", "artist"}
+		qs.QueryString.DefaultOperator = "OR"
+		qs.QueryString.Boost = 1.0
+
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, qs)
+	}
+
+	if options.Mode != nil {
+		boolQueryMode := BoolQuery{}
+
+		for _, mode := range options.Mode {
+			termCustom := TermCustom{}
+			termCustom.Term.GameMode = Term{
+				Value: mode,
+				Boost: 1.0,
+			}
+
+			boolQueryMode.BoolQuery.Should = append(boolQueryMode.BoolQuery.Should, termCustom)
+		}
+
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQueryMode)
+	}
+
 	query := Query{
 		Size: 0,
-		From: 1, // Current page
+		From: 0, // Current page
 		Aggs: Aggs{
 			ByMapsetID: ByMapsetID{
 				Terms: Terms{
@@ -271,26 +304,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 				},
 			},
 		},
-		Query: BoolQuery{
-			Bool: MustBool{
-				Must: MustQuery{
-					Bool: ShouldBool{
-						Should: []QueryString{},
-					},
-				},
-			},
-		},
-	}
-
-	if options.Search != "" {
-		query.Query.Bool.Must.Bool.Should = append(query.Query.Bool.Must.Bool.Should, QueryString{
-			QueryString: QueryStringParams{
-				Query:           options.Search,
-				Fields:          []string{"title", "artist"},
-				DefaultOperator: "OR",
-				Boost:           1.0,
-			},
-		})
+		Query: boolQuery,
 	}
 
 	queryJSON, err := json.Marshal(query)

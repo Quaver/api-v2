@@ -38,56 +38,41 @@ type TopHits struct {
 	Sort   []map[string]SortOrder `json:"sort,omitempty"`
 }
 
-type Bool struct {
-	Must               []interface{} `json:"must,omitempty"`
-	Should             []interface{} `json:"should,omitempty"`
-	Filter             []interface{} `json:"filter,omitempty"`
-	MinimumShouldMatch int           `json:"minimum_should_match,omitempty"`
-}
-
 type BoolQuery struct {
-	Bool MustBool `json:"bool"`
-}
-
-type MustBool struct {
-	Must MustQuery `json:"must"`
-}
-
-type MustQuery struct {
-	Bool ShouldBool `json:"bool"`
-}
-
-type ShouldBool struct {
-	Should []QueryString `json:"should"`
+	BoolQuery struct {
+		Must               []interface{} `json:"must,omitempty"`
+		Should             []interface{} `json:"should,omitempty"`
+		Filter             []interface{} `json:"filter,omitempty"`
+		MinimumShouldMatch int           `json:"minimum_should_match,omitempty"`
+	} `json:"bool,omitempty"`
 }
 
 type QueryString struct {
-	QueryString QueryStringParams `json:"query_string"`
-}
-
-type QueryStringParams struct {
-	Query           string   `json:"query"`
-	Fields          []string `json:"fields"`
-	DefaultOperator string   `json:"default_operator"`
-	Boost           float64  `json:"boost"`
-}
-
-type TermQuery struct {
-	Query Term `json:"query"`
-}
-
-type Term struct {
-	Term Field `json:"term"`
-}
-
-type Field struct {
-	MapsetID int `json:"mapset_id"`
-}
-
-type Sort struct {
-	Field SortOrder `json:"field"`
+	QueryString struct {
+		Query           string   `json:"query"`
+		Fields          []string `json:"fields"`
+		DefaultOperator string   `json:"default_operator"`
+		Boost           float64  `json:"boost"`
+	} `json:"query_string"`
 }
 
 type SortOrder struct {
 	Order string `json:"order"`
+}
+
+type Term struct {
+	Value interface{} `json:"value"`
+	Boost float64     `json:"boost"`
+}
+
+type TermCustom struct {
+	Term struct {
+		GameMode Term `json:"game_mode,omitempty"`
+	} `json:"term"`
+}
+
+type TermStringParams struct {
+	Field string      `json:"field"`
+	Value interface{} `json:"value"`
+	Boost float64     `json:"boost"`
 }
