@@ -5,6 +5,7 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/goccy/go-yaml"
 	"github.com/sirupsen/logrus"
+	"math"
 	"os"
 	"regexp"
 )
@@ -62,7 +63,14 @@ func Parse(file []byte) (*Qua, error) {
 
 // MapLength Returns the length of the map
 func (q *Qua) MapLength() int {
-	return 0
+	var length int
+
+	for _, hitObject := range q.HitObjects {
+		length = int(math.Max(float64(length), float64(hitObject.StartTime)))
+		length = int(math.Max(float64(length), float64(hitObject.EndTime)))
+	}
+
+	return length
 }
 
 // CommonBPM Returns the most common BPM in the map
