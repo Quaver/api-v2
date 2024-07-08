@@ -10,6 +10,7 @@ import (
 )
 
 type Qua struct {
+	RawBytes                       []byte `yaml:"-"`
 	AudioFile                      string `yaml:"AudioFile"`
 	SongPreviewTime                int    `yaml:"SongPreviewTime"`
 	BackgroundFile                 string `yaml:"BackgroundFile"`
@@ -18,18 +19,24 @@ type Qua struct {
 	MapSetId                       int    `yaml:"MapSetId"`
 	RawMode                        string `yaml:"Mode"`
 	Mode                           enums.GameMode
-	Title                          string  `yaml:"Title"`
-	Artist                         string  `yaml:"Artist"`
-	Source                         string  `yaml:"Source"`
-	Tags                           string  `yaml:"Tags"`
-	Creator                        string  `yaml:"Creator"`
-	DifficultyName                 string  `yaml:"DifficultyName"`
-	Description                    string  `yaml:"Description"`
-	Genre                          string  `yaml:"Genre"`
-	BPMDoesNotAffectScrollVelocity bool    `yaml:"BPMDoesNotAffectScrollVelocity"`
-	InitialScrollVelocity          float32 `yaml:"InitialScrollVelocity"`
-	HasScratchKey                  bool    `yaml:"HasScratchKey"`
-	RawBytes                       []byte  `yaml:"-,omitempty"`
+	Title                          string           `yaml:"Title"`
+	Artist                         string           `yaml:"Artist"`
+	Source                         string           `yaml:"Source"`
+	Tags                           string           `yaml:"Tags"`
+	Creator                        string           `yaml:"Creator"`
+	DifficultyName                 string           `yaml:"DifficultyName"`
+	Description                    string           `yaml:"Description"`
+	Genre                          string           `yaml:"Genre"`
+	LegacyLNRendering              bool             `yaml:"LegacyLNRendering"`
+	BPMDoesNotAffectScrollVelocity bool             `yaml:"BPMDoesNotAffectScrollVelocity"`
+	InitialScrollVelocity          float32          `yaml:"InitialScrollVelocity"`
+	HasScratchKey                  bool             `yaml:"HasScratchKey"`
+	EditorLayers                   []EditorLayer    `yaml:"EditorLayers"`
+	Bookmarks                      []Bookmark       `yaml:"Bookmarks"`
+	SoundEffects                   []SoundEffect    `yaml:"SoundEffects"`
+	TimingPoints                   []TimingPoint    `yaml:"TimingPoints"`
+	ScrollVelocities               []ScrollVelocity `yaml:"SliderVelocities"`
+	HitObjects                     []HitObject      `yaml:"HitObjects"`
 }
 
 // Parse Parses and returns a Qua file
@@ -53,6 +60,32 @@ func Parse(file []byte) (*Qua, error) {
 	return &qua, nil
 }
 
+// MapLength Returns the length of the map
+func (q *Qua) MapLength() int {
+	return 0
+}
+
+// CommonBPM Returns the most common BPM in the map
+func (q *Qua) CommonBPM() float32 {
+	return 0
+}
+
+// CountHitObjectNormal Returns the count of normal hit objects in the map
+func (q *Qua) CountHitObjectNormal() int {
+	return 0
+}
+
+// CountHitObjectLong Returns the count of long notes in the map
+func (q *Qua) CountHitObjectLong() int {
+	return 0
+}
+
+// MaxCombo Returns the max combo achievable in the map
+func (q *Qua) MaxCombo() int {
+	return q.CountHitObjectLong()*2 + q.CountHitObjectNormal()
+}
+
+// ReplaceIds Replaces the ids of the map and sets Qua.RawBytes. Returns a string of the new file.
 func (q *Qua) ReplaceIds(mapsetId int, mapId int) string {
 	q.MapSetId = mapsetId
 	q.MapId = mapId
@@ -76,6 +109,7 @@ func (q *Qua) Write(path string) error {
 	return os.WriteFile(path, q.RawBytes, 0644)
 }
 
+// FileName Returns the file name of the qua (map_id.qua)
 func (q *Qua) FileName() string {
 	return fmt.Sprintf("%v.qua", q.MapId)
 }

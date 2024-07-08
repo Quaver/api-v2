@@ -316,12 +316,11 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 			Tags:                 quaFile.Tags,
 			Description:          quaFile.Description,
 			DifficultyName:       quaFile.DifficultyName,
-			Length:               0,
-			BPM:                  0,
-			DifficultyRating:     0,
-			CountHitObjectNormal: 0,
-			CountHitObjectLong:   0,
-			MaxCombo:             0,
+			Length:               quaFile.MapLength(),
+			BPM:                  quaFile.CommonBPM(),
+			CountHitObjectNormal: quaFile.CountHitObjectNormal(),
+			CountHitObjectLong:   quaFile.CountHitObjectLong(),
+			MaxCombo:             quaFile.MaxCombo(),
 		}
 
 		if err := db.InsertMap(songMap); err != nil {
