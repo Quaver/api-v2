@@ -25,7 +25,10 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"os"
+	"os/exec"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -124,7 +127,9 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 			logrus.Error("Error creating mapset banner: ", err)
 		}
 
-		// TODO: Create Audio Preview
+		if err := createAudioPreviewFromZip(zipReader, quaFiles); err != nil {
+			logrus.Error("Error creating mapset banner: ", err)
+		}
 	}()
 
 	c.JSON(http.StatusOK, gin.H{
@@ -467,7 +472,14 @@ func InsertOrUpdateMap(user *db.User, mapset *db.Mapset, quaFile *qua.Qua) (*db.
 		return nil, APIErrorServerError("Error uploading .qua file to azure", err)
 	}
 
-	go calcMapDifficulty(songMap, filePath)
+	go func() {
+		calcMapDifficulty(songMap, filePath)
+
+		if err := os.Remove(filePath); err != nil {
+			logrus.Error("Error removing file: ", filePath)
+		}
+	}()
+
 	return songMap, nil
 }
 
@@ -657,6 +669,114 @@ func createMapsetBanner(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua) error 
 
 			return nil
 		}
+	}
+
+	return errors.New("could not create mapset banner (file no exists)")
+}
+
+// Creates an auto-cropped mapset banner and uploads it to azure
+func createAudioPreviewFromZip(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua) error {
+	// Loop through each qua file & try to find a matching audio file.
+	// Both need to exist in order for a banner to get created.
+	for _, quaFile := range quaFiles {
+		for _, zipFile := range zip.File {
+			if strings.Contains(zipFile.Name, __MACOSX) || path.Base(zipFile.Name) != quaFile.AudioFile {
+				continue
+			}
+
+			reader, err := zipFile.Open()
+
+			if err != nil {
+				return nil
+			}
+
+			audioFilePath, err := filepath.Abs(fmt.Sprintf("%v/%v%v", files.GetTempDirectory(),
+				time.Now().UnixMilli(), path.Ext(zipFile.Name)))
+
+			if err != nil {
+				return err
+			}
+
+			outFile, err := os.Create(audioFilePath)
+
+			if err != nil {
+				reader.Close()
+				return err
+			}
+
+			_, err = io.Copy(outFile, reader)
+
+			if err != nil {
+				reader.Close()
+				_ = outFile.Close()
+				return err
+			}
+
+			_ = outFile.Close()
+
+			outputPath, err := filepath.Abs(fmt.Sprintf("%v/%v-preview.mp3", files.GetTempDirectory(),
+				time.Now().UnixMilli()))
+
+			if err != nil {
+				return err
+			}
+
+			previewTime := quaFile.SongPreviewTime / 1000
+
+			if err := createAudioPreviewFromFile(audioFilePath, outputPath, previewTime); err != nil {
+				return err
+			}
+
+			fileBytes, err := os.ReadFile(outputPath)
+
+			if err != nil {
+				return err
+			}
+
+			if err := azure.Client.UploadFile("audio-previews",
+				fmt.Sprintf("%v.mp3", quaFile.MapSetId), fileBytes); err != nil {
+				return err
+			}
+
+			if err := os.Remove(audioFilePath); err != nil {
+				logrus.Error("Error removing original file: ", err)
+				return nil
+			}
+
+			if err := os.Remove(outputPath); err != nil {
+				logrus.Error("Error removing original file: ", err)
+				return nil
+			}
+
+			return err
+		}
+	}
+
+	return errors.New("could not create audio preview (file no exists)")
+}
+
+// Uses FFMPEG to create an audio preview from a file path
+func createAudioPreviewFromFile(filePath string, outputPath string, previewTimeSeconds int) error {
+	cmd := exec.Command("ffmpeg",
+		"-i",
+		fmt.Sprintf("%v", filePath),
+		"-ss",
+		fmt.Sprintf("%v", previewTimeSeconds),
+		"-to",
+		fmt.Sprintf("%v", previewTimeSeconds+10),
+		"-c",
+		"copy",
+		fmt.Sprintf("%v", outputPath))
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		return fmt.Errorf("%v\n\n```%v```", err, stderr.String())
 	}
 
 	return nil
