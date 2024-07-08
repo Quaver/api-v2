@@ -173,7 +173,7 @@ func (clan *Clan) UpdateName(name string) error {
 	result := SQL.Model(&Clan{}).
 		Where("id = ?", clan.Id).
 		Update("name", name).
-		Update("lasT_name_change_time", time.Now().UnixMilli())
+		Update("last_name_change_time", time.Now().UnixMilli())
 
 	return result.Error
 }
