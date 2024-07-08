@@ -205,6 +205,10 @@ func UpdateClan(c *gin.Context) *APIError {
 		}
 
 		clan.AboutMe = body.AboutMe
+
+		if err := clan.UpdateAboutMe(*body.AboutMe); err != nil {
+			return APIErrorServerError("Error updating clan favorite mode", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully updated."})
