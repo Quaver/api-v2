@@ -75,7 +75,7 @@ func (q *Qua) MapLength() int {
 
 // CommonBPM Returns the most common BPM in the map
 func (q *Qua) CommonBPM() float32 {
-	return 0
+	return q.TimingPoints[0].BPM
 }
 
 // CountHitObjectNormal Returns the count of normal hit objects in the map
