@@ -259,12 +259,16 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 				Terms: Terms{
 					Field: "mapset_id",
 					Size:  options.Limit, // Results per page
+					Order: map[string]string{"_key": "desc"},
 				},
 				Aggs: GroupedHits{
 					GroupedHits: TopHitsAgg{
 						TopHits: TopHits{
 							Source: map[string]interface{}{},
 							Size:   50, // How many maps to group by
+							Sort: []map[string]SortOrder{
+								{"date_last_updated": {Order: "desc"}},
+							},
 						},
 					},
 				},
@@ -300,7 +304,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		log.Fatalf("Error marshaling the query: %s", err)
 	}
 
-	printQueryStructure(string(queryJSON), "")
+	fmt.Printf("%v\n", string(queryJSON))
 
 	resp, err := ElasticSearch.Search(
 		ElasticSearch.Search.WithIndex(elasticMapSearchIndex),

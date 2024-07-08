@@ -1,10 +1,5 @@
 package db
 
-import (
-	"fmt"
-	"reflect"
-)
-
 type Query struct {
 	From  int                    `json:"from,omitempty"`
 	Limit int                    `json:"limit,omitempty"`
@@ -24,8 +19,9 @@ type ByMapsetID struct {
 }
 
 type Terms struct {
-	Field string `json:"field"`
-	Size  int    `json:"size"`
+	Field string            `json:"field"`
+	Size  int               `json:"size"`
+	Order map[string]string `json:"order"`
 }
 
 type GroupedHits struct {
@@ -94,41 +90,4 @@ type Sort struct {
 
 type SortOrder struct {
 	Order string `json:"order"`
-}
-
-func convertSortOrders(sortOrders []map[string]SortOrder) []Sort {
-	var result []Sort
-	for _, sortOrder := range sortOrders {
-		for _, order := range sortOrder {
-			result = append(result, Sort{Field: SortOrder{Order: order.Order}})
-		}
-	}
-	return result
-}
-
-func printQueryStructure(v interface{}, indent string) {
-	t := reflect.TypeOf(v)
-	val := reflect.ValueOf(v)
-
-	switch t.Kind() {
-	case reflect.Struct:
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i)
-			value := val.Field(i)
-			fmt.Printf("%s%s -> ", indent, field.Name)
-			printQueryStructure(value.Interface(), indent+"  ")
-		}
-	case reflect.Map:
-		for _, key := range val.MapKeys() {
-			fmt.Printf("%s%v -> ", indent, key)
-			printQueryStructure(val.MapIndex(key).Interface(), indent+"  ")
-		}
-	case reflect.Slice:
-		for i := 0; i < val.Len(); i++ {
-			fmt.Printf("%s[%d] -> ", indent, i)
-			printQueryStructure(val.Index(i).Interface(), indent+"  ")
-		}
-	default:
-		fmt.Printf("%v\n", v)
-	}
 }
