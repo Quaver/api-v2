@@ -93,6 +93,10 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return apiErr
 	}
 
+	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
+		return APIErrorServerError("Error updating elastic search", err)
+	}
+
 	archive, err := createMapsetArchive(zipReader, quaFiles)
 
 	if err != nil {
@@ -322,10 +326,6 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 		return nil, APIErrorServerError("Error inserting user activity for uploading mapset", err)
 	}
 
-	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
-		return nil, APIErrorServerError("Error updating elastic search", err)
-	}
-
 	return mapset, nil
 }
 
@@ -408,10 +408,6 @@ func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.M
 
 	if err := db.AddUserActivity(user.Id, db.UserActivityUpdatedMapset, mapset.String(), mapset.Id); err != nil {
 		return nil, APIErrorServerError("Error inserting user activity for updating mapset", err)
-	}
-
-	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
-		return nil, APIErrorServerError("Error updating elastic search", err)
 	}
 
 	return mapset, nil
