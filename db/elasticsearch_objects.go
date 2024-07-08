@@ -67,12 +67,7 @@ type Term struct {
 
 type TermCustom struct {
 	Term struct {
-		GameMode Term `json:"game_mode,omitempty"`
+		GameMode     *Term `json:"game_mode,omitempty"`
+		RankedStatus *Term `json:"ranked_status,omitempty"`
 	} `json:"term"`
-}
-
-type TermStringParams struct {
-	Field string      `json:"field"`
-	Value interface{} `json:"value"`
-	Boost float64     `json:"boost"`
 }

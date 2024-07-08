@@ -17,11 +17,11 @@ import (
 )
 
 type ElasticMapsetSearchOptions struct {
-	Search string               `form:"search" json:"search"`
-	Status []enums.RankedStatus `form:"status" json:"status"`
-	Mode   []enums.GameMode     `form:"mode" json:"mode"`
-	Page   int                  `form:"page" json:"page"`
-	Limit  int                  `form:"limit" json:"limit"`
+	Search       string               `form:"search" json:"search"`
+	RankedStatus []enums.RankedStatus `form:"ranked_status" json:"ranked_status"`
+	Mode         []enums.GameMode     `form:"mode" json:"mode"`
+	Page         int                  `form:"page" json:"page"`
+	Limit        int                  `form:"limit" json:"limit"`
 
 	MinDifficultyRating float64 `form:"min_difficulty_rating" json:"min_difficulty_rating"`
 	MaxDifficultyRating float64 `form:"max_difficulty_rating" json:"max_difficulty_rating"`
@@ -70,10 +70,10 @@ type ElasticAggregation struct {
 // DefaultSearchOptions Returns a new search options object with default values
 func DefaultSearchOptions() *ElasticMapsetSearchOptions {
 	return &ElasticMapsetSearchOptions{
-		Limit:  50,
-		Page:   1,
-		Mode:   []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7},
-		Status: []enums.RankedStatus{enums.RankedStatusRanked},
+		Limit:        50,
+		Page:         1,
+		Mode:         []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7},
+		RankedStatus: []enums.RankedStatus{enums.RankedStatusRanked},
 	}
 }
 
@@ -273,7 +273,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 
 		for _, mode := range options.Mode {
 			termCustom := TermCustom{}
-			termCustom.Term.GameMode = Term{
+			termCustom.Term.GameMode = &Term{
 				Value: mode,
 				Boost: 1.0,
 			}
@@ -282,6 +282,22 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		}
 
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQueryMode)
+	}
+
+	if options.RankedStatus != nil {
+		boolQueryStatus := BoolQuery{}
+
+		for _, status := range options.RankedStatus {
+			termCustom := TermCustom{}
+			termCustom.Term.RankedStatus = &Term{
+				Value: status,
+				Boost: 1.0,
+			}
+
+			boolQueryStatus.BoolQuery.Should = append(boolQueryStatus.BoolQuery.Should, termCustom)
+		}
+
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQueryStatus)
 	}
 
 	query := Query{
