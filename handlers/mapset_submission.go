@@ -394,13 +394,26 @@ func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.M
 		}
 	}
 
-	if err = db.UpdateMapsetMetadata(mapset.Id, user.Username, quaSlice[0].Artist,
-		quaSlice[0].Title, quaSlice[0].Source, quaSlice[0].Tags); err != nil {
+	mapset.CreatorUsername = user.Username
+	mapset.Artist = quaSlice[0].Artist
+	mapset.Title = quaSlice[0].Title
+	mapset.Source = quaSlice[0].Source
+	mapset.Tags = quaSlice[0].Tags
+	mapset.User = nil
+	mapset.Maps = newMaps
+
+	if err = mapset.UpdateMetadata(); err != nil {
 		return nil, APIErrorServerError("Error updating mapset metadata", err)
 	}
 
-	mapset.User = nil
-	mapset.Maps = newMaps
+	if err := db.AddUserActivity(user.Id, db.UserActivityUpdatedMapset, mapset.String(), mapset.Id); err != nil {
+		return nil, APIErrorServerError("Error inserting user activity for updating mapset", err)
+	}
+
+	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
+		return nil, APIErrorServerError("Error updating elastic search", err)
+	}
+
 	return mapset, nil
 }
 

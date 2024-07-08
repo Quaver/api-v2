@@ -242,16 +242,16 @@ func UpdateMapsetPackageMD5(id int, md5 string) error {
 	return result.Error
 }
 
-// UpdateMapsetMetadata Updates the metadata of a given mapset
-func UpdateMapsetMetadata(id int, username string, artist string, title string, source string, tags string) error {
+// UpdateMetadata Updates the metadata of a given mapset (username, artist, title, etc)
+func (m *Mapset) UpdateMetadata() error {
 	result := SQL.Model(&Mapset{}).
-		Where("id = ?", id).
+		Where("id = ?", m.Id).
 		Updates(map[string]interface{}{
-			"creator_username":  username,
-			"artist":            artist,
-			"title":             title,
-			"source":            source,
-			"tags":              tags,
+			"creator_username":  m.CreatorUsername,
+			"artist":            m.Artist,
+			"title":             m.Title,
+			"source":            m.Source,
+			"tags":              m.Tags,
 			"date_last_updated": time.Now().UnixMilli(),
 		})
 
