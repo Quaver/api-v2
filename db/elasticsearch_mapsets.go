@@ -258,6 +258,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	boolQuery := BoolQuery{}
 
 	if options.Search != "" {
+		boolQuerySearch := BoolQuery{}
 		qs := QueryString{}
 
 		qs.QueryString.Query = options.Search
@@ -265,7 +266,17 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		qs.QueryString.DefaultOperator = "OR"
 		qs.QueryString.Boost = 1.0
 
-		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, qs)
+		boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, qs)
+
+		qs2 := QueryString{}
+		qs2.QueryString.Query = options.Search
+		qs2.QueryString.Fields = []string{"source", "creator_name", "difficulty_name"}
+		qs2.QueryString.DefaultOperator = "OR"
+		qs2.QueryString.Boost = 0.8
+
+		boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, qs2)
+
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQuerySearch)
 	}
 
 	if options.Mode != nil {
