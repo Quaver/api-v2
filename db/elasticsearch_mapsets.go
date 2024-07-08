@@ -266,9 +266,6 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 						TopHits: TopHits{
 							Source: map[string]interface{}{},
 							Size:   50, // How many maps to group by
-							Sort: []map[string]SortOrder{
-								{"date_last_updated": {Order: "desc"}},
-							},
 						},
 					},
 				},
@@ -282,9 +279,6 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 					},
 				},
 			},
-		},
-		Sort: []map[string]SortOrder{
-			{"date_last_updated": {Order: "desc"}},
 		},
 	}
 
