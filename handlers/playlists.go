@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/Quaver/api2/azure"
+	"github.com/Quaver/api2/cache"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -433,6 +434,8 @@ func UploadPlaylistCover(c *gin.Context) *APIError {
 	if apiErr != nil {
 		return apiErr
 	}
+
+	_ = cache.RemoveCacheServerPlaylistCover(playlist.Id)
 
 	if err := azure.Client.UploadFile("playlists", fmt.Sprintf("%v.jpg", playlist.Id), file); err != nil {
 		return APIErrorServerError("Failed to upload file", err)

@@ -52,5 +52,9 @@
   "discord": {
     "bot_api": ""
   },
-  "openai_api_key": ""
+  "openai_api_key": "",
+  "cache_server": {
+    "url": "",
+    "key": ""
+  }
 }

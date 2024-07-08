@@ -78,6 +78,11 @@ type Config struct {
 	} `json:"discord"`
 
 	OpenAIAPIKey string `json:"openai_api_key"`
+
+	CacheServer struct {
+		URL string `json:"url"`
+		Key string `json:"key"`
+	} `json:"cache_server"`
 }
 
 var Instance *Config = nil

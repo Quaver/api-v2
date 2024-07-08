@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Quaver/api2/azure"
+	"github.com/Quaver/api2/cache"
 	"github.com/gin-gonic/gin"
 	"image"
 	_ "image/jpeg"
@@ -48,6 +49,13 @@ func uploadClanImage(c *gin.Context, imageType ClanImage) *APIError {
 
 	if apiErr != nil {
 		return apiErr
+	}
+
+	switch imageType {
+	case ClanImageAvatar:
+		_ = cache.RemoveCacheServerClanAvatar(clan.Id)
+	case ClanImageBanner:
+		_ = cache.RemoveCacheServerClanBanner(clan.Id)
 	}
 
 	err := azure.Client.UploadFile(clanImageContainer(imageType), fmt.Sprintf("%v.jpg", clan.Id), file)

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Quaver/api2/azure"
+	"github.com/Quaver/api2/cache"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/files"
@@ -663,6 +664,8 @@ func createMapsetBanner(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua) error 
 
 			fileName := fmt.Sprintf("%v_banner.jpg", quaFile.MapSetId)
 
+			_ = cache.RemoveCacheServerMapsetBanner(quaFile.MapSetId)
+
 			if err := azure.Client.UploadFile("banners", fileName, buf.Bytes()); err != nil {
 				return err
 			}
@@ -733,6 +736,8 @@ func createAudioPreviewFromZip(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua)
 				return err
 			}
 
+			_ = cache.RemoveCacheServerAudioPreview(quaFile.MapSetId)
+			
 			if err := azure.Client.UploadFile("audio-previews",
 				fmt.Sprintf("%v.mp3", quaFile.MapSetId), fileBytes); err != nil {
 				return err
