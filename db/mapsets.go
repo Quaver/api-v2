@@ -22,6 +22,7 @@ type Mapset struct {
 	DateLastUpdated     int64     `gorm:"column:date_last_updated" json:"-"`
 	DateLastUpdatedJSON time.Time `gorm:"-:all" json:"date_last_updated"`
 	IsVisible           bool      `gorm:"column:visible" json:"is_visible"`
+	IsExplicit          bool      `gorm:"column:explicit" json:"is_explicit"`
 	Maps                []*MapQua `gorm:"foreignKey:MapsetId" json:"maps,omitempty"`
 	User                *User     `gorm:"foreignKey:CreatorID; references:Id" json:"user,omitempty"`
 }
@@ -254,6 +255,15 @@ func (m *Mapset) UpdateMetadata() error {
 			"tags":              m.Tags,
 			"date_last_updated": time.Now().UnixMilli(),
 		})
+
+	return result.Error
+}
+
+// UpdateExplicit Sets the explicit state of the mapset
+func (m *Mapset) UpdateExplicit(isExplicit bool) error {
+	result := SQL.Model(&Mapset{}).
+		Where("id = ?", m.Id).
+		Update("explicit", isExplicit)
 
 	return result.Error
 }

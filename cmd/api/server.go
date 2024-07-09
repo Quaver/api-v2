@@ -20,6 +20,7 @@ func initializeServer(port int) {
 
 	logrus.Info(fmt.Sprintf("API is now being served on port :%v", port))
 	logrus.Fatal(engine.Run(fmt.Sprintf(":%v", port)))
+
 }
 
 // Initializes all the routes for the server.
@@ -99,6 +100,8 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/mapset/offsets", handlers.CreateHandler(handlers.GetMapsetOnlineOffsets))
 	engine.GET("/v2/mapset/:id/elastic", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateElasticSearchMapset))
 	engine.POST("/v2/mapset/:id/description", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMapsetDescription))
+	engine.POST("/v2/mapset/:id/explicit", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkMapsetAsExplicit))
+	engine.POST("/v2/mapset/:id/unexplicit", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkMapsetAsNotExplicit))
 
 	// Chat
 	engine.GET("/v2/chat/:channel/history", middleware.RequireAuth, handlers.CreateHandler(handlers.GetChatHistory))

@@ -1,0 +1,1 @@
+ALTER TABLE `mapsets` DROP COLUMN `explicit`;
