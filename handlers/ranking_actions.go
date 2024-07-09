@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 type rankingQueueRequestData struct {
@@ -123,7 +122,9 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 
 	// Handle ranking the mapset
 	if len(existingVotes) >= config.Instance.RankingQueue.VotesRequired {
-		queueMapset.Status = db.RankingQueueRanked
+		if err := queueMapset.UpdateStatus(db.RankingQueueRanked); err != nil {
+			return APIErrorServerError("Error updating ranking queue status mapset status", err)
+		}
 
 		if err := db.RankMapset(data.MapsetId); err != nil {
 			return APIErrorServerError("Failed to rank mapset", err)
@@ -145,11 +146,8 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		_ = webhooks.SendRankedWebhook(data.QueueMapset.Mapset, existingVotes)
 	}
 
-	queueMapset.Votes++
-	queueMapset.DateLastUpdated = time.Now().UnixMilli()
-
-	if result := db.SQL.Save(queueMapset); result.Error != nil {
-		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	if err := queueMapset.UpdateVoteCount(queueMapset.Votes + 1); err != nil {
+		return APIErrorServerError("Error updating vote count for queue mapset", err)
 	}
 
 	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionVote)
@@ -205,11 +203,8 @@ func DenyRankingQueueMapset(c *gin.Context) *APIError {
 	}
 
 	if len(existingDenies)+1 == config.Instance.RankingQueue.DenialsRequired {
-		queueMapset.Status = db.RankingQueueDenied
-		queueMapset.DateLastUpdated = time.Now().UnixMilli()
-
-		if result := db.SQL.Save(queueMapset); result.Error != nil {
-			return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+		if err := queueMapset.UpdateStatus(db.RankingQueueDenied); err != nil {
+			return APIErrorServerError("Error updating ranking queue mapset status", err)
 		}
 
 		if err := db.AddUserActivity(data.QueueMapset.Mapset.CreatorID, db.UserActivityDeniedMapset,
@@ -254,11 +249,8 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting new ranking queue blacklist action", err)
 	}
 
-	queueMapset.Status = db.RankingQueueBlacklisted
-	queueMapset.DateLastUpdated = time.Now().UnixMilli()
-
-	if result := db.SQL.Save(queueMapset); result.Error != nil {
-		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	if err := queueMapset.UpdateStatus(db.RankingQueueBlacklisted); err != nil {
+		return APIErrorServerError("Error updating ranking queue mapset status", err)
 	}
 
 	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionBlacklist)
@@ -297,11 +289,8 @@ func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting new ranking queue on hold action.", err)
 	}
 
-	queueMapset.Status = db.RankingQueueOnHold
-	queueMapset.DateLastUpdated = time.Now().UnixMilli()
-
-	if result := db.SQL.Save(data.QueueMapset); result.Error != nil {
-		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	if err := queueMapset.UpdateStatus(db.RankingQueueOnHold); err != nil {
+		return APIErrorServerError("Error updating ranking queue mapset status", err)
 	}
 
 	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionOnHold)

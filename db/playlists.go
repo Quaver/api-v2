@@ -52,6 +52,39 @@ func (p *Playlist) Insert() error {
 	return nil
 }
 
+// UpdateVisibility Updates the visibility of a playlist
+func (p *Playlist) UpdateVisibility(visible bool) error {
+	p.Visible = false
+
+	result := SQL.Model(&Playlist{}).
+		Where("id = ?", p.Id).
+		Update("visible", visible)
+
+	return result.Error
+}
+
+// UpdateName Updates the name of a playlist
+func (p *Playlist) UpdateName(name string) error {
+	p.Name = name
+
+	result := SQL.Model(&Playlist{}).
+		Where("id = ?", p.Id).
+		Update("name", name)
+
+	return result.Error
+}
+
+// UpdateDescription Updates the description of a playlist
+func (p *Playlist) UpdateDescription(description string) error {
+	p.Description = description
+
+	result := SQL.Model(&Playlist{}).
+		Where("id = ?", p.Id).
+		Update("description", description)
+
+	return result.Error
+}
+
 // UpdatePlaylistMapCount Updates the map count for a playlist
 func UpdatePlaylistMapCount(id int, count int) error {
 	result := SQL.Model(&Playlist{}).

@@ -88,3 +88,14 @@ func (mod *MapMod) Insert() error {
 
 	return nil
 }
+
+// UpdateStatus Updates the status of a map mod
+func (mod *MapMod) UpdateStatus(status MapModStatus) error {
+	mod.Status = status
+
+	result := SQL.Model(&MapMod{}).
+		Where("id = ?", mod.Id).
+		Update("status", status)
+
+	return result.Error
+}

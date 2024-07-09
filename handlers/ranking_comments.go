@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 // GetRankingQueueComments Returns all of the comments for a mapset in the ranking queue
@@ -127,10 +126,7 @@ func EditRankingQueueComment(c *gin.Context) *APIError {
 		return APIErrorForbidden("You are not the author of this comment.")
 	}
 
-	comment.Comment = body.Comment
-	comment.DateLastUpdated = time.Now().UnixMilli()
-
-	if result := db.SQL.Save(comment); result.Error != nil {
+	if result := comment.Edit(body.Comment); result.Error != nil {
 		return APIErrorServerError("Error updating ranking queue comment in the database", result.Error)
 	}
 

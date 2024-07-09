@@ -167,11 +167,8 @@ func RemoveFromRankingQueue(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting new ranking queue denial", err)
 	}
 
-	queueMapset.Status = db.RankingQueueDenied
-	queueMapset.DateLastUpdated = time.Now().UnixMilli()
-
-	if result := db.SQL.Save(queueMapset); result.Error != nil {
-		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	if err := queueMapset.UpdateStatus(db.RankingQueueDenied); err != nil {
+		return APIErrorServerError("Error updating ranking queue mapset status", err)
 	}
 
 	_ = webhooks.SendQueueWebhook(user, queueMapset.Mapset, db.RankingQueueActionDeny)
@@ -228,12 +225,12 @@ func resubmitMapsetToRankingQueue(c *gin.Context, mapset *db.RankingQueueMapset)
 		return APIErrorForbidden(fmt.Sprintf("You can only resubmit your mapset for rank every %v days.", resubmitDays))
 	}
 
-	mapset.Votes = 0
-	mapset.Status = db.RankingQueuePending
-	mapset.DateLastUpdated = time.Now().UnixMilli()
+	if err := mapset.UpdateVoteCount(0); err != nil {
+		return APIErrorServerError("Error updating vote count for ranking queue mapset", err)
+	}
 
-	if result := db.SQL.Save(mapset); result.Error != nil {
-		return APIErrorServerError("Error updating ranking queue mapset in the database", result.Error)
+	if err := mapset.UpdateStatus(db.RankingQueuePending); err != nil {
+		return APIErrorServerError("Error updating ranking queue mapset status", err)
 	}
 
 	// Deactivate previous actions since they no longer count

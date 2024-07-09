@@ -57,10 +57,7 @@ func RunPlaylistMapset() {
 				logrus.Infof("Inserted playlist mapset for %v - %v", playlist.Id, songMap.Map.MapsetId)
 			}
 
-			// Update the playlist map with the playlist_mapsets_id
-			songMap.PlaylistsMapsetId = playlistMapset.Id
-
-			if err := db.SQL.Save(&songMap).Error; err != nil {
+			if err := songMap.UpdateMapsetId(playlistMapset.Id); err != nil {
 				logrus.Fatal(err)
 			}
 		}

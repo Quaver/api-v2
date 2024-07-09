@@ -52,6 +52,20 @@ func (c *MapsetRankingQueueComment) Insert() error {
 	return nil
 }
 
+// Edit Edits the content of a ranking queue comment
+func (c *MapsetRankingQueueComment) Edit(comment string) error {
+	c.Comment = comment
+	c.DateLastUpdated = time.Now().UnixMilli()
+
+	result := SQL.Model(&MapsetRankingQueueComment{}).
+		Where("id = ?", c.Id).
+		Update("comment", c.Comment).
+		Update("date_last_updated", c.DateLastUpdated)
+
+	_ = c.AfterFind(SQL)
+	return result.Error
+}
+
 // GetRankingQueueComments Retrieves the ranking queue comments for a given mapset
 func GetRankingQueueComments(mapsetId int) ([]*MapsetRankingQueueComment, error) {
 	var comments = make([]*MapsetRankingQueueComment, 0)

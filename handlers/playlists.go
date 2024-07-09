@@ -117,15 +117,15 @@ func UpdatePlaylist(c *gin.Context) *APIError {
 	}
 
 	if len(body.Name) > 0 {
-		playlist.Name = body.Name
+		if err := playlist.UpdateName(body.Name); err != nil {
+			return APIErrorServerError("Error updating playlist name", err)
+		}
 	}
 
 	if len(body.Description) > 0 {
-		playlist.Description = body.Description
-	}
-
-	if err := db.SQL.Save(&playlist).Error; err != nil {
-		return APIErrorServerError("Error updating playlist in db", err)
+		if err := playlist.UpdateDescription(body.Description); err != nil {
+			return APIErrorServerError("Error updating playlist description", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your playlist has been successfully updated"})
@@ -161,10 +161,8 @@ func DeletePlaylist(c *gin.Context) *APIError {
 		return APIErrorForbidden("You do not own this playlist.")
 	}
 
-	playlist.Visible = false
-
-	if err := db.SQL.Save(&playlist).Error; err != nil {
-		return APIErrorServerError("Error deleting (updating visibility) playlist in db", err)
+	if err := playlist.UpdateVisibility(false); err != nil {
+		return APIErrorServerError("Error updating playlist visibility", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your playlist has been successfully deleted"})

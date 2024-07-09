@@ -737,7 +737,7 @@ func createAudioPreviewFromZip(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua)
 			}
 
 			_ = cache.RemoveCacheServerAudioPreview(quaFile.MapSetId)
-			
+
 			if err := azure.Client.UploadFile("audio-previews",
 				fmt.Sprintf("%v.mp3", quaFile.MapSetId), fileBytes); err != nil {
 				return err
@@ -843,11 +843,8 @@ func resolveMapsetInRankingQueue(user *db.User, mapset *db.Mapset) *APIError {
 		return APIErrorServerError("Error inserting new ranking queue on hold action.", err)
 	}
 
-	rankingQueueMapset.Status = db.RankingQueueResolved
-	rankingQueueMapset.DateLastUpdated = time.Now().UnixMilli()
-
-	if result := db.SQL.Save(rankingQueueMapset); result.Error != nil {
-		return APIErrorServerError("Error updating ranking queue mapset in database", result.Error)
+	if err := rankingQueueMapset.UpdateStatus(db.RankingQueueResolved); err != nil {
+		return APIErrorServerError("Error updating ranking queue mapset status", err)
 	}
 
 	_ = webhooks.SendQueueWebhook(user, mapset, db.RankingQueueActionResolved)

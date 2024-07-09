@@ -50,6 +50,30 @@ func (mapset *RankingQueueMapset) Insert() error {
 	return nil
 }
 
+// UpdateStatus Updates the status of a ranking queue mapset
+func (mapset *RankingQueueMapset) UpdateStatus(status RankingQueueStatus) error {
+	mapset.Status = status
+
+	result := SQL.Model(&RankingQueueMapset{}).
+		Where("id = ?", mapset.Id).
+		Update("status", status).
+		Update("date_last_updated", time.Now().UnixMilli())
+
+	return result.Error
+}
+
+// UpdateVoteCount Updates the vote count of a ranking queue mapset
+func (mapset *RankingQueueMapset) UpdateVoteCount(votes int) error {
+	mapset.Votes = votes
+
+	result := SQL.Model(&RankingQueueMapset{}).
+		Where("id = ?", mapset.Id).
+		Update("votes", votes).
+		Update("date_last_updated", time.Now().UnixMilli())
+
+	return result.Error
+}
+
 // GetRankingQueue Retrieves the ranking queue for a given game mode
 func GetRankingQueue(mode enums.GameMode, limit int, page int) ([]*RankingQueueMapset, error) {
 	var mapsets = make([]*RankingQueueMapset, 0)
