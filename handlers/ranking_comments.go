@@ -126,8 +126,8 @@ func EditRankingQueueComment(c *gin.Context) *APIError {
 		return APIErrorForbidden("You are not the author of this comment.")
 	}
 
-	if result := comment.Edit(body.Comment); result.Error != nil {
-		return APIErrorServerError("Error updating ranking queue comment in the database", result.Error)
+	if err := comment.Edit(body.Comment); err != nil {
+		return APIErrorServerError("Error updating ranking queue comment in the database", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully edited."})
