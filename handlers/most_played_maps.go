@@ -39,7 +39,7 @@ func GetUserMostPlayedMaps(c *gin.Context) *APIError {
 // GetWeeklyMostPlayedMapsets Gets the most played mapsets of the week
 // Endpoint: GET /v2/server/stats/mostplayed
 func GetWeeklyMostPlayedMapsets(c *gin.Context) *APIError {
-	mapsets, err := db.GetWeeklyMostPlayedMapsets()
+	mapsets, err := db.GetWeeklyMostPlayedMapsets(false)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving weekly most played mapsets in db", err)
