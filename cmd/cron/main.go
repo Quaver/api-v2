@@ -27,9 +27,9 @@ func main() {
 	c := cron.New()
 	jobs := config.Instance.Cron
 
-	registerCronJob(c, jobs.DonatorCheck.CronJob, func() { commands.WeeklyMostPlayedMapsetsCmd.Run(nil, nil) })
-	registerCronJob(c, jobs.ElasticIndexMapsets.CronJob, func() { commands.ElasticIndexMapsets.Run(nil, nil) })
-	registerCronJob(c, jobs.WeeklyMostPlayed.CronJob, func() { commands.WeeklyMostPlayedMapsetsCmd.Run(nil, nil) })
+	registerCronJob(c, jobs.DonatorCheck.Job, func() { commands.WeeklyMostPlayedMapsetsCmd.Run(nil, nil) })
+	registerCronJob(c, jobs.ElasticIndexMapsets.Job, func() { commands.ElasticIndexMapsets.Run(nil, nil) })
+	registerCronJob(c, jobs.WeeklyMostPlayed.Job, func() { commands.WeeklyMostPlayedMapsetsCmd.Run(nil, nil) })
 
 	c.Start()
 
@@ -40,7 +40,7 @@ func main() {
 	logrus.Info("Exiting...")
 }
 
-func registerCronJob(c *cron.Cron, job config.CronJob, f func()) {
+func registerCronJob(c *cron.Cron, job config.Job, f func()) {
 	if !job.Enabled {
 		logrus.Warningf("Ignoring job: %v, as it is disabled", job.Name)
 		return

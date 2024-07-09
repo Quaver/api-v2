@@ -85,19 +85,17 @@ type Config struct {
 	} `json:"cache_server"`
 
 	Cron struct {
-		DonatorCheck struct {
-			CronJob
-		} `json:"donator_check"`
-		ElasticIndexMapsets struct {
-			CronJob
-		} `json:"elastic_index_mapsets"`
-		WeeklyMostPlayed struct {
-			CronJob
-		} `json:"weekly_most_played"`
+		DonatorCheck        CronJob `json:"donator_check"`
+		ElasticIndexMapsets CronJob `json:"elastic_index_mapsets"`
+		WeeklyMostPlayed    CronJob `json:"weekly_most_played"`
 	} `json:"cron"`
 }
 
 type CronJob struct {
+	Job
+}
+
+type Job struct {
 	Enabled  bool   `json:"enabled"`
 	Name     string `json:"name"`
 	Schedule string `json:"schedule"`
