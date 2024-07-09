@@ -83,6 +83,21 @@ type Config struct {
 		URL string `json:"url"`
 		Key string `json:"key"`
 	} `json:"cache_server"`
+
+	Cron struct {
+		DonatorCheck struct {
+			CronJob
+		} `json:"donator_check"`
+		ElasticIndexMapsets struct {
+			CronJob
+		} `json:"elastic_index_mapsets"`
+	} `json:"cron"`
+}
+
+type CronJob struct {
+	Enabled  bool   `json:"enabled"`
+	Name     string `json:"name"`
+	Schedule string `json:"schedule"`
 }
 
 var Instance *Config = nil

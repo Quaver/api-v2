@@ -56,5 +56,17 @@
   "cache_server": {
     "url": "",
     "key": ""
+  },
+  "cron": {
+    "donator_check": {
+      "enabled": true,
+      "name": "Donator Check",
+      "schedule": "*/5 * * * *"
+    },
+    "elastic_index_mapsets": {
+      "enabled": true,
+      "name": "Index Elastic Mapsets",
+      "schedule": "*/5 * * * *"
+    }
   }
 }
