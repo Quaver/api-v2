@@ -88,6 +88,7 @@ type Config struct {
 		DonatorCheck        CronJob `json:"donator_check"`
 		ElasticIndexMapsets CronJob `json:"elastic_index_mapsets"`
 		WeeklyMostPlayed    CronJob `json:"weekly_most_played"`
+		UserRank            CronJob `json:"user_rank"`
 	} `json:"cron"`
 }
 

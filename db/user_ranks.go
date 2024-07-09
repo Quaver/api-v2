@@ -10,7 +10,7 @@ type UserRank struct {
 	UserId                   int       `gorm:"column:user_id" json:"-"`
 	Rank                     int       `gorm:"column:rank" json:"rank"`
 	OverallPerformanceRating float64   `gorm:"column:overall_performance_rating" json:"overall_performance_rating"`
-	Timestamp                time.Time `gorm:"column:timestamp" json:"timestamp"`
+	Timestamp                time.Time `gorm:"type:date; column:timestamp" json:"timestamp"`
 }
 
 type UserRankKeys4 UserRank

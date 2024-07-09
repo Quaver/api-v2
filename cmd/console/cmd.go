@@ -36,6 +36,7 @@ func init() {
 	RootCmd.AddCommand(commands.ElasticIndexMapsets)
 	RootCmd.AddCommand(commands.PlayerDonatorCheckCmd)
 	RootCmd.AddCommand(commands.WeeklyMostPlayedMapsetsCmd)
+	RootCmd.AddCommand(commands.UserRankCmd)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)

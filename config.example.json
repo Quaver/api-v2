@@ -72,6 +72,11 @@
       "enabled": true,
       "name": "Cache Weekly Most Played",
       "schedule": "0 * * * *"
+    },
+    "user_rank": {
+      "enabled": true,
+      "name": "Store user daily rank",
+      "schedule": "0 0 * * *"
     }
   }
 }
