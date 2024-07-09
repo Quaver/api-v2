@@ -261,6 +261,8 @@ func (m *Mapset) UpdateMetadata() error {
 
 // UpdateExplicit Sets the explicit state of the mapset
 func (m *Mapset) UpdateExplicit(isExplicit bool) error {
+	m.IsExplicit = isExplicit
+
 	result := SQL.Model(&Mapset{}).
 		Where("id = ?", m.Id).
 		Update("explicit", isExplicit)
