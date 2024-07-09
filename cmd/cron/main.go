@@ -27,8 +27,9 @@ func main() {
 	c := cron.New()
 	jobs := config.Instance.Cron
 
-	registerCronJob(c, jobs.DonatorCheck.CronJob, func() { commands.PlayerDonatorCheckCmd.Run(nil, nil) })
+	registerCronJob(c, jobs.DonatorCheck.CronJob, func() { commands.WeeklyMostPlayedMapsetsCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.ElasticIndexMapsets.CronJob, func() { commands.ElasticIndexMapsets.Run(nil, nil) })
+	registerCronJob(c, jobs.WeeklyMostPlayed.CronJob, func() { commands.WeeklyMostPlayedMapsetsCmd.Run(nil, nil) })
 
 	c.Start()
 

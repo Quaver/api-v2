@@ -67,6 +67,11 @@
       "enabled": true,
       "name": "Index Elastic Mapsets",
       "schedule": "*/5 * * * *"
+    },
+    "weekly_most_played": {
+      "enabled": true,
+      "name": "Cache Weekly Most Played",
+      "schedule": "0 * * * *"
     }
   }
 }

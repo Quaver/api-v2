@@ -91,6 +91,9 @@ type Config struct {
 		ElasticIndexMapsets struct {
 			CronJob
 		} `json:"elastic_index_mapsets"`
+		WeeklyMostPlayed struct {
+			CronJob
+		} `json:"weekly_most_played"`
 	} `json:"cron"`
 }
 
