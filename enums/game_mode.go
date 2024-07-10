@@ -6,6 +6,7 @@ const (
 	None GameMode = iota
 	GameModeKeys4
 	GameModeKeys7
+	GameModeEnumMaxValue
 )
 
 // GetGameModeString Returns a game mode int in its stringified name
