@@ -89,6 +89,7 @@ type Config struct {
 		ElasticIndexMapsets CronJob `json:"elastic_index_mapsets"`
 		WeeklyMostPlayed    CronJob `json:"weekly_most_played"`
 		UserRank            CronJob `json:"user_rank"`
+		CacheLeaderboard    CronJob `json:"cache_leaderboard"`
 	} `json:"cron"`
 }
 

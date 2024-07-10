@@ -31,6 +31,7 @@ func main() {
 	registerCronJob(c, jobs.ElasticIndexMapsets.Job, func() { commands.ElasticIndexMapsets.Run(nil, nil) })
 	registerCronJob(c, jobs.WeeklyMostPlayed.Job, func() { commands.WeeklyMostPlayedMapsetsCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.UserRank.Job, func() { commands.UserRankCmd.Run(nil, nil) })
+	registerCronJob(c, jobs.CacheLeaderboard.Job, func() { commands.CacheLeaderboardCmd.Run(nil, nil) })
 
 	c.Start()
 

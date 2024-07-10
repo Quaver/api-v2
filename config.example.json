@@ -77,6 +77,11 @@
       "enabled": true,
       "name": "Store user daily rank",
       "schedule": "0 0 * * *"
+    },
+    "cache_leaderboard": {
+      "enabled": true,
+      "name": "Syncs all leaderboards",
+      "schedule": "0 * * * *"
     }
   }
 }
