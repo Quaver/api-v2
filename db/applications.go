@@ -13,12 +13,17 @@ type Application struct {
 	ClientId      string    `gorm:"column:client_id" json:"client_id"`
 	ClientSecret  string    `gorm:"column:client_secret" json:"client_secret,omitempty"`
 	Timestamp     int64     `gorm:"column:timestamp" json:"-"`
-	TimestampJSON time.Time `gorm:":-all" json:"timestamp"`
+	TimestampJSON time.Time `gorm:"-:all" json:"timestamp"`
 	Active        bool      `gorm:"column:active" json:"active"`
 }
 
 func (*Application) TableName() string {
 	return "applications"
+}
+
+func (app *Application) BeforeCreate(*gorm.DB) (err error) {
+	app.TimestampJSON = time.Now()
+	return nil
 }
 
 func (app *Application) AfterFind(db *gorm.DB) error {

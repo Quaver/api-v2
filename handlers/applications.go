@@ -6,7 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+	"net/url"
 	"strconv"
+	"time"
 )
 
 // GetUserApplications Returns a users active applications
@@ -50,6 +52,78 @@ func GetUserApplication(c *gin.Context) *APIError {
 	application.ClientSecret = ""
 
 	c.JSON(http.StatusOK, gin.H{"application": application})
+	return nil
+}
+
+// CreateNewApplication Creates a new application
+// Endpoint: POST /v2/developers/applications
+func CreateNewApplication(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	body := struct {
+		Name        string `form:"name" json:"name" binding:"required"`
+		RedirectURL string `form:"redirect_url" json:"redirect_url" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if len(body.Name) > 50 {
+		return APIErrorBadRequest("The name of your application must not exceed 50 characters.")
+	}
+
+	_, err := url.ParseRequestURI(body.RedirectURL)
+
+	if err != nil {
+		return APIErrorBadRequest("Your redirect URL is not valid.")
+	}
+
+	applications, err := db.GetUserActiveApplications(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error fetching user active applications", err)
+	}
+
+	if len(applications) >= 10 {
+		return APIErrorForbidden("You have already created the maximum amount of applications.")
+	}
+
+	clientId, err := stringutil.GenerateToken(16)
+
+	if err != nil {
+		return APIErrorServerError("Error generating client id", err)
+	}
+
+	clientSecret, err := stringutil.GenerateToken(32)
+
+	if err != nil {
+		return APIErrorServerError("Error generating client secret", err)
+	}
+
+	newApp := &db.Application{
+		UserId:       user.Id,
+		Name:         body.Name,
+		RedirectURL:  body.RedirectURL,
+		ClientId:     clientId,
+		ClientSecret: clientSecret,
+		Timestamp:    time.Now().UnixMilli(),
+		Active:       true,
+	}
+
+	if err := db.SQL.Create(&newApp).Error; err != nil {
+		return APIErrorServerError("Error inserting application into db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Your newApp has been successfully created.",
+		"application": newApp,
+	})
+
 	return nil
 }
 
