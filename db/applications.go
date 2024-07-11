@@ -83,3 +83,25 @@ func (app *Application) SetClientSecret(secret string) error {
 
 	return result.Error
 }
+
+// SetName Sets a new name for the application
+func (app *Application) SetName(name string) error {
+	app.Name = name
+
+	result := SQL.Model(&Application{}).
+		Where("id = ?", app.Id).
+		Update("name", app.Name)
+
+	return result.Error
+}
+
+// SetRedirectURL Sets a new redirect url for the application
+func (app *Application) SetRedirectURL(url string) error {
+	app.RedirectURL = url
+
+	result := SQL.Model(&Application{}).
+		Where("id = ?", app.Id).
+		Update("redirect_url", app.RedirectURL)
+
+	return result.Error
+}

@@ -77,9 +77,7 @@ func CreateNewApplication(c *gin.Context) *APIError {
 		return APIErrorBadRequest("The name of your application must not exceed 50 characters.")
 	}
 
-	_, err := url.ParseRequestURI(body.RedirectURL)
-
-	if err != nil {
+	if _, err := url.ParseRequestURI(body.RedirectURL); err != nil {
 		return APIErrorBadRequest("Your redirect URL is not valid.")
 	}
 
@@ -122,6 +120,60 @@ func CreateNewApplication(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "Your newApp has been successfully created.",
 		"application": newApp,
+	})
+
+	return nil
+}
+
+// UpdateApplication Updates an application's data
+// Endpoint: POST /v2/developers/applications/:id
+func UpdateApplication(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	application, apiErr := getUserApplication(c, user)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	body := struct {
+		Name        string `form:"name" json:"name"`
+		RedirectURL string `form:"redirect_url" json:"redirect_url"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if body.Name != "" {
+		if len(body.Name) > 50 {
+			return APIErrorBadRequest("The name of your application must not exceed 50 characters.")
+		}
+
+		if err := application.SetName(body.Name); err != nil {
+			return APIErrorServerError("Error setting application name", err)
+		}
+	}
+
+	if body.RedirectURL != "" {
+		if _, err := url.ParseRequestURI(body.RedirectURL); err != nil {
+			return APIErrorBadRequest("Your redirect URL is not valid.")
+		}
+
+		if err := application.SetRedirectURL(body.RedirectURL); err != nil {
+			return APIErrorServerError("Error setting application redirect url", err)
+		}
+	}
+
+	application.ClientSecret = ""
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Your application has been successfully updated.",
+		"application": application,
 	})
 
 	return nil
