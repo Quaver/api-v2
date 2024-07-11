@@ -67,3 +67,14 @@ func (app *Application) SetActiveStatus(active bool) error {
 
 	return result.Error
 }
+
+// SetClientSecret Sets a new secret for the application
+func (app *Application) SetClientSecret(secret string) error {
+	app.ClientSecret = secret
+
+	result := SQL.Model(&Application{}).
+		Where("id = ?", app.Id).
+		Update("client_secret", app.ClientSecret)
+
+	return result.Error
+}

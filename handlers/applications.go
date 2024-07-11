@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/stringutil"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -49,6 +50,37 @@ func GetUserApplication(c *gin.Context) *APIError {
 	application.ClientSecret = ""
 
 	c.JSON(http.StatusOK, gin.H{"application": application})
+	return nil
+}
+
+func ResetApplicationSecret(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	application, apiErr := getUserApplication(c, user)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	secret, err := stringutil.GenerateToken(32)
+
+	if err != nil {
+		return APIErrorServerError("Error generating random string", err)
+	}
+
+	if err := application.SetClientSecret(secret); err != nil {
+		return APIErrorServerError("Error setting application secret", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "You have successfully reset your secret.",
+		"secret":  application.ClientSecret,
+	})
+
 	return nil
 }
 
