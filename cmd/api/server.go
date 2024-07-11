@@ -185,6 +185,9 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/orders/stripe/initiate/donation", middleware.RequireAuth, handlers.CreateHandler(handlers.InitiateStripeDonatorCheckoutSession))
 	engine.POST("/v2/orders/stripe/webhook", handlers.CreateHandler(handlers.HandleStripeWebhook))
 
+	// Applications
+	engine.GET("/v2/developers/applications", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserApplications))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
