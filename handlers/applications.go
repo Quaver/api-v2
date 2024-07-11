@@ -53,6 +53,8 @@ func GetUserApplication(c *gin.Context) *APIError {
 	return nil
 }
 
+// ResetApplicationSecret Resets the secret of an application
+// Endpoint: POST /v2/developers/applications/:id/secret
 func ResetApplicationSecret(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 
