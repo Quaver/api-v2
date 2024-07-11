@@ -118,7 +118,7 @@ func CreateNewApplication(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":     "Your newApp has been successfully created.",
+		"message":     "Your application has been successfully created.",
 		"application": newApp,
 	})
 
