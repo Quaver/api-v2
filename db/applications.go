@@ -41,3 +41,29 @@ func GetUserActiveApplications(userId int) ([]*Application, error) {
 
 	return applications, nil
 }
+
+// GetApplicationById Retrieves an application by id
+func GetApplicationById(id int) (*Application, error) {
+	var application *Application
+
+	result := SQL.
+		Where("id = ? AND active = 1", id).
+		First(&application)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return application, nil
+}
+
+// SetActiveStatus Sets an applications active status
+func (app *Application) SetActiveStatus(active bool) error {
+	app.Active = active
+
+	result := SQL.Model(&Application{}).
+		Where("id = ?", app.Id).
+		Update("active", app.Active)
+
+	return result.Error
+}
