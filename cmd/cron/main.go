@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/Quaver/api2/cmd/console/commands"
+	"github.com/Quaver/api2/cmd/console/migrations"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/robfig/cron/v3"
@@ -32,6 +33,7 @@ func main() {
 	registerCronJob(c, jobs.WeeklyMostPlayed.Job, func() { commands.WeeklyMostPlayedMapsetsCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.UserRank.Job, func() { commands.UserRankCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.CacheLeaderboard.Job, func() { commands.CacheLeaderboardCmd.Run(nil, nil) })
+	registerCronJob(c, jobs.MigratePlaylists.Job, func() { migrations.MigrationPlaylistMapsetCmd.Run(nil, nil) })
 
 	c.Start()
 

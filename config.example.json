@@ -82,6 +82,11 @@
       "enabled": true,
       "name": "Syncs all leaderboards",
       "schedule": "0 * * * *"
+    },
+    "migrate_playlists": {
+      "enabled": true,
+      "name": "Migrates playlists from v1 to v2",
+      "schedule": "*/30 * * * *"
     }
   }
 }

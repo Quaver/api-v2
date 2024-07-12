@@ -90,6 +90,7 @@ type Config struct {
 		WeeklyMostPlayed    CronJob `json:"weekly_most_played"`
 		UserRank            CronJob `json:"user_rank"`
 		CacheLeaderboard    CronJob `json:"cache_leaderboard"`
+		MigratePlaylists    CronJob `json:"migrate_playlists"`
 	} `json:"cron"`
 }
 
