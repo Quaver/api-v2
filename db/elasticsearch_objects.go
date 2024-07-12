@@ -52,3 +52,15 @@ type TermCustom struct {
 		RankedStatus *Term `json:"ranked_status,omitempty"`
 	} `json:"term"`
 }
+
+type Range struct {
+	Gte   float64 `json:"gte,omitempty"`
+	Lte   float64 `json:"lte,omitempty"`
+	Boost float64 `json:"boost,omitempty"`
+}
+
+type RangeCustom struct {
+	Range struct {
+		DifficultyRating *Range `json:"difficulty_rating,omitempty"`
+	} `json:"range"`
+}

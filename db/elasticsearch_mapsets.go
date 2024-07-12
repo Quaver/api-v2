@@ -308,6 +308,20 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQueryStatus)
 	}
 
+	if options.MinDifficultyRating != 0 || options.MaxDifficultyRating != 0 {
+		boolQueryDifficultyRating := BoolQuery{}
+
+		rangeCustom := RangeCustom{}
+		rangeCustom.Range.DifficultyRating = &Range{
+			Gte: options.MinDifficultyRating,
+			Lte: options.MaxDifficultyRating,
+		}
+
+		boolQueryDifficultyRating.BoolQuery.Must = append(boolQueryDifficultyRating.BoolQuery.Must, rangeCustom)
+
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQueryDifficultyRating)
+	}
+
 	query := Query{
 		Size: options.Limit,
 		From: options.Page, // Pages start from 0
@@ -316,6 +330,9 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 			InnerHits: InnerHits{
 				Name: "most_relevant",
 				Size: 50,
+				Sort: []map[string]SortOrder{
+					{"difficulty_rating": {Order: "asc"}},
+				},
 			},
 		},
 		Query: boolQuery,
