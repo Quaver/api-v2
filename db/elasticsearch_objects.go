@@ -54,13 +54,29 @@ type TermCustom struct {
 }
 
 type Range struct {
-	Gte   float64 `json:"gte,omitempty"`
-	Lte   float64 `json:"lte,omitempty"`
-	Boost float64 `json:"boost,omitempty"`
+	Gte   interface{} `json:"gte,omitempty"`
+	Lte   interface{} `json:"lte,omitempty"`
+	Boost interface{} `json:"boost,omitempty"`
 }
 
 type RangeCustom struct {
-	Range struct {
-		DifficultyRating *Range `json:"difficulty_rating,omitempty"`
-	} `json:"range"`
+	Range map[string]Range `json:"range,omitempty"`
+}
+
+type Number interface {
+	int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64
+}
+
+func addRangeQuery[T Number](boolQuery *BoolQuery, field string, min T, max T) {
+	if min != 0 || max != 0 {
+		rangeCustom := RangeCustom{
+			Range: map[string]Range{
+				field: {
+					Gte: min,
+					Lte: max,
+				},
+			},
+		}
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, rangeCustom)
+	}
 }

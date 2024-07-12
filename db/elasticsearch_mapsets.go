@@ -276,6 +276,8 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQuerySearch)
 	}
 
+	// ToDo Tags
+
 	if options.Mode != nil {
 		boolQueryMode := BoolQuery{}
 
@@ -308,19 +310,14 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQueryStatus)
 	}
 
-	if options.MinDifficultyRating != 0 || options.MaxDifficultyRating != 0 {
-		boolQueryDifficultyRating := BoolQuery{}
-
-		rangeCustom := RangeCustom{}
-		rangeCustom.Range.DifficultyRating = &Range{
-			Gte: options.MinDifficultyRating,
-			Lte: options.MaxDifficultyRating,
-		}
-
-		boolQueryDifficultyRating.BoolQuery.Must = append(boolQueryDifficultyRating.BoolQuery.Must, rangeCustom)
-
-		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQueryDifficultyRating)
-	}
+	addRangeQuery(&boolQuery, "difficulty_rating", options.MinDifficultyRating, options.MaxDifficultyRating)
+	addRangeQuery(&boolQuery, "bpm", options.MinBPM, options.MaxBPM)
+	addRangeQuery(&boolQuery, "length", options.MinLength, options.MaxLength)
+	addRangeQuery(&boolQuery, "long_note_percentage", options.MinLongNotePercent, options.MaxLongNotePercent)
+	addRangeQuery(&boolQuery, "play_count", options.MinPlayCount, options.MaxPlayCount)
+	addRangeQuery(&boolQuery, "max_combo", options.MinCombo, options.MaxCombo)
+	addRangeQuery(&boolQuery, "date_submitted", options.MinDateSubmitted, options.MaxDateSubmitted)
+	addRangeQuery(&boolQuery, "last_updated", options.MinLastUpdated, options.MaxLastUpdated)
 
 	query := Query{
 		Size: options.Limit,
