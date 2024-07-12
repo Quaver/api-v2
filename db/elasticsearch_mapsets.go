@@ -309,8 +309,8 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	}
 
 	query := Query{
-		Size: 50,
-		From: 0, // Current page
+		Size: options.Limit,
+		From: options.Page, // Pages start from 0
 		Collapse: Collapse{
 			Field: "mapset_id",
 			InnerHits: InnerHits{
@@ -319,6 +319,10 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 			},
 		},
 		Query: boolQuery,
+		Sort: []map[string]SortOrder{
+			{"_score": {Order: "desc"}},
+			{"date_last_updated": {Order: "desc"}},
+		},
 	}
 
 	queryJSON, err := json.Marshal(query)
