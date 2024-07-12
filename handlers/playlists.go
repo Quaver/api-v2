@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/Quaver/api2/azure"
+	"github.com/Quaver/api2/cache"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -116,15 +117,15 @@ func UpdatePlaylist(c *gin.Context) *APIError {
 	}
 
 	if len(body.Name) > 0 {
-		playlist.Name = body.Name
+		if err := playlist.UpdateName(body.Name); err != nil {
+			return APIErrorServerError("Error updating playlist name", err)
+		}
 	}
 
 	if len(body.Description) > 0 {
-		playlist.Description = body.Description
-	}
-
-	if err := db.SQL.Save(&playlist).Error; err != nil {
-		return APIErrorServerError("Error updating playlist in db", err)
+		if err := playlist.UpdateDescription(body.Description); err != nil {
+			return APIErrorServerError("Error updating playlist description", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your playlist has been successfully updated"})
@@ -160,10 +161,8 @@ func DeletePlaylist(c *gin.Context) *APIError {
 		return APIErrorForbidden("You do not own this playlist.")
 	}
 
-	playlist.Visible = false
-
-	if err := db.SQL.Save(&playlist).Error; err != nil {
-		return APIErrorServerError("Error deleting (updating visibility) playlist in db", err)
+	if err := playlist.UpdateVisibility(false); err != nil {
+		return APIErrorServerError("Error updating playlist visibility", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your playlist has been successfully deleted"})
@@ -433,6 +432,8 @@ func UploadPlaylistCover(c *gin.Context) *APIError {
 	if apiErr != nil {
 		return apiErr
 	}
+
+	_ = cache.RemoveCacheServerPlaylistCover(playlist.Id)
 
 	if err := azure.Client.UploadFile("playlists", fmt.Sprintf("%v.jpg", playlist.Id), file); err != nil {
 		return APIErrorServerError("Failed to upload file", err)

@@ -5,22 +5,34 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Quaver/api2/azure"
+	"github.com/Quaver/api2/cache"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/files"
 	"github.com/Quaver/api2/qua"
 	"github.com/Quaver/api2/sliceutil"
+	"github.com/Quaver/api2/tools"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
+	"github.com/oliamb/cutter"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"image"
+	"image/jpeg"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
 	"math"
 	"net/http"
+	"os"
+	"os/exec"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 )
 
 var (
@@ -71,6 +83,10 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return q.MapSetId == -1 && q.MapId == -1
 	})
 
+	if apiErr := checkDuplicateQuaData(quaFiles); apiErr != nil {
+		return apiErr
+	}
+
 	var mapset *db.Mapset
 
 	if isUploadingNewMapset {
@@ -82,6 +98,40 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 	if apiErr != nil {
 		return apiErr
 	}
+
+	archive, err := createMapsetArchive(zipReader, quaFiles)
+
+	if err != nil {
+		return APIErrorServerError("Failed to create mapset archive", err)
+	}
+
+	mapset.PackageMD5 = files.GetByteSliceMD5(archive)
+
+	if err := db.UpdateMapsetPackageMD5(mapset.Id, mapset.PackageMD5); err != nil {
+		return APIErrorServerError("Error updating mapset package md5", err)
+	}
+
+	if err := azure.Client.UploadFile("mapsets", fmt.Sprintf("%v.qp", mapset.Id), archive); err != nil {
+		return APIErrorServerError("Failed to upload mapset archive to azure", err)
+	}
+
+	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
+		return APIErrorServerError("Error updating elastic search", err)
+	}
+
+	if apiErr := resolveMapsetInRankingQueue(user, mapset); apiErr != nil {
+		return apiErr
+	}
+
+	go func() {
+		if err := createMapsetBanner(zipReader, quaFiles); err != nil {
+			logrus.Error("Error creating mapset banner: ", err)
+		}
+
+		if err := createAudioPreviewFromZip(zipReader, quaFiles); err != nil {
+			logrus.Error("Error creating audio file: ", err)
+		}
+	}()
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Your mapset has been successfully uploaded.",
@@ -261,14 +311,177 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 		return nil, apiErr
 	}
 
-	logrus.Debug("UPLOAD NEW MAPSET")
-	return nil, nil
+	referenceMap := sliceutil.Values(quaFiles)[0]
+
+	mapset := &db.Mapset{
+		CreatorID:       user.Id,
+		CreatorUsername: user.Username,
+		Artist:          referenceMap.Artist,
+		Title:           referenceMap.Title,
+		Source:          referenceMap.Source,
+		Tags:            referenceMap.Tags,
+	}
+
+	if err := mapset.Insert(); err != nil {
+		return nil, APIErrorServerError("Error inserting mapset into db", err)
+	}
+
+	for _, quaFile := range quaFiles {
+		songMap, apiErr := InsertOrUpdateMap(user, mapset, quaFile)
+
+		if apiErr != nil {
+			return nil, apiErr
+		}
+
+		mapset.Maps = append(mapset.Maps, songMap)
+	}
+
+	if err := db.AddUserActivity(user.Id, db.UserActivityUploadedMapset, mapset.String(), mapset.Id); err != nil {
+		return nil, APIErrorServerError("Error inserting user activity for uploading mapset", err)
+	}
+
+	return mapset, nil
 }
 
 // Handles the updating of an existing mapset
 func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset, *APIError) {
-	logrus.Debug("UPDATE EXISTING MAPSET")
-	return nil, nil
+	quaSlice := sliceutil.Values(quaFiles)
+
+	if !sliceutil.All(quaSlice, func(q *qua.Qua) bool {
+		return q.MapSetId == quaSlice[0].MapSetId
+	}) {
+		return nil, APIErrorBadRequest("Your .qua files have conflicting `MapSetId`s.")
+	}
+
+	mapset, err := db.GetMapsetById(quaSlice[0].MapSetId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, APIErrorServerError("Error retrieving mapset from database during update", err)
+	}
+
+	if mapset == nil || len(mapset.Maps) == 0 {
+		return nil, APIErrorBadRequest("The mapset you are trying to update does not exist.")
+	}
+
+	if mapset.CreatorID != user.Id {
+		return nil, APIErrorForbidden("You cannot update a mapset that you do not own.")
+	}
+
+	if mapset.Maps[0].RankedStatus == enums.RankedStatusRanked {
+		return nil, APIErrorBadRequest("You cannot update an already ranked mapset.")
+	}
+
+	// Check to see if all non -1 files actually exist in the mapset.
+	for _, quaFile := range quaFiles {
+		if quaFile.MapId == -1 {
+			continue
+		}
+
+		if !slices.ContainsFunc(mapset.Maps, func(mapQua *db.MapQua) bool {
+			return quaFile.MapId == mapQua.Id
+		}) {
+			return nil, APIErrorBadRequest("One of your .qua files has a non -1 MapId that does not exist.")
+		}
+	}
+
+	var newMaps []*db.MapQua
+
+	// Insert new maps & update existing ones
+	for _, quaFile := range quaFiles {
+		songMap, apiErr := InsertOrUpdateMap(user, mapset, quaFile)
+
+		if apiErr != nil {
+			return nil, apiErr
+		}
+
+		newMaps = append(newMaps, songMap)
+	}
+
+	// Delete old maps that are no longer in the set.
+	for _, mapQua := range mapset.Maps {
+		if !slices.ContainsFunc(quaSlice, func(q *qua.Qua) bool {
+			return q.MapId == mapQua.Id
+		}) {
+			if err := db.DeleteMap(mapQua.Id); err != nil {
+				return nil, APIErrorServerError("Error deleting map from database", err)
+			}
+		}
+	}
+
+	mapset.CreatorUsername = user.Username
+	mapset.Artist = quaSlice[0].Artist
+	mapset.Title = quaSlice[0].Title
+	mapset.Source = quaSlice[0].Source
+	mapset.Tags = quaSlice[0].Tags
+	mapset.User = nil
+	mapset.Maps = newMaps
+
+	if err = mapset.UpdateMetadata(); err != nil {
+		return nil, APIErrorServerError("Error updating mapset metadata", err)
+	}
+
+	if err := db.AddUserActivity(user.Id, db.UserActivityUpdatedMapset, mapset.String(), mapset.Id); err != nil {
+		return nil, APIErrorServerError("Error inserting user activity for updating mapset", err)
+	}
+
+	return mapset, nil
+}
+
+// InsertOrUpdateMap Inserts/Updates a map in the database
+func InsertOrUpdateMap(user *db.User, mapset *db.Mapset, quaFile *qua.Qua) (*db.MapQua, *APIError) {
+	songMap := &db.MapQua{
+		MapsetId:             mapset.Id,
+		CreatorId:            user.Id,
+		CreatorUsername:      user.Username,
+		GameMode:             quaFile.Mode,
+		RankedStatus:         enums.RankedStatusUnranked,
+		Artist:               quaFile.Artist,
+		Title:                quaFile.Title,
+		Source:               quaFile.Source,
+		Tags:                 quaFile.Tags,
+		Description:          quaFile.Description,
+		DifficultyName:       quaFile.DifficultyName,
+		Length:               quaFile.MapLength(),
+		BPM:                  quaFile.CommonBPM(),
+		CountHitObjectNormal: quaFile.CountHitObjectNormal(),
+		CountHitObjectLong:   quaFile.CountHitObjectLong(),
+		MaxCombo:             quaFile.MaxCombo(),
+	}
+
+	if quaFile.MapId != -1 {
+		songMap.Id = quaFile.MapId
+	}
+
+	if err := db.SQL.Save(&songMap).Error; err != nil {
+		return nil, APIErrorServerError("Error inserting map into db", err)
+	}
+
+	quaFile.ReplaceIds(mapset.Id, songMap.Id)
+	songMap.MD5 = files.GetByteSliceMD5(quaFile.RawBytes)
+
+	if err := db.UpdateMapMD5(songMap.Id, songMap.MD5); err != nil {
+		return nil, APIErrorServerError("Error saving map in db", err)
+	}
+
+	filePath := fmt.Sprintf("%v/%v.qua", files.GetTempDirectory(), songMap.Id)
+
+	if err := quaFile.Write(filePath); err != nil {
+		return nil, APIErrorServerError("Error writing .qua file to disk", err)
+	}
+
+	if err := azure.Client.UploadFile("maps", quaFile.FileName(), quaFile.RawBytes); err != nil {
+		return nil, APIErrorServerError("Error uploading .qua file to azure", err)
+	}
+
+	go func() {
+		calcMapDifficulty(songMap, filePath)
+
+		if err := os.Remove(filePath); err != nil {
+			logrus.Error("Error removing file: ", filePath)
+		}
+	}()
+
+	return songMap, nil
 }
 
 // Checks if a user is eligible to upload an existing mapset
@@ -283,6 +496,30 @@ func checkUserUploadEligibility(user *db.User) *APIError {
 
 	if len(mapsets) >= maxUploads {
 		return APIErrorForbidden(fmt.Sprintf("You can only upload %v mapsets per month.", maxUploads))
+	}
+
+	return nil
+}
+
+// Checks if .qua files in a mapset have duplicate map ids or difficulty names
+func checkDuplicateQuaData(quaFiles map[*zip.File]*qua.Qua) *APIError {
+	var duplicateMapIds []int
+	var duplicateDifficultyNames []string
+
+	for _, quaFile := range quaFiles {
+		if slices.Contains(duplicateMapIds, quaFile.MapId) {
+			return APIErrorBadRequest("Your .qua files have duplicate `MapId`s.")
+		}
+
+		if slices.Contains(duplicateDifficultyNames, quaFile.DifficultyName) {
+			return APIErrorBadRequest("Your .qua files have duplicate `DifficultyName`s.")
+		}
+
+		if quaFile.MapId != -1 {
+			duplicateMapIds = append(duplicateMapIds, quaFile.MapId)
+		}
+
+		duplicateDifficultyNames = append(duplicateDifficultyNames, quaFile.DifficultyName)
 	}
 
 	return nil
@@ -308,4 +545,308 @@ func getUserMaxUploadsPerMonth(user *db.User) int {
 	} else {
 		return 10
 	}
+}
+
+// Calculates a map's difficulty rating
+func calcMapDifficulty(songMap *db.MapQua, filePath string) {
+	calc, err := tools.RunDifficultyCalculator(filePath, 0)
+
+	if err != nil {
+		logrus.Error("Error calculating difficulty for map: ", err)
+		return
+	}
+
+	if err := db.UpdateMapDifficultyRating(songMap.Id, calc.Difficulty.OverallDifficulty); err != nil {
+		logrus.Error("Error updating map difficulty rating in DB: ", err)
+		return
+	}
+}
+
+// Creates a mapset archive file (.qp)
+func createMapsetArchive(zipReader *zip.Reader, quaFiles map[*zip.File]*qua.Qua) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	zipWriter := zip.NewWriter(buf)
+
+	// Add all files that aren't .qua from the original package into this one.
+	for _, zipFile := range zipReader.File {
+		if strings.Contains(zipFile.Name, __MACOSX) ||
+			strings.Contains(strings.ToLower(zipFile.Name), "thumbs.db") ||
+			path.Ext(zipFile.Name) == ".qua" {
+			continue
+		}
+
+		newFile, err := zipWriter.Create(zipFile.Name)
+
+		if err != nil {
+			return nil, err
+		}
+
+		reader, err := zipFile.Open()
+
+		if err != nil {
+			return nil, err
+		}
+
+		fileBytes, err := io.ReadAll(reader)
+
+		if err != nil {
+			return nil, err
+		}
+
+		reader.Close()
+
+		if _, err = newFile.Write(fileBytes); err != nil {
+			return nil, err
+		}
+	}
+
+	// Now add .qua files to the archive.
+	for _, quaFile := range quaFiles {
+		newFile, err := zipWriter.Create(quaFile.FileName())
+
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err = newFile.Write(quaFile.RawBytes); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := zipWriter.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// Creates an auto-cropped mapset banner and uploads it to azure
+func createMapsetBanner(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua) error {
+	// Loop through each qua file & try to find a matching background file in the archive.
+	// Both need to exist in order for a banner to get created.
+	for _, quaFile := range quaFiles {
+		for _, zipFile := range zip.File {
+			if strings.Contains(zipFile.Name, __MACOSX) || path.Base(zipFile.Name) != quaFile.BackgroundFile {
+				continue
+			}
+
+			reader, err := zipFile.Open()
+
+			if err != nil {
+				return err
+			}
+
+			img, _, err := image.Decode(reader)
+
+			if err != nil {
+				return err
+			}
+
+			reader.Close()
+
+			cropped, err := cutter.Crop(img, cutter.Config{
+				Width:   900,
+				Height:  250,
+				Anchor:  image.Point{X: 0, Y: 0},
+				Mode:    cutter.Centered,
+				Options: cutter.Copy,
+			})
+
+			if err != nil {
+				return err
+			}
+
+			buf := new(bytes.Buffer)
+
+			if err := jpeg.Encode(buf, cropped, nil); err != nil {
+				return err
+			}
+
+			fileName := fmt.Sprintf("%v_banner.jpg", quaFile.MapSetId)
+
+			_ = cache.RemoveCacheServerMapsetBanner(quaFile.MapSetId)
+
+			if err := azure.Client.UploadFile("banners", fileName, buf.Bytes()); err != nil {
+				return err
+			}
+
+			return nil
+		}
+	}
+
+	return errors.New("could not create mapset banner (file no exists)")
+}
+
+// Creates an auto-cropped mapset banner and uploads it to azure
+func createAudioPreviewFromZip(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua) error {
+	// Loop through each qua file & try to find a matching audio file.
+	// Both need to exist in order for a banner to get created.
+	for _, quaFile := range quaFiles {
+		for _, zipFile := range zip.File {
+			if strings.Contains(zipFile.Name, __MACOSX) || path.Base(zipFile.Name) != quaFile.AudioFile {
+				continue
+			}
+
+			reader, err := zipFile.Open()
+
+			if err != nil {
+				return nil
+			}
+
+			audioFilePath, err := filepath.Abs(fmt.Sprintf("%v/%v%v", files.GetTempDirectory(),
+				time.Now().UnixMilli(), path.Ext(zipFile.Name)))
+
+			if err != nil {
+				return err
+			}
+
+			outFile, err := os.Create(audioFilePath)
+
+			if err != nil {
+				reader.Close()
+				return err
+			}
+
+			_, err = io.Copy(outFile, reader)
+
+			if err != nil {
+				reader.Close()
+				_ = outFile.Close()
+				return err
+			}
+
+			_ = outFile.Close()
+
+			outputPath, err := filepath.Abs(fmt.Sprintf("%v/%v-preview.mp3", files.GetTempDirectory(),
+				time.Now().UnixMilli()))
+
+			if err != nil {
+				return err
+			}
+
+			previewTime := quaFile.SongPreviewTime / 1000
+
+			if err := createAudioPreviewFromFile(audioFilePath, outputPath, previewTime); err != nil {
+				return err
+			}
+
+			fileBytes, err := os.ReadFile(outputPath)
+
+			if err != nil {
+				return err
+			}
+
+			_ = cache.RemoveCacheServerAudioPreview(quaFile.MapSetId)
+
+			if err := azure.Client.UploadFile("audio-previews",
+				fmt.Sprintf("%v.mp3", quaFile.MapSetId), fileBytes); err != nil {
+				return err
+			}
+
+			if err := os.Remove(audioFilePath); err != nil {
+				logrus.Error("Error removing original file: ", err)
+				return nil
+			}
+
+			if err := os.Remove(outputPath); err != nil {
+				logrus.Error("Error removing original file: ", err)
+				return nil
+			}
+
+			return err
+		}
+	}
+
+	return errors.New("could not create audio preview (file no exists)")
+}
+
+// Uses FFMPEG to create an audio preview from a file path
+func createAudioPreviewFromFile(filePath string, outputPath string, previewTimeSeconds int) error {
+	originalOutputPath := outputPath
+
+	if path.Ext(filePath) == ".ogg" {
+		outputPath = strings.Replace(outputPath, ".mp3", ".ogg", -1)
+	}
+
+	trimCmd := exec.Command("ffmpeg",
+		"-i",
+		fmt.Sprintf("%v", filePath),
+		"-ss",
+		fmt.Sprintf("%v", previewTimeSeconds),
+		"-to",
+		fmt.Sprintf("%v", previewTimeSeconds+10),
+		"-c",
+		"copy",
+		fmt.Sprintf("%v", outputPath))
+
+	var trimStdout bytes.Buffer
+	var trimStderr bytes.Buffer
+	trimCmd.Stdout = &trimStdout
+	trimCmd.Stderr = &trimStderr
+
+	if err := trimCmd.Run(); err != nil {
+		return fmt.Errorf("%v\n\n```%v```", err, trimStderr.String())
+	}
+
+	if path.Ext(filePath) != ".ogg" {
+		return nil
+	}
+
+	// Convert .ogg to mp3
+	convertCmd := exec.Command("ffmpeg",
+		"-i",
+		fmt.Sprintf("%v", outputPath),
+		originalOutputPath)
+
+	var convertStdout bytes.Buffer
+	var convertStderr bytes.Buffer
+	convertCmd.Stdout = &convertStdout
+	convertCmd.Stderr = &convertStderr
+
+	if err := convertCmd.Run(); err != nil {
+		return fmt.Errorf("%v\n\n```%v```", err, convertStderr.String())
+	}
+
+	if err := os.Remove(outputPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Sets a mapset's ranking queue status to resolved. This is usually done when a user updates their map
+// while on hold.
+func resolveMapsetInRankingQueue(user *db.User, mapset *db.Mapset) *APIError {
+	rankingQueueMapset, err := db.GetRankingQueueMapset(mapset.Id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving mapset in the ranking queue", err)
+	}
+
+	if rankingQueueMapset == nil {
+		return nil
+	}
+
+	if rankingQueueMapset.Status != db.RankingQueueOnHold {
+		return nil
+	}
+
+	resolvedAction := &db.MapsetRankingQueueComment{
+		UserId:     mapset.CreatorID,
+		MapsetId:   mapset.Id,
+		ActionType: db.RankingQueueActionResolved,
+		IsActive:   true,
+		Comment:    "I have just updated my mapset, and its status has been changed back to Resolved.",
+	}
+
+	if err := resolvedAction.Insert(); err != nil {
+		return APIErrorServerError("Error inserting new ranking queue on hold action.", err)
+	}
+
+	if err := rankingQueueMapset.UpdateStatus(db.RankingQueueResolved); err != nil {
+		return APIErrorServerError("Error updating ranking queue mapset status", err)
+	}
+
+	_ = webhooks.SendQueueWebhook(user, mapset, db.RankingQueueActionResolved)
+	return nil
 }

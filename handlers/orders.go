@@ -13,6 +13,18 @@ import (
 	"slices"
 )
 
+type DonatorPricing struct {
+	Steam  DonatorPaymentMethod `json:"steam"`
+	Stripe DonatorPaymentMethod `json:"stripe"`
+}
+
+type DonatorPaymentMethod struct {
+	Months1  float32 `json:"months_1"`
+	Months3  float32 `json:"months_3"`
+	Months6  float32 `json:"months_6"`
+	Months12 float32 `json:"months_12"`
+}
+
 type checkoutPaymentMethod int
 
 const (
@@ -20,11 +32,35 @@ const (
 	paymentMethodStripe
 )
 
+var (
+	donatorPrices = DonatorPricing{
+		Steam: DonatorPaymentMethod{
+			Months1:  6.49,
+			Months3:  17.99,
+			Months6:  34.99,
+			Months12: 64.99,
+		},
+		Stripe: DonatorPaymentMethod{
+			Months1:  4.99,
+			Months3:  13.99,
+			Months6:  26.99,
+			Months12: 49.99,
+		},
+	}
+)
+
 // Common request body when initiating a donator transaction
 type donationRequestBody struct {
 	Months     int  `form:"months" json:"months" binding:"required"`
 	GiftUserId int  `form:"gift_user_id" json:"gift_user_id"`
 	Recurring  bool `form:"recurring" json:"recurring"`
+}
+
+// GetDonatorPrices Returns the current donator prices
+// Endpoint: GET /v2/orders/donations/prices
+func GetDonatorPrices(c *gin.Context) *APIError {
+	c.JSON(http.StatusOK, gin.H{"pricing": donatorPrices})
+	return nil
 }
 
 // GetUserOrders Gets a user's completed orders.
@@ -197,31 +233,23 @@ func ModifyStripeSubscription(c *gin.Context) *APIError {
 // Gets the donator price.
 // Steam price = OG Price + 30%
 func getDonatorPrice(months int, isSteam bool) (float32, error) {
+	var paymentMethodPricing DonatorPaymentMethod
+
+	if isSteam {
+		paymentMethodPricing = donatorPrices.Steam
+	} else {
+		paymentMethodPricing = donatorPrices.Stripe
+	}
+
 	switch months {
 	case 1:
-		if isSteam {
-			return 6.49, nil
-		}
-
-		return 4.99, nil
+		return paymentMethodPricing.Months1, nil
 	case 3:
-		if isSteam {
-			return 17.99, nil
-		}
-
-		return 13.99, nil
+		return paymentMethodPricing.Months3, nil
 	case 6:
-		if isSteam {
-			return 34.99, nil
-		}
-
-		return 26.99, nil
+		return paymentMethodPricing.Months6, nil
 	case 12:
-		if isSteam {
-			return 64.99, nil
-		}
-
-		return 49.99, nil
+		return paymentMethodPricing.Months12, nil
 	}
 
 	return 0, errors.New("invalid donator months provided")

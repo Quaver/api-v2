@@ -24,3 +24,4 @@ go.work
 data/
 config.json
 temp/
+.DS_STORE

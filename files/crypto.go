@@ -36,3 +36,9 @@ func GetFileMD5(path string) (string, error) {
 
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
+
+// GetByteSliceMD5 Gets the MD5 hash of a byte array
+func GetByteSliceMD5(data []byte) string {
+	hash := md5.Sum(data)
+	return hex.EncodeToString(hash[:])
+}

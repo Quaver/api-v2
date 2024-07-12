@@ -44,6 +44,17 @@ func (pm *PlaylistMap) Insert() error {
 	return nil
 }
 
+// UpdateMapsetId Updates the PLAYLIST mapset id for a playlist
+func (pm *PlaylistMap) UpdateMapsetId(playlistMapsetId int) error {
+	pm.PlaylistsMapsetId = playlistMapsetId
+
+	result := SQL.Model(&PlaylistMap{}).
+		Where("id = ?", pm.Id).
+		Update("playlists_mapsets_id", playlistMapsetId)
+
+	return result.Error
+}
+
 // DeletePlaylistMap Deletes a playlist map row
 func DeletePlaylistMap(playlistId int, mapId int) error {
 	result := SQL.Delete(&PlaylistMap{}, "playlist_id = ? AND map_id = ?", playlistId, mapId)

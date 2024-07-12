@@ -33,8 +33,10 @@ func init() {
 	// Commands
 	RootCmd.AddCommand(commands.CacheClearCmd)
 	RootCmd.AddCommand(commands.CacheLeaderboardCmd)
-	RootCmd.AddCommand(commands.PlayerDonatorCheckCmd)
 	RootCmd.AddCommand(commands.ElasticIndexMapsets)
+	RootCmd.AddCommand(commands.PlayerDonatorCheckCmd)
+	RootCmd.AddCommand(commands.WeeklyMostPlayedMapsetsCmd)
+	RootCmd.AddCommand(commands.UserRankCmd)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)

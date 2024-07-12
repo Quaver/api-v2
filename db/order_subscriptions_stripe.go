@@ -29,6 +29,19 @@ func (sub *OrderSubscriptionStripe) Insert() error {
 	return SQL.Create(&sub).Error
 }
 
+// UpdateActiveState Sets the active state of the subscription
+func (sub *OrderSubscriptionStripe) UpdateActiveState(isActive bool) error {
+	sub.IsActive = isActive
+	sub.TimeLastUpdated = time.Now().UnixMilli()
+
+	result := SQL.Model(&OrderSubscriptionStripe{}).
+		Where("id = ?", sub.Id).
+		Update("is_active", sub.IsActive).
+		Update("time_last_updated", time.Now().UnixMilli())
+
+	return result.Error
+}
+
 // GetOrderSubscriptionById Retrieves a subscription by id
 func GetOrderSubscriptionById(subscriptionId string) (*OrderSubscriptionStripe, error) {
 	var sub *OrderSubscriptionStripe
@@ -85,10 +98,7 @@ func GetUserStripeSubscriptions(userId int) ([]*stripe.Subscription, error) {
 
 		exists := result.Next()
 
-		sub.IsActive = exists
-		sub.TimeLastUpdated = time.Now().UnixMilli()
-
-		if err := SQL.Save(sub).Error; err != nil {
+		if err := sub.UpdateActiveState(exists); err != nil {
 			return nil, err
 		}
 

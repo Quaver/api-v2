@@ -22,7 +22,7 @@ func GetUserMostPlayedMaps(id int, limit int, page int) ([]*UserMostPlayedMap, e
 	var maps = make([]*UserMostPlayedMap, 0)
 	redisKey := fmt.Sprintf("quaver:most_played:%v:%v:%v", id, limit, page)
 
-	if err := cacheJsonInRedis(redisKey, &maps, time.Hour*24, func() error {
+	if err := cacheJsonInRedis(redisKey, &maps, time.Hour*24, false, func() error {
 		return SQL.Raw("SELECT "+
 			"maps.id, maps.creator_id, maps.creator_username, maps.artist, maps.title, maps.difficulty_name, COUNT(*) "+
 			"FROM scores s "+
@@ -52,7 +52,7 @@ type WeeklyMostPlayedMapsets struct {
 }
 
 // GetWeeklyMostPlayedMapsets Retrieves the most played mapsets in the past week
-func GetWeeklyMostPlayedMapsets() ([]*WeeklyMostPlayedMapsets, error) {
+func GetWeeklyMostPlayedMapsets(ignoreCache bool) ([]*WeeklyMostPlayedMapsets, error) {
 	var mapsets = make([]*WeeklyMostPlayedMapsets, 0)
 	redisKey := "quaver:weekly_most_played"
 
@@ -65,7 +65,7 @@ func GetWeeklyMostPlayedMapsets() ([]*WeeklyMostPlayedMapsets, error) {
 
 	bundled := fmt.Sprintf("(%v)", strings.Join(bundledStringSlice, ", "))
 
-	if err := cacheJsonInRedis(redisKey, &mapsets, time.Hour*24, func() error {
+	if err := cacheJsonInRedis(redisKey, &mapsets, time.Hour*24, ignoreCache, func() error {
 		return SQL.Raw("SELECT "+
 			"maps.mapset_id, maps.creator_id, maps.creator_username, maps.artist, maps.title, COUNT(*) "+
 			"FROM scores s "+

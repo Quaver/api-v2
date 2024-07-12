@@ -52,5 +52,41 @@
   "discord": {
     "bot_api": ""
   },
-  "openai_api_key": ""
+  "openai_api_key": "",
+  "cache_server": {
+    "url": "",
+    "key": ""
+  },
+  "cron": {
+    "donator_check": {
+      "enabled": true,
+      "name": "Donator Check",
+      "schedule": "*/5 * * * *"
+    },
+    "elastic_index_mapsets": {
+      "enabled": true,
+      "name": "Index Elastic Mapsets",
+      "schedule": "*/5 * * * *"
+    },
+    "weekly_most_played": {
+      "enabled": true,
+      "name": "Cache Weekly Most Played",
+      "schedule": "0 * * * *"
+    },
+    "user_rank": {
+      "enabled": true,
+      "name": "Store user daily rank",
+      "schedule": "0 0 * * *"
+    },
+    "cache_leaderboard": {
+      "enabled": true,
+      "name": "Syncs all leaderboards",
+      "schedule": "0 * * * *"
+    },
+    "migrate_playlists": {
+      "enabled": true,
+      "name": "Migrates playlists from v1 to v2",
+      "schedule": "*/30 * * * *"
+    }
+  }
 }

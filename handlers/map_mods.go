@@ -156,9 +156,7 @@ func UpdateMapModStatus(c *gin.Context) *APIError {
 		return APIErrorForbidden("This map does not belong to you.")
 	}
 
-	mod.Status = body.Status
-
-	if err := db.SQL.Save(&mod).Error; err != nil {
+	if err := mod.UpdateStatus(body.Status); err != nil {
 		return APIErrorServerError("Error updating mod status in database", err)
 	}
 

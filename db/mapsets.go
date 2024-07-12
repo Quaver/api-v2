@@ -22,6 +22,7 @@ type Mapset struct {
 	DateLastUpdated     int64     `gorm:"column:date_last_updated" json:"-"`
 	DateLastUpdatedJSON time.Time `gorm:"-:all" json:"date_last_updated"`
 	IsVisible           bool      `gorm:"column:visible" json:"is_visible"`
+	IsExplicit          bool      `gorm:"column:explicit" json:"is_explicit"`
 	Maps                []*MapQua `gorm:"foreignKey:MapsetId" json:"maps,omitempty"`
 	User                *User     `gorm:"foreignKey:CreatorID; references:Id" json:"user,omitempty"`
 }
@@ -43,6 +44,18 @@ func (m *Mapset) BeforeCreate(*gorm.DB) (err error) {
 func (m *Mapset) AfterFind(*gorm.DB) (err error) {
 	m.DateSubmittedJSON = time.UnixMilli(m.DateSubmitted)
 	m.DateLastUpdatedJSON = time.UnixMilli(m.DateLastUpdated)
+	return nil
+}
+
+func (m *Mapset) Insert() error {
+	m.IsVisible = true
+	m.DateSubmittedJSON = time.Now()
+	m.DateLastUpdatedJSON = time.Now()
+
+	if err := SQL.Create(&m).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -219,4 +232,40 @@ func DeleteMapset(id int) error {
 	}
 
 	return nil
+}
+
+// UpdateMapsetPackageMD5 Updates the package md5 of a mapset
+func UpdateMapsetPackageMD5(id int, md5 string) error {
+	result := SQL.Model(&Mapset{}).
+		Where("id = ?", id).
+		Update("package_md5", md5)
+
+	return result.Error
+}
+
+// UpdateMetadata Updates the metadata of a given mapset (username, artist, title, etc)
+func (m *Mapset) UpdateMetadata() error {
+	result := SQL.Model(&Mapset{}).
+		Where("id = ?", m.Id).
+		Updates(map[string]interface{}{
+			"creator_username":  m.CreatorUsername,
+			"artist":            m.Artist,
+			"title":             m.Title,
+			"source":            m.Source,
+			"tags":              m.Tags,
+			"date_last_updated": time.Now().UnixMilli(),
+		})
+
+	return result.Error
+}
+
+// UpdateExplicit Sets the explicit state of the mapset
+func (m *Mapset) UpdateExplicit(isExplicit bool) error {
+	m.IsExplicit = isExplicit
+
+	result := SQL.Model(&Mapset{}).
+		Where("id = ?", m.Id).
+		Update("explicit", isExplicit)
+
+	return result.Error
 }

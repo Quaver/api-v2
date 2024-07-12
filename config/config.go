@@ -78,6 +78,30 @@ type Config struct {
 	} `json:"discord"`
 
 	OpenAIAPIKey string `json:"openai_api_key"`
+
+	CacheServer struct {
+		URL string `json:"url"`
+		Key string `json:"key"`
+	} `json:"cache_server"`
+
+	Cron struct {
+		DonatorCheck        CronJob `json:"donator_check"`
+		ElasticIndexMapsets CronJob `json:"elastic_index_mapsets"`
+		WeeklyMostPlayed    CronJob `json:"weekly_most_played"`
+		UserRank            CronJob `json:"user_rank"`
+		CacheLeaderboard    CronJob `json:"cache_leaderboard"`
+		MigratePlaylists    CronJob `json:"migrate_playlists"`
+	} `json:"cron"`
+}
+
+type CronJob struct {
+	Job
+}
+
+type Job struct {
+	Enabled  bool   `json:"enabled"`
+	Name     string `json:"name"`
+	Schedule string `json:"schedule"`
 }
 
 var Instance *Config = nil

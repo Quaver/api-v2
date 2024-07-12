@@ -227,6 +227,80 @@ func DeleteMapset(c *gin.Context) *APIError {
 	return nil
 }
 
+// MarkMapsetAsExplicit Marks a mapset as explicit
+// POST /v2/mapset/:id/explicit
+func MarkMapsetAsExplicit(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeRankMapsets) {
+		return APIErrorForbidden("You do not have permission to perform this action.")
+	}
+
+	mapset, err := db.GetMapsetById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving mapset data", err)
+	}
+
+	if mapset == nil {
+		return APIErrorNotFound("Mapset")
+	}
+
+	if err := mapset.UpdateExplicit(true); err != nil {
+		return APIErrorServerError("Error setting mapset as explicit", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully marked that mapset as explicit."})
+	return nil
+}
+
+// MarkMapsetAsNotExplicit Marks a mapsets as not explicit
+// POST /v2/mapset/:id/unexplicit
+func MarkMapsetAsNotExplicit(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeRankMapsets) {
+		return APIErrorForbidden("You do not have permission to perform this action.")
+	}
+
+	mapset, err := db.GetMapsetById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving mapset data", err)
+	}
+
+	if mapset == nil {
+		return APIErrorNotFound("Mapset")
+	}
+
+	if err := mapset.UpdateExplicit(false); err != nil {
+		return APIErrorServerError("Error setting mapset as explicit", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully marked that mapset as clean."})
+	return nil
+}
+
 // UpdateElasticSearchMapset Updates a mapset in elastic search
 // Endpoint: GET /v2/mapset/:id/elastic
 func UpdateElasticSearchMapset(c *gin.Context) *APIError {

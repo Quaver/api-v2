@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -170,8 +170,9 @@ func UpdateClan(c *gin.Context) *APIError {
 			return APIErrorBadRequest(errClanNameExists)
 		}
 
-		clan.Name = *body.Name
-		clan.LastNameChangeTime = time.Now().UnixMilli()
+		if err := clan.UpdateName(*body.Name); err != nil {
+			return APIErrorServerError("Error updating clan name", err)
+		}
 	}
 
 	if body.Tag != nil {
@@ -180,6 +181,10 @@ func UpdateClan(c *gin.Context) *APIError {
 		}
 
 		clan.Tag = *body.Tag
+
+		if err := clan.UpdateTag(*body.Tag); err != nil {
+			return APIErrorServerError("Error updating clan tag", err)
+		}
 	}
 
 	if body.FavoriteMode != nil {
@@ -188,6 +193,10 @@ func UpdateClan(c *gin.Context) *APIError {
 		}
 
 		clan.FavoriteMode = *body.FavoriteMode
+
+		if err := clan.UpdateFavoriteMode(enums.GameMode(*body.FavoriteMode)); err != nil {
+			return APIErrorServerError("Error updating clan favorite mode", err)
+		}
 	}
 
 	if body.AboutMe != nil {
@@ -196,14 +205,13 @@ func UpdateClan(c *gin.Context) *APIError {
 		}
 
 		clan.AboutMe = body.AboutMe
-	}
 
-	if result := db.SQL.Save(clan); result.Error != nil {
-		return APIErrorServerError("Error updating clan in the database", result.Error)
+		if err := clan.UpdateAboutMe(*body.AboutMe); err != nil {
+			return APIErrorServerError("Error updating clan favorite mode", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully updated."})
-	logrus.Debugf("%v (#%v) has updated the clan: `%v` (#%v).", user.Username, user.Id, clan.Name, clan.Id)
 	return nil
 }
 

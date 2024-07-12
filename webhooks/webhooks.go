@@ -81,6 +81,9 @@ func SendQueueWebhook(user *db.User, mapset *db.Mapset, action db.RankingQueueAc
 	case db.RankingQueueActionOnHold:
 		actionStr = "On Hold"
 		color = 0xFFFF00
+	case db.RankingQueueActionResolved:
+		actionStr = "Resolved"
+		color = 0xFFA500
 	case db.RankingQueueActionVote:
 		actionStr = "Voted"
 		color = 0x00FF00
@@ -217,7 +220,7 @@ func SendOrderWebhook(purchasedOrders []*db.Order) error {
 func getUserPingText(mapset *db.Mapset) string {
 	content := ""
 
-	if mapset.User.MiscInformation != nil && mapset.User.MiscInformation.NotifyMapsetActions {
+	if mapset.User != nil && mapset.User.MiscInformation != nil && mapset.User.MiscInformation.NotifyMapsetActions {
 		if mapset.User.DiscordId == nil {
 			return ""
 		}

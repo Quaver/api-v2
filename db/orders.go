@@ -100,7 +100,12 @@ func (order *Order) Finalize() error {
 	}
 
 	order.Status = OrderStatusCompleted
-	return SQL.Save(&order).Error
+
+	result := SQL.Model(&Order{}).
+		Where("id = ?", order.Id).
+		Update("status", order.Status)
+
+	return result.Error
 }
 
 // FinalizeDonator Finalizes a donator item
