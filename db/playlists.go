@@ -102,6 +102,8 @@ func GetAllPlaylists() ([]*Playlist, error) {
 	var playlists = make([]*Playlist, 0)
 
 	result := SQL.
+		Preload("Mapsets").
+		Preload("Mapsets.Maps").
 		Preload("Maps").
 		Preload("Maps.Map").
 		Find(&playlists)

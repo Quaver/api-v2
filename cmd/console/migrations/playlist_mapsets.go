@@ -25,6 +25,17 @@ func RunPlaylistMapset() {
 	logrus.Infof("Found: %v playlists", len(playlists))
 
 	for index, playlist := range playlists {
+		// Delete playlist mapsets that have zero maps in them
+		for _, playlistMapset := range playlist.Mapsets {
+			if len(playlistMapset.Maps) == 0 {
+				if err := db.DeletePlaylistMapset(playlist.Id, playlistMapset.MapsetId); err != nil {
+					logrus.Fatal(err)
+				}
+
+				logrus.Infof("Deleted playlist mapset: %v from playlist %v", playlistMapset.Id, playlist.Id)
+			}
+		}
+
 		if len(playlist.Maps) == 0 {
 			continue
 		}
@@ -61,5 +72,6 @@ func RunPlaylistMapset() {
 				logrus.Fatal(err)
 			}
 		}
+
 	}
 }
