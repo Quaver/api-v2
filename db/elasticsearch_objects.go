@@ -1,40 +1,22 @@
 package db
 
 type Query struct {
-	From  int                    `json:"from,omitempty"`
-	Size  int                    `json:"size"`
-	Aggs  Aggs                   `json:"aggs,omitempty"`
-	Query BoolQuery              `json:"query,omitempty"`
-	Sort  []map[string]SortOrder `json:"sort,omitempty"`
+	From     int                    `json:"from,omitempty"`
+	Size     int                    `json:"size"`
+	Collapse Collapse               `json:"collapse,omitempty"`
+	Query    BoolQuery              `json:"query,omitempty"`
+	Sort     []map[string]SortOrder `json:"sort,omitempty"`
 }
 
-type Aggs struct {
-	ByMapsetID ByMapsetID `json:"by_mapset_id"`
+type Collapse struct {
+	Field     string    `json:"field,omitempty"`
+	InnerHits InnerHits `json:"inner_hits,omitempty"`
 }
 
-type ByMapsetID struct {
-	Terms Terms       `json:"terms"`
-	Aggs  GroupedHits `json:"aggs"`
-}
-
-type Terms struct {
-	Field string            `json:"field"`
-	Size  int               `json:"size"`
-	Order map[string]string `json:"order"`
-}
-
-type GroupedHits struct {
-	GroupedHits TopHitsAgg `json:"grouped_hits"`
-}
-
-type TopHitsAgg struct {
-	TopHits TopHits `json:"top_hits"`
-}
-
-type TopHits struct {
-	Source map[string]interface{} `json:"_source"`
-	Size   int                    `json:"size"`
-	Sort   []map[string]SortOrder `json:"sort,omitempty"`
+type InnerHits struct {
+	Name string      `json:"name,omitempty"`
+	Size int         `json:"size,omitempty"`
+	Sort interface{} `json:"sort,omitempty"`
 }
 
 type BoolQuery struct {

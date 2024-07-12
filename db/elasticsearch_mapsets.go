@@ -48,23 +48,20 @@ type ElasticMap struct {
 	DateLastUpdated int64  `json:"date_last_updated"`
 }
 
-type ElasticAggregation struct {
-	Aggregations struct {
-		ByMapsetID struct {
-			Buckets []struct {
-				GroupedHits struct {
+type ElasticHits struct {
+	Hits struct {
+		Hits []struct {
+			InnerHits struct {
+				MostRelevant struct {
 					Hits struct {
 						Hits []struct {
-							ID     string     `json:"_id"`
 							Source ElasticMap `json:"_source"`
 						} `json:"hits"`
 					} `json:"hits"`
-				} `json:"grouped_hits"`
-				Key      int `json:"key,omitempty"`
-				DocCount int `json:"doc_count,omitempty"`
-			} `json:"buckets"`
-		} `json:"by_mapset_id"`
-	} `json:"aggregations"`
+				} `json:"most_relevant"`
+			} `json:"inner_hits"`
+		} `json:"hits"`
+	} `json:"hits"`
 }
 
 // DefaultSearchOptions Returns a new search options object with default values
@@ -312,23 +309,13 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	}
 
 	query := Query{
-		Size: 0, // How many hits to return (we don't care about those)
+		Size: 50,
 		From: 0, // Current page
-		Aggs: Aggs{
-			ByMapsetID: ByMapsetID{
-				Terms: Terms{
-					Field: "mapset_id",
-					Size:  options.Limit, // Results per page
-					Order: map[string]string{"_key": "desc"},
-				},
-				Aggs: GroupedHits{
-					GroupedHits: TopHitsAgg{
-						TopHits: TopHits{
-							Source: map[string]interface{}{},
-							Size:   50, // How many maps to group by
-						},
-					},
-				},
+		Collapse: Collapse{
+			Field: "mapset_id",
+			InnerHits: InnerHits{
+				Name: "most_relevant",
+				Size: 50,
 			},
 		},
 		Query: boolQuery,
@@ -358,41 +345,39 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		return nil, err
 	}
 
-	var aggregation ElasticAggregation
+	var hits ElasticHits
 
-	if err := json.Unmarshal(body, &aggregation); err != nil {
+	if err := json.Unmarshal(body, &hits); err != nil {
 		return nil, err
 	}
 
 	var mapsets []*Mapset
 
-	for _, bucket := range aggregation.Aggregations.ByMapsetID.Buckets {
-		if len(bucket.GroupedHits.Hits.Hits) > 0 {
-			firstHit := bucket.GroupedHits.Hits.Hits[0].Source
+	for _, hit := range hits.Hits.Hits {
+		firstHit := hit.InnerHits.MostRelevant.Hits.Hits[0].Source
 
-			mapset := &Mapset{
-				Id:                  firstHit.MapsetId,
-				PackageMD5:          firstHit.PackageMD5,
-				CreatorID:           firstHit.CreatorId,
-				CreatorUsername:     firstHit.CreatorUsername,
-				Artist:              firstHit.Artist,
-				Title:               firstHit.Title,
-				Source:              firstHit.Source,
-				Tags:                firstHit.Tags,
-				Description:         firstHit.Description,
-				Maps:                []*MapQua{firstHit.MapQua},
-				DateSubmitted:       firstHit.DateSubmitted,
-				DateSubmittedJSON:   time.UnixMilli(firstHit.DateSubmitted),
-				DateLastUpdated:     firstHit.DateLastUpdated,
-				DateLastUpdatedJSON: time.UnixMilli(firstHit.DateLastUpdated),
-				IsVisible:           true,
-			}
+		mapset := &Mapset{
+			Id:                  firstHit.MapsetId,
+			PackageMD5:          firstHit.PackageMD5,
+			CreatorID:           firstHit.CreatorId,
+			CreatorUsername:     firstHit.CreatorUsername,
+			Artist:              firstHit.Artist,
+			Title:               firstHit.Title,
+			Source:              firstHit.Source,
+			Tags:                firstHit.Tags,
+			Description:         firstHit.Description,
+			Maps:                []*MapQua{},
+			DateSubmitted:       firstHit.DateSubmitted,
+			DateSubmittedJSON:   time.UnixMilli(firstHit.DateSubmitted),
+			DateLastUpdated:     firstHit.DateLastUpdated,
+			DateLastUpdatedJSON: time.UnixMilli(firstHit.DateLastUpdated),
+			IsVisible:           true,
+		}
 
-			for _, hit := range bucket.GroupedHits.Hits.Hits[1:] {
-				mapset.Maps = append(mapset.Maps, hit.Source.MapQua)
-			}
+		mapsets = append(mapsets, mapset)
 
-			mapsets = append(mapsets, mapset)
+		for _, mapQua := range hit.InnerHits.MostRelevant.Hits.Hits {
+			mapset.Maps = append(mapset.Maps, mapQua.Source.MapQua)
 		}
 	}
 
