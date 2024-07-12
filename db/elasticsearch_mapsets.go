@@ -273,10 +273,19 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 
 		boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, qs2)
 
+		m := map[string]interface{}{
+			"match": map[string]interface{}{
+				"tags": map[string]interface{}{
+					"query": options.Search,
+					"boost": 0.2,
+				},
+			},
+		}
+
+		boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, m)
+
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQuerySearch)
 	}
-
-	// ToDo Tags
 
 	if options.Mode != nil {
 		boolQueryMode := BoolQuery{}
