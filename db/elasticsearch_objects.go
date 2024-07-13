@@ -61,6 +61,7 @@ type TermCustom struct {
 	Term struct {
 		GameMode     *Term `json:"game_mode,omitempty"`
 		RankedStatus *Term `json:"ranked_status,omitempty"`
+		Explicit     *Term `json:"explicit,omitempty"`
 	} `json:"term"`
 }
 

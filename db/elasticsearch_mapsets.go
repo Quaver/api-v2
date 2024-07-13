@@ -38,6 +38,7 @@ type ElasticMapsetSearchOptions struct {
 	MaxDateSubmitted    int64   `form:"max_date_submitted" json:"max_date_submitted"`
 	MinLastUpdated      int64   `form:"min_last_updated" json:"min_last_updated"`
 	MaxLastUpdated      int64   `form:"max_last_updated" json:"max_last_updated"`
+	Explicit            bool    `form:"show_explicit" json:"show_explicit"`
 }
 
 func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
@@ -46,11 +47,13 @@ func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
 		RankedStatus: []enums.RankedStatus{enums.RankedStatusRanked},
 		Mode:         []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7},
 		Limit:        50,
+		Explicit:     false,
 	}
 }
 
 type ElasticMap struct {
 	*MapQua
+	Explicit        bool   `json:"explicit"`
 	PackageMD5      string `json:"package_md5"`
 	DateSubmitted   int64  `json:"date_submitted"`
 	DateLastUpdated int64  `json:"date_last_updated"`
@@ -83,6 +86,7 @@ func IndexElasticSearchMapset(mapset Mapset) error {
 			MapQua:          mapQua,
 			DateSubmitted:   mapset.DateSubmitted,
 			DateLastUpdated: mapset.DateLastUpdated,
+			Explicit:        mapset.IsExplicit,
 		}
 
 		data, err := json.Marshal(&elasticMap)
@@ -111,6 +115,7 @@ func UpdateElasticSearchMapset(mapset Mapset) error {
 			MapQua:          mapQua,
 			DateSubmitted:   mapset.DateSubmitted,
 			DateLastUpdated: mapset.DateLastUpdated,
+			Explicit:        mapset.IsExplicit,
 		}
 
 		data, err := json.Marshal(&elasticMap)
@@ -191,6 +196,7 @@ func IndexAllElasticSearchMapsets(deletePrevious bool) error {
 				PackageMD5:      mapset.PackageMD5,
 				DateSubmitted:   mapset.DateSubmitted,
 				DateLastUpdated: mapset.DateLastUpdated,
+				Explicit:        mapset.IsExplicit,
 			}
 
 			data, err := json.Marshal(&elasticMap)
@@ -296,6 +302,14 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	addRangeQuery(&boolQuery, "date_submitted", options.MinDateSubmitted, options.MaxDateSubmitted)
 	addRangeQuery(&boolQuery, "date_last_updated", options.MinLastUpdated, options.MaxLastUpdated)
 
+	if !options.Explicit {
+		explicitTerm := TermCustom{}
+		explicitTerm.Term.Explicit = &Term{
+			Value: options.Explicit,
+		}
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, explicitTerm)
+	}
+
 	query := Query{
 		Size: options.Limit,
 		From: options.Page, // Pages start from 0
@@ -321,6 +335,8 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Error marshaling the query: %s", err))
 	}
+
+	fmt.Println(string(queryJSON))
 
 	resp, err := ElasticSearch.Search(
 		ElasticSearch.Search.WithIndex(elasticMapSearchIndex),
