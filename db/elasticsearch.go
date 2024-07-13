@@ -9,6 +9,7 @@ import (
 var ElasticSearch *elasticsearch.Client
 
 const elasticMapsetIndex = "mapsets-v2"
+const elasticMapSearchIndex = "maps"
 
 // InitializeElasticSearch Initializes the ElasticSearch client
 func InitializeElasticSearch() {
@@ -34,7 +35,7 @@ func InitializeElasticSearch() {
 
 	defer resp.Body.Close()
 
-	if err := CreateElasticIndex(elasticMapsetIndex); err != nil {
+	if err := CreateElasticIndex(elasticMapSearchIndex); err != nil {
 		panic(err)
 	}
 
