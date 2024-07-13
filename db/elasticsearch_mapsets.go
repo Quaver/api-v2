@@ -42,27 +42,10 @@ type ElasticMapsetSearchOptions struct {
 
 func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
 	return &ElasticMapsetSearchOptions{
-		Search:              "",
-		RankedStatus:        []enums.RankedStatus{enums.RankedStatusRanked},
-		Mode:                []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7},
-		Page:                0,
-		Limit:               50,
-		MinDifficultyRating: 0,
-		MaxDifficultyRating: 100,
-		MinBPM:              0,
-		MaxBPM:              999999999,
-		MinLength:           0,
-		MaxLength:           999999999,
-		MinLongNotePercent:  0,
-		MaxLongNotePercent:  100,
-		MinPlayCount:        0,
-		MaxPlayCount:        999999999,
-		MinCombo:            0,
-		MaxCombo:            999999999,
-		MinDateSubmitted:    0,
-		MaxDateSubmitted:    0,
-		MinLastUpdated:      0,
-		MaxLastUpdated:      0,
+		Search:       "",
+		RankedStatus: []enums.RankedStatus{enums.RankedStatusRanked},
+		Mode:         []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7},
+		Limit:        50,
 	}
 }
 
