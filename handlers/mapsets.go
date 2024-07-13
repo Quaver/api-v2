@@ -349,21 +349,22 @@ func UpdateElasticSearchMapset(c *gin.Context) *APIError {
 // GetMapsetsSearch Gets a list of mapsets that match a search query
 // Endpoint: GET /v2/mapsets/search
 func GetMapsetsSearch(c *gin.Context) *APIError {
-	body := db.ElasticMapsetSearchOptions{}
+	body := db.NewElasticMapsetSearchOptions()
 
 	if err := c.BindQuery(&body); err != nil {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	// ToDo - Add validations for status & mode
+	if body.Limit > 50 {
+		body.Limit = 50
+	}
 
-	mapsets, err := db.SearchElasticMapsets(&body)
+	mapsets, err := db.SearchElasticMapsets(body)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving mapsets from elastic search", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"mapsets": mapsets})
-
 	return nil
 }

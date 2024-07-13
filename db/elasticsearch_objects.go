@@ -37,6 +37,17 @@ type QueryString struct {
 	} `json:"query_string"`
 }
 
+func NewQueryString(query string, fields []string, defaultOperator string, boost float64) QueryString {
+	qs := QueryString{}
+
+	qs.QueryString.Query = query
+	qs.QueryString.Fields = fields
+	qs.QueryString.DefaultOperator = defaultOperator
+	qs.QueryString.Boost = boost
+
+	return qs
+}
+
 type SortOrder struct {
 	Order string `json:"order"`
 }
