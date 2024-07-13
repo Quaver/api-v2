@@ -311,7 +311,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	addRangeQuery(&boolQuery, "play_count", options.MinPlayCount, options.MaxPlayCount)
 	addRangeQuery(&boolQuery, "max_combo", options.MinCombo, options.MaxCombo)
 	addRangeQuery(&boolQuery, "date_submitted", options.MinDateSubmitted, options.MaxDateSubmitted)
-	addRangeQuery(&boolQuery, "last_updated", options.MinLastUpdated, options.MaxLastUpdated)
+	addRangeQuery(&boolQuery, "date_last_updated", options.MinLastUpdated, options.MaxLastUpdated)
 
 	query := Query{
 		Size: options.Limit,
@@ -338,6 +338,8 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Error marshaling the query: %s", err))
 	}
+
+	fmt.Println(string(queryJSON))
 
 	resp, err := ElasticSearch.Search(
 		ElasticSearch.Search.WithIndex(elasticMapSearchIndex),
