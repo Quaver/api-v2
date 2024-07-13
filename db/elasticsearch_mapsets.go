@@ -339,8 +339,6 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		return nil, errors.New(fmt.Sprintf("Error marshaling the query: %s", err))
 	}
 
-	fmt.Println(string(queryJSON))
-
 	resp, err := ElasticSearch.Search(
 		ElasticSearch.Search.WithIndex(elasticMapSearchIndex),
 		ElasticSearch.Search.WithBody(strings.NewReader(string(queryJSON))),
