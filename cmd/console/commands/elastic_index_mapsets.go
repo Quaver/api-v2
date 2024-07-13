@@ -10,7 +10,7 @@ var ElasticIndexMapsets = &cobra.Command{
 	Use:   "elastic:index:mapsets",
 	Short: "Indexes all mapsets in Elastic Search",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := db.IndexAllElasticSearchMapsets(true, 3); err != nil {
+		if err := db.IndexAllElasticSearchMapsets(true); err != nil {
 			logrus.Error(err)
 			return
 		}
