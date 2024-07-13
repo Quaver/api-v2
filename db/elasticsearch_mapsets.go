@@ -10,6 +10,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esutil"
 	"github.com/sirupsen/logrus"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -43,11 +44,27 @@ type ElasticMapsetSearchOptions struct {
 
 func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
 	return &ElasticMapsetSearchOptions{
-		Search:       "",
-		RankedStatus: []enums.RankedStatus{enums.RankedStatusRanked},
-		Mode:         []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7},
-		Limit:        50,
-		Explicit:     false,
+		Search:              "",
+		RankedStatus:        []enums.RankedStatus{enums.RankedStatusRanked},
+		Mode:                []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7},
+		Limit:               50,
+		MinDifficultyRating: 0,
+		MaxDifficultyRating: math.MaxInt32,
+		MinBPM:              0,
+		MaxBPM:              math.MaxInt32,
+		MinLength:           0,
+		MaxLength:           math.MaxInt32,
+		MinLongNotePercent:  0,
+		MaxLongNotePercent:  math.MaxInt32,
+		MinPlayCount:        0,
+		MaxPlayCount:        math.MaxInt32,
+		MinCombo:            0,
+		MaxCombo:            math.MaxInt32,
+		MinDateSubmitted:    0,
+		MaxDateSubmitted:    math.MaxInt64,
+		MinLastUpdated:      0,
+		MaxLastUpdated:      math.MaxInt64,
+		Explicit:            false,
 	}
 }
 
@@ -335,8 +352,6 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Error marshaling the query: %s", err))
 	}
-
-	fmt.Println(string(queryJSON))
 
 	resp, err := ElasticSearch.Search(
 		ElasticSearch.Search.WithIndex(elasticMapSearchIndex),
