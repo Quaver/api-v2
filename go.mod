@@ -13,8 +13,9 @@ require (
 	github.com/goccy/go-yaml v1.11.3
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang-migrate/migrate/v4 v4.17.1
+	github.com/oliamb/cutter v0.2.2
 	github.com/redis/go-redis/v9 v9.4.0
-	github.com/sdqri/effdsl v1.2.0
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/stripe/stripe-go/v79 v79.0.0
@@ -54,9 +55,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/oliamb/cutter v0.2.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
-	github.com/robfig/cron/v3 v3.0.0 // indirect
 	github.com/sasha-s/go-csync v0.0.0-20240107134140-fcbab37b09ad // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
