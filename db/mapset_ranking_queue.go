@@ -19,16 +19,20 @@ const (
 )
 
 type RankingQueueMapset struct {
-	Id              int                `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	MapsetId        int                `gorm:"column:mapset_id" json:"mapset_id"`
-	Timestamp       int64              `gorm:"column:timestamp" json:"-"`
-	CreatedAtJSON   time.Time          `gorm:"-:all" json:"created_at"` // Same value as Timestamp
-	DateLastUpdated int64              `gorm:"column:date_last_updated" json:"-"`
-	LastUpdatedJSON time.Time          `gorm:"-:all" json:"last_updated"` // Same value as DateLastUpdated
-	Status          RankingQueueStatus `gorm:"column:status" json:"status"`
-	NeedsAttention  bool               `gorm:"column:needs_attention" json:"-"`
-	Votes           int                `gorm:"column:votes" json:"votes"`
-	Mapset          *Mapset            `gorm:"foreignKey:MapsetId; references:Id" json:"mapset"`
+	Id              int                          `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	MapsetId        int                          `gorm:"column:mapset_id" json:"mapset_id"`
+	Timestamp       int64                        `gorm:"column:timestamp" json:"-"`
+	CreatedAtJSON   time.Time                    `gorm:"-:all" json:"created_at"` // Same value as Timestamp
+	DateLastUpdated int64                        `gorm:"column:date_last_updated" json:"-"`
+	LastUpdatedJSON time.Time                    `gorm:"-:all" json:"last_updated"` // Same value as DateLastUpdated
+	Status          RankingQueueStatus           `gorm:"column:status" json:"status"`
+	NeedsAttention  bool                         `gorm:"column:needs_attention" json:"-"`
+	VoteCount       int                          `gorm:"-:all" json:"-"`
+	Mapset          *Mapset                      `gorm:"foreignKey:MapsetId; references:Id" json:"mapset"`
+	Votes           []*MapsetRankingQueueComment `gorm:"-:all" json:"votes"`
+	Denies          []*MapsetRankingQueueComment `gorm:"-:all" json:"denies"`
+
+	Comments []*MapsetRankingQueueComment `gorm:"foreignKey:MapsetId; references:MapsetId" json:"-"`
 }
 
 func (*RankingQueueMapset) TableName() string {
@@ -64,7 +68,7 @@ func (mapset *RankingQueueMapset) UpdateStatus(status RankingQueueStatus) error 
 
 // UpdateVoteCount Updates the vote count of a ranking queue mapset
 func (mapset *RankingQueueMapset) UpdateVoteCount(votes int) error {
-	mapset.Votes = votes
+	mapset.VoteCount = votes
 
 	result := SQL.Model(&RankingQueueMapset{}).
 		Where("id = ?", mapset.Id).
@@ -81,6 +85,8 @@ func GetRankingQueue(mode enums.GameMode, limit int, page int) ([]*RankingQueueM
 	result := SQL.
 		Joins("Mapset").
 		Preload("Mapset.Maps").
+		Preload("Comments").
+		Preload("Comments.User").
 		Joins("LEFT JOIN maps ON maps.mapset_id = Mapset.id").
 		Where("(status = ? OR status = ? OR status = ?) "+
 			"AND maps.game_mode = ?",
@@ -96,6 +102,24 @@ func GetRankingQueue(mode enums.GameMode, limit int, page int) ([]*RankingQueueM
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	for _, mapset := range mapsets {
+		mapset.Votes = make([]*MapsetRankingQueueComment, 0)
+		mapset.Denies = make([]*MapsetRankingQueueComment, 0)
+
+		for _, comment := range mapset.Comments {
+			if !comment.IsActive {
+				continue
+			}
+
+			switch comment.ActionType {
+			case RankingQueueActionVote:
+				mapset.Votes = append(mapset.Votes, comment)
+			case RankingQueueActionDeny:
+				mapset.Denies = append(mapset.Denies, comment)
+			}
+		}
 	}
 
 	return mapsets, nil

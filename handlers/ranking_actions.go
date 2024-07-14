@@ -146,7 +146,7 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		_ = webhooks.SendRankedWebhook(data.QueueMapset.Mapset, existingVotes)
 	}
 
-	if err := queueMapset.UpdateVoteCount(queueMapset.Votes + 1); err != nil {
+	if err := queueMapset.UpdateVoteCount(queueMapset.VoteCount + 1); err != nil {
 		return APIErrorServerError("Error updating vote count for queue mapset", err)
 	}
 
