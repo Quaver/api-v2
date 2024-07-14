@@ -86,6 +86,7 @@ func GetRankingQueue(mode enums.GameMode, limit int, page int) ([]*RankingQueueM
 			"AND maps.game_mode = ?",
 			RankingQueuePending, RankingQueueOnHold, RankingQueueResolved,
 			mode).
+		Group("maps.mapset_id").
 		Order(fmt.Sprintf("votes DESC, "+
 			"status = %v DESC, status = %v DESC, status = %v DESC, "+
 			"date_last_updated DESC", RankingQueueResolved, RankingQueuePending, RankingQueueOnHold)).
