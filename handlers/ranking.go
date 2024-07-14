@@ -46,7 +46,16 @@ func GetRankingQueue(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving ranking queue", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"ranking_queue": rankingQueue})
+	count, err := db.GetRankingQueueCount(enums.GameMode(mode))
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving ranking queue count", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"count":         count,
+		"ranking_queue": rankingQueue,
+	})
 	return nil
 }
 

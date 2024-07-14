@@ -101,6 +101,24 @@ func GetRankingQueue(mode enums.GameMode, limit int, page int) ([]*RankingQueueM
 	return mapsets, nil
 }
 
+// GetRankingQueueCount Gets the total amount of maps in the ranking queue
+func GetRankingQueueCount(mode enums.GameMode) (int, error) {
+	var count int
+
+	result := SQL.Raw("SELECT COUNT(*) from mapset_ranking_queue "+
+		"INNER JOIN mapsets ON mapset_ranking_queue.mapset_id = mapsets.id "+
+		"INNER JOIN maps ON maps.mapset_id = mapsets.id "+
+		"WHERE (status = ? OR status = ? OR status = ?) AND maps.game_mode = ? ",
+		RankingQueuePending, RankingQueueOnHold, RankingQueueResolved, mode).
+		Scan(&count)
+
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return count, nil
+}
+
 // GetRankingQueueMapset Retrieves a ranking queue mapset for a given mapset id
 func GetRankingQueueMapset(mapsetId int) (*RankingQueueMapset, error) {
 	var mapset *RankingQueueMapset
