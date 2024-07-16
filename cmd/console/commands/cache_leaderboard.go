@@ -69,7 +69,7 @@ func populateLeaderboard() error {
 
 func processUsers(users []*db.User) error {
 	for _, user := range users {
-		for i := 1; i < 2; i++ {
+		for i := 1; i <= 2; i++ {
 			mode := enums.GameMode(i)
 			globalKey := fmt.Sprintf("quaver:leaderboard:%v", mode)
 			countryKey := fmt.Sprintf("quaver:country_leaderboard:%v:%v", strings.ToLower(user.Country), mode)
@@ -87,8 +87,17 @@ func processUsers(users []*db.User) error {
 				continue
 			}
 
+			var performanceRating float64
+
+			switch mode {
+			case enums.GameModeKeys4:
+				performanceRating = user.StatsKeys4.OverallPerformanceRating
+			case enums.GameModeKeys7:
+				performanceRating = user.StatsKeys7.OverallPerformanceRating
+			}
+
 			err := db.Redis.ZAdd(db.RedisCtx, globalKey, redis.Z{
-				Score:  user.StatsKeys4.OverallPerformanceRating,
+				Score:  performanceRating,
 				Member: strconv.Itoa(user.Id),
 			}).Err()
 
@@ -98,7 +107,7 @@ func processUsers(users []*db.User) error {
 
 			if user.Country != "XX" {
 				err = db.Redis.ZAdd(db.RedisCtx, countryKey, redis.Z{
-					Score:  user.StatsKeys4.OverallPerformanceRating,
+					Score:  performanceRating,
 					Member: strconv.Itoa(user.Id),
 				}).Err()
 
