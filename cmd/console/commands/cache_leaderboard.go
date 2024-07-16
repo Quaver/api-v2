@@ -72,7 +72,7 @@ func processUsers(users []*db.User) error {
 		for i := 1; i < 2; i++ {
 			mode := enums.GameMode(i)
 			globalKey := fmt.Sprintf("quaver:leaderboard:%v", mode)
-			countryKey := fmt.Sprintf("quaver:country_leaderboard:%v:%v", user.Country, mode)
+			countryKey := fmt.Sprintf("quaver:country_leaderboard:%v:%v", strings.ToLower(user.Country), mode)
 
 			// User was banned so remove them from the global/country leaderboards
 			if !user.Allowed {

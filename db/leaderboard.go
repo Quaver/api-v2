@@ -33,7 +33,7 @@ func GetGlobalLeaderboard(mode enums.GameMode, page int, limit int) ([]*User, er
 
 // GetCountryLeaderboard Retrieves the country leaderboard for a given country and mode
 func GetCountryLeaderboard(country string, mode enums.GameMode, page int, limit int) ([]*User, error) {
-	key := fmt.Sprintf("quaver:country_leaderboard:%v:%v", country, mode)
+	key := fmt.Sprintf("quaver:country_leaderboard:%v:%v", strings.ToLower(country), mode)
 
 	users, err := getLeaderboardUsers(key, page, limit)
 
