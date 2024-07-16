@@ -26,7 +26,8 @@ var CacheClearCmd = &cobra.Command{
 			delCount, err := db.Redis.Del(db.RedisCtx, keys...).Result()
 
 			if err != nil {
-				logrus.Fatalf("Failed to DELETE keys: %v", err)
+				logrus.Errorf("Failed to DELETE keys: %v", err)
+				return
 			}
 
 			logrus.Printf("Deleted %d keys\n", delCount)

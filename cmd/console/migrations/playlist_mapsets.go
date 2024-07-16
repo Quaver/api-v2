@@ -19,7 +19,8 @@ func RunPlaylistMapset() {
 	playlists, err := db.GetAllPlaylists()
 
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Error(err)
+		return
 	}
 
 	logrus.Infof("Found: %v playlists", len(playlists))
@@ -29,7 +30,8 @@ func RunPlaylistMapset() {
 		for _, playlistMapset := range playlist.Mapsets {
 			if len(playlistMapset.Maps) == 0 {
 				if err := db.DeletePlaylistMapset(playlist.Id, playlistMapset.MapsetId); err != nil {
-					logrus.Fatal(err)
+					logrus.Error(err)
+					return
 				}
 
 				logrus.Infof("Deleted playlist mapset: %v from playlist %v", playlistMapset.Id, playlist.Id)
@@ -51,7 +53,8 @@ func RunPlaylistMapset() {
 			playlistMapset, err := db.GetPlaylistMapsetByIds(playlist.Id, songMap.Map.MapsetId)
 
 			if err != nil && err != gorm.ErrRecordNotFound {
-				logrus.Fatal(err)
+				logrus.Error(err)
+				return
 			}
 
 			// Create new playlist mapset
@@ -62,14 +65,16 @@ func RunPlaylistMapset() {
 				}
 
 				if err := playlistMapset.Insert(); err != nil {
-					logrus.Fatal(err)
+					logrus.Error(err)
+					return
 				}
 
 				logrus.Infof("Inserted playlist mapset for %v - %v", playlist.Id, songMap.Map.MapsetId)
 			}
 
 			if err := songMap.UpdateMapsetId(playlistMapset.Id); err != nil {
-				logrus.Fatal(err)
+				logrus.Error(err)
+				return
 			}
 		}
 

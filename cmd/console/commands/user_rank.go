@@ -6,7 +6,6 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"log"
 	"time"
 )
 
@@ -42,7 +41,8 @@ var UserRankCmd = &cobra.Command{
 					data, err := db.Redis.ZRevRankWithScore(db.RedisCtx, key, userStr).Result()
 
 					if err != nil {
-						logrus.Fatal(err)
+						logrus.Error(err)
+						return
 					}
 
 					switch enums.GameMode(i) {
@@ -87,7 +87,8 @@ var UserRankCmd = &cobra.Command{
 			result := db.SQL.Exec(query)
 
 			if result.Error != nil {
-				log.Fatal(result.Error)
+				logrus.Error(result.Error)
+				return
 			}
 		}
 

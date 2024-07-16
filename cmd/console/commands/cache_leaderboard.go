@@ -18,7 +18,7 @@ var CacheLeaderboardCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 0 && strings.ToLower(args[0]) == "delete-all" {
 			if err := deleteOldLeaderboards(); err != nil {
-				logrus.Fatal(err)
+				logrus.Error(err)
 				return
 			}
 		}
@@ -26,7 +26,7 @@ var CacheLeaderboardCmd = &cobra.Command{
 		logrus.Println("Populating leaderboards...")
 
 		if err := populateLeaderboard(); err != nil {
-			logrus.Fatal(err)
+			logrus.Error(err)
 			return
 		}
 
@@ -152,7 +152,8 @@ func deleteOldLeaderboards() error {
 		_, err := db.Redis.Del(db.RedisCtx, keys...).Result()
 
 		if err != nil {
-			logrus.Fatalf("Failed to DELETE keys: %v", err)
+			logrus.Errorf("Failed to DELETE keys: %v", err)
+			return err
 		}
 	}
 
