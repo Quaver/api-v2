@@ -351,7 +351,7 @@ func GetUserClientStatus(id int) (*UserClientStatus, error) {
 	result, err := Redis.Get(RedisCtx, fmt.Sprintf("quaver:server:user_status:%v", id)).Result()
 
 	if err != nil && err != redis.Nil {
-		logrus.Error("Error getting user status from redis", err)
+		logrus.Errorf("[#%v] Error getting user status from redis: %v", id, err)
 		return nil, err
 	}
 
