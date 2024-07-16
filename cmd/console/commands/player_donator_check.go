@@ -79,7 +79,7 @@ func userIsDiscordPremiumUser(user *db.User) bool {
 		return false
 	}
 
-	resp, err := resty.New().R().Get(fmt.Sprintf("%v/donator/discord/check/%v", config.Instance.Discord.BotAPI, user.DiscordId))
+	resp, err := resty.New().R().Get(fmt.Sprintf("%v/donator/discord/check/%v", config.Instance.Discord.BotAPI, *user.DiscordId))
 
 	if err != nil {
 		return false
