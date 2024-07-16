@@ -305,7 +305,7 @@ func getStripeDonatorPriceId(months int, isRecurring bool) string {
 		if isRecurring {
 			switch months {
 			case 1:
-				return "price_1PVzPCRw21C92BKs2QSHNO7r"
+				return "price_1PVzPCRw21C92BKsJd6EfokA"
 			case 3:
 				return "price_1PVzPCRw21C92BKsKAP3P5q1"
 			case 6:
