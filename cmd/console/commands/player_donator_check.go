@@ -42,9 +42,11 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 				if user.DonatorEndTime < currentTime.UnixMilli() {
 					logrus.Printf("User %s donator expired", user.Username)
 
+					user.UserGroups = user.UserGroups &^ enums.UserGroupDonator
+
 					result := db.SQL.Model(&db.User{}).
 						Where("id = ?", user.Id).
-						Update("usergroups", user.UserGroups&^enums.UserGroupDonator).
+						Update("usergroups", user.UserGroups).
 						Update("donator_end_time", 0)
 
 					if result.Error != nil {
@@ -53,9 +55,11 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 
 					// Add back donator if user is discord premium
 					if userIsDiscordPremiumUser(user) {
+						user.UserGroups = user.UserGroups | enums.UserGroupDonator
+
 						result := db.SQL.Model(&db.User{}).
 							Where("id = ?", user.Id).
-							Update("usergroups", user.UserGroups|enums.UserGroupDonator).
+							Update("usergroups", user.UserGroups).
 							Update("donator_end_time", time.Now().UnixMilli()+3600000)
 
 						if result.Error != nil {
