@@ -140,13 +140,19 @@ func processUsers(users []*db.User) error {
 func deleteOldLeaderboards() error {
 	logrus.Info("Deleting old leaderboards...")
 
-	var cursor uint64
-
-	keys, cursor, err := db.Redis.Scan(db.RedisCtx, cursor, fmt.Sprintf("quaver:leaderboard:*"), 0).Result()
+	keys, err := db.Redis.Keys(db.RedisCtx, "quaver:leaderboard:*").Result()
 
 	if err != nil && err != redis.Nil {
 		logrus.Println(err)
 	}
+
+	countryKeys, err := db.Redis.Keys(db.RedisCtx, "quaver:country_leaderboard:*").Result()
+
+	if err != nil && err != redis.Nil {
+		logrus.Println(err)
+	}
+
+	keys = append(keys, countryKeys...)
 
 	if len(keys) > 0 {
 		_, err := db.Redis.Del(db.RedisCtx, keys...).Result()
