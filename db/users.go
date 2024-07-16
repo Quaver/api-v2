@@ -348,7 +348,7 @@ func UpdateUserAllowed(userId int, isAllowed bool) error {
 
 // GetUserClientStatus Retrieves a user's client status from Redis
 func GetUserClientStatus(id int) (*UserClientStatus, error) {
-	result, err := Redis.Get(RedisCtx, fmt.Sprintf("quaver:server:user_status:%v", id)).Result()
+	result, err := Redis.HGetAll(RedisCtx, fmt.Sprintf("quaver:server:user_status:%v", id)).Result()
 
 	if err != nil && err != redis.Nil {
 		logrus.Errorf("[#%v] Error getting user status from redis: %v", id, err)
@@ -359,23 +359,10 @@ func GetUserClientStatus(id int) (*UserClientStatus, error) {
 		return nil, nil
 	}
 
-	type redisClientStatus struct {
-		Status  string `json:"s"`
-		Mode    string `json:"m"`
-		Content string `json:"c"`
-	}
-
-	var status *redisClientStatus
-
-	if err := json.Unmarshal([]byte(result), &status); err != nil {
-		logrus.Error("Error unmarshalling client status json", err)
-		return nil, err
-	}
-
 	return &UserClientStatus{
-		Status:  parseRedisIntWithDefault(status.Status, 0),
-		Mode:    parseRedisIntWithDefault(status.Mode, 1),
-		Content: status.Content,
+		Status:  parseRedisIntWithDefault(result["s"], 0),
+		Mode:    parseRedisIntWithDefault(result["m"], 1),
+		Content: result["c"],
 	}, nil
 }
 
