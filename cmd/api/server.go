@@ -59,7 +59,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/user/:id/badges", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserBadges))
 	engine.GET("/v2/user/:id/mapsets", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserMapsets))
 	engine.GET("/v2/user/:id/playlists", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPlaylists))
-	//engine.GET("/v2/user/:id/mostplayed", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserMostPlayedMaps))
+	engine.GET("/v2/user/:id/mostplayed", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserMostPlayedMaps))
 	engine.GET("/v2/user/:id/scores/:mode/best", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserBestScoresForMode))
 	engine.GET("/v2/user/:id/scores/:mode/recent", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserRecentScoresForMode))
 	engine.GET("/v2/user/:id/scores/:mode/firstplace", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserFirstPlaceScoresForMode))
@@ -110,7 +110,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Server
 	engine.GET("/v2/server/stats", handlers.CreateHandler(handlers.GetServerStats))
 	engine.GET("/v2/server/stats/country", handlers.CreateHandler(handlers.GetCountryPlayers))
-	engine.GET("/v2/server/stats/mostplayed", handlers.CreateHandler(handlers.GetWeeklyMostPlayedMapsets))
+	//engine.GET("/v2/server/stats/mostplayed", handlers.CreateHandler(handlers.GetWeeklyMostPlayedMapsets))
 
 	// Download
 	engine.GET("/v2/download/map/:id", handlers.CreateHandler(handlers.DownloadQua))
