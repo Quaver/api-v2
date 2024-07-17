@@ -129,9 +129,9 @@ func GetRankingQueue(mode enums.GameMode, limit int, page int) ([]*RankingQueueM
 func GetRankingQueueCount(mode enums.GameMode) (int, error) {
 	var count int
 
-	result := SQL.Raw("SELECT COUNT(*) from mapset_ranking_queue "+
-		"INNER JOIN mapsets ON mapset_ranking_queue.mapset_id = mapsets.id "+
-		"INNER JOIN maps ON maps.mapset_id = mapsets.id "+
+	result := SQL.Raw("SELECT COUNT(DISTINCT mapset_ranking_queue.id) from mapset_ranking_queue "+
+		"LEFT JOIN mapsets ON mapset_ranking_queue.mapset_id = mapsets.id "+
+		"LEFT JOIN maps ON maps.mapset_id = mapsets.id "+
 		"WHERE (status = ? OR status = ? OR status = ?) AND maps.game_mode = ? ",
 		RankingQueuePending, RankingQueueOnHold, RankingQueueResolved, mode).
 		Scan(&count)
