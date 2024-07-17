@@ -16,62 +16,94 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 	Use:   "player:donator:check",
 	Short: "Checks if a player is a donator",
 	Run: func(cmd *cobra.Command, args []string) {
-		batchSize := 1000
-		offset := 0
+		removeExpiredDonator()
+		addDiscordPremiumDonator()
+	},
+}
 
-		currentTime := time.Now()
+func removeExpiredDonator() {
+	batchSize := 1000
+	offset := 0
 
-		for {
-			var users = make([]*db.User, 0)
+	currentTime := time.Now()
 
-			result := db.SQL.
-				Where("? & usergroups != 0", enums.UserGroupDonator).
-				Limit(batchSize).
-				Offset(offset).
-				Find(&users)
+	for {
+		var users = make([]*db.User, 0)
 
-			if result.Error != nil {
-				logrus.Println(result.Error)
-			}
+		result := db.SQL.
+			Where("? & usergroups != 0", enums.UserGroupDonator).
+			Limit(batchSize).
+			Offset(offset).
+			Find(&users)
 
-			if len(users) == 0 {
-				break
-			}
+		if result.Error != nil {
+			logrus.Println(result.Error)
+		}
 
-			for _, user := range users {
-				if user.DonatorEndTime < currentTime.UnixMilli() {
-					logrus.Printf("User %s donator expired", user.Username)
+		if len(users) == 0 {
+			break
+		}
 
-					user.UserGroups = user.UserGroups &^ enums.UserGroupDonator
+		for _, user := range users {
+			if user.DonatorEndTime < currentTime.UnixMilli() {
+				logrus.Printf("User %s donator expired", user.Username)
 
-					result := db.SQL.Model(&db.User{}).
-						Where("id = ?", user.Id).
-						Update("usergroups", user.UserGroups).
-						Update("donator_end_time", 0)
+				user.UserGroups = user.UserGroups &^ enums.UserGroupDonator
 
-					if result.Error != nil {
-						logrus.Println(result.Error)
-					}
+				result := db.SQL.Model(&db.User{}).
+					Where("id = ?", user.Id).
+					Update("usergroups", user.UserGroups).
+					Update("donator_end_time", 0)
 
-					// Add back donator if user is discord premium
-					if userIsDiscordPremiumUser(user) {
-						user.UserGroups = user.UserGroups | enums.UserGroupDonator
-
-						result := db.SQL.Model(&db.User{}).
-							Where("id = ?", user.Id).
-							Update("usergroups", user.UserGroups).
-							Update("donator_end_time", time.Now().UnixMilli()+3600000)
-
-						if result.Error != nil {
-							logrus.Println(result.Error)
-						}
-					}
+				if result.Error != nil {
+					logrus.Println(result.Error)
 				}
 			}
-
-			offset += batchSize
 		}
-	},
+
+		offset += batchSize
+	}
+}
+
+func addDiscordPremiumDonator() {
+	batchSize := 1000
+	offset := 0
+
+	for {
+		var users = make([]*db.User, 0)
+
+		result := db.SQL.
+			Where("(? & usergroups = 0) AND discord_id IS NOT NULL", enums.UserGroupDonator).
+			Limit(batchSize).
+			Offset(offset).
+			Find(&users)
+
+		if result.Error != nil {
+			logrus.Println(result.Error)
+		}
+
+		if len(users) == 0 {
+			break
+		}
+
+		for _, user := range users {
+			if userIsDiscordPremiumUser(user) {
+				user.UserGroups = user.UserGroups | enums.UserGroupDonator
+
+				result := db.SQL.Model(&db.User{}).
+					Where("id = ?", user.Id).
+					Update("usergroups", user.UserGroups).
+					Update("donator_end_time", time.Now().UnixMilli()+3600000)
+
+				if result.Error != nil {
+					logrus.Println(result.Error)
+				}
+
+				logrus.Info("Gave donator to Discord premium user: ", user.Username)
+			}
+		}
+		offset += batchSize
+	}
 }
 
 func userIsDiscordPremiumUser(user *db.User) bool {
