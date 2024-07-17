@@ -5,7 +5,9 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"math"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -41,8 +43,12 @@ func GetUser(c *gin.Context) *APIError {
 	var user *db.User
 	var dbError error
 
-	if id, err := strconv.Atoi(query); err == nil {
-		user, dbError = db.GetUserById(id)
+	value, err := strconv.Atoi(query)
+
+	if err == nil && value <= math.MaxInt32 {
+		user, dbError = db.GetUserById(value)
+	} else if regexp.MustCompile(`\d`).MatchString(query) {
+		user, dbError = db.GetUserBySteamId(query)
 	} else {
 		user, dbError = db.GetUserByUsername(query)
 	}
