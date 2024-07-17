@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/handlers"
 	"github.com/Quaver/api2/middleware"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -15,6 +16,7 @@ func initializeServer(port int) {
 	logrus.Info("Starting gin server in mode: ", gin.Mode())
 
 	engine := gin.New()
+	engine.Use(cors.Default())
 	engine.Use(gin.Recovery())
 	initializeRoutes(engine)
 
