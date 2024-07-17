@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	ratelimit "github.com/JGLTechnologies/gin-rate-limit"
 	"github.com/Quaver/api2/handlers"
 	"github.com/Quaver/api2/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 // Starts the server on a given port
@@ -18,11 +20,36 @@ func initializeServer(port int) {
 	engine := gin.New()
 	engine.Use(cors.Default())
 	engine.Use(gin.Recovery())
+
+	initializeRateLimiter(engine)
 	initializeRoutes(engine)
 
 	logrus.Info(fmt.Sprintf("API is now being served on port :%v", port))
 	logrus.Fatal(engine.Run(fmt.Sprintf(":%v", port)))
 
+}
+
+// Initializes the rate limiter for the server
+func initializeRateLimiter(engine *gin.Engine) {
+	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
+		Rate:  time.Minute,
+		Limit: 100,
+	})
+
+	engine.Use(ratelimit.RateLimiter(store, &ratelimit.Options{
+		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
+			// Ignore localhost
+			if c.ClientIP() == "::1" || c.ClientIP() == "127.0.0.1" {
+				c.Next()
+				return
+			}
+
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests"})
+		},
+		KeyFunc: func(c *gin.Context) string {
+			return c.ClientIP()
+		},
+	}))
 }
 
 // Initializes all the routes for the server.
