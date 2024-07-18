@@ -172,17 +172,17 @@ func GetScoreById(id int) (*Score, error) {
 
 // GetGlobalScoresForMap Retrieves the global scores for a map
 func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*Score, error) {
-	if useCache {
-		cached, err := getCachedScoreboard(scoreboardGlobal, md5, 0)
-
-		if err != nil {
-			return nil, err
-		}
-
-		if cached != nil {
-			return cached, nil
-		}
-	}
+	//if useCache {
+	//	cached, err := getCachedScoreboard(scoreboardGlobal, md5, 0)
+	//
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	if cached != nil {
+	//		return cached, nil
+	//	}
+	//}
 
 	var scores = make([]*Score, 0)
 
@@ -246,7 +246,7 @@ func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]
 }
 
 // GetModifierScoresForMap Retrieves the modifier scores for a map
-func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score, error) {
+func GetModifierScoresForMap(md5 string, mods int64, limit int) ([]*Score, error) {
 	cached, err := getCachedScoreboard(scoreboardMods, md5, mods)
 
 	if err != nil {
@@ -259,18 +259,17 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 
 	var scores = make([]*Score, 0)
 
-	result := SQL.
-		Joins("User").
-		Where("scores.map_md5 = ? "+
-			"AND scores.failed = 0 "+
-			"AND (scores.mods & ?) != 0 "+
-			"AND User.allowed = 1", md5, mods).
-		Distinct("scores.user_id").
-		Select("scores.*, User.*").
-		Order("scores.performance_rating DESC").
-		Limit(limit).
-		Offset(page * limit).
-		Find(&scores)
+	result := SQL.Raw(fmt.Sprintf(`
+		WITH MaxRatings AS (
+			SELECT user_id, MAX(performance_rating) AS max_performance_rating
+			FROM scores
+			WHERE map_md5 = ?
+			  AND failed = 0
+			  AND (mods & ?) != 0
+			GROUP BY user_id
+		)
+		%v`, getSelectUserScoreboardQuery(limit)), md5, mods).
+		Scan(&scores)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -284,7 +283,7 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int, page int) ([]*Sc
 }
 
 // GetRateScoresForMap Retrieves the rate scores for a map
-func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score, error) {
+func GetRateScoresForMap(md5 string, mods int64, limit int) ([]*Score, error) {
 	cached, err := getCachedScoreboard(scoreboardRate, md5, mods)
 
 	if err != nil {
@@ -306,18 +305,17 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 		modsQuery = "AND (scores.mods & ?) != 0 "
 	}
 
-	result := SQL.
-		Joins("User").
-		Where("scores.map_md5 = ? "+
-			"AND scores.failed = 0 "+
-			modsQuery+
-			"AND User.allowed = 1", md5, mods).
-		Distinct("scores.user_id").
-		Select("scores.*, User.*").
-		Order("scores.performance_rating DESC").
-		Limit(limit).
-		Offset(page * limit).
-		Find(&scores)
+	result := SQL.Raw(fmt.Sprintf(`
+		WITH MaxRatings AS (
+			SELECT user_id, MAX(performance_rating) AS max_performance_rating
+			FROM scores
+			WHERE map_md5 = ?
+			  AND failed = 0
+			  %v
+			GROUP BY user_id
+		)
+		%v`, modsQuery, getSelectUserScoreboardQuery(limit)), md5, mods).
+		Scan(&scores)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -331,7 +329,7 @@ func GetRateScoresForMap(md5 string, mods int64, limit int, page int) ([]*Score,
 }
 
 // GetAllScoresForMap Retrieves all scores for a map
-func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
+func GetAllScoresForMap(md5 string, limit int) ([]*Score, error) {
 	cached, err := getCachedScoreboard(scoreboardAll, md5, 0)
 
 	if err != nil {
@@ -344,17 +342,16 @@ func GetAllScoresForMap(md5 string, limit int, page int) ([]*Score, error) {
 
 	var scores = make([]*Score, 0)
 
-	result := SQL.
-		Joins("User").
-		Where("scores.map_md5 = ? "+
-			"AND scores.failed = 0 "+
-			"AND User.allowed = 1", md5).
-		Order("scores.performance_rating DESC").
-		Distinct("scores.user_id").
-		Select("scores.*, User.*").
-		Limit(limit).
-		Offset(page * limit).
-		Find(&scores)
+	result := SQL.Raw(fmt.Sprintf(`
+		WITH MaxRatings AS (
+			SELECT user_id, MAX(performance_rating) AS max_performance_rating
+			FROM scores
+			WHERE map_md5 = ?
+			  AND failed = 0
+			GROUP BY user_id
+		)
+		%v`, getSelectUserScoreboardQuery(limit)), md5).
+		Scan(&scores)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -572,4 +569,38 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*
 	}
 
 	return scores, nil
+}
+
+// Returns a query to select user scores from non personal best scoreboards.
+func getSelectUserScoreboardQuery(limit int) string {
+	return fmt.Sprintf(`
+		SELECT s.user_id,
+			   s.*,
+			   u.id AS User__id,
+			   u.steam_id AS User__steam_id,
+			   u.username AS User__username,
+			   u.time_registered AS User__time_registered,
+			   u.allowed AS User__allowed,
+			   u.privileges AS User__privileges,
+			   u.usergroups AS User__usergroups,
+			   u.mute_endtime AS User__mute_endtime,
+			   u.latest_activity AS User__latest_activity,
+			   u.country AS User__country,
+			   u.avatar_url AS User__avatar_url,
+			   u.twitter AS User__twitter,
+			   u.title AS User__title,
+			   u.userpage AS User__userpage,
+			   u.twitch_username AS User__twitch_username,
+			   u.donator_end_time AS User__donator_end_time,
+			   u.discord_id AS User__discord_id,
+			   u.information AS User__information,
+			   u.clan_id AS User__clan_id,
+			   u.clan_leave_time AS User__clan_leave_time
+		FROM MaxRatings mr
+		JOIN scores s ON s.user_id = mr.user_id
+					  AND s.performance_rating = mr.max_performance_rating
+		JOIN users u ON s.user_id = u.id
+		WHERE u.allowed = 1
+		ORDER BY s.performance_rating DESC
+		LIMIT %v;`, limit)
 }

@@ -92,7 +92,7 @@ func GetModifierScoresForMap(c *gin.Context) *APIError {
 		return APIErrorForbidden("You must be a donator to access this scoreboard.")
 	}
 
-	scores, err := db.GetModifierScoresForMap(dbMap.MD5, mods, limit, 0)
+	scores, err := db.GetModifierScoresForMap(dbMap.MD5, mods, limit)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving modifier scoreboard", err)
@@ -124,7 +124,7 @@ func GetRateScoresForMap(c *gin.Context) *APIError {
 		return APIErrorForbidden("You must be a donator to access this scoreboard.")
 	}
 
-	scores, err := db.GetRateScoresForMap(dbMap.MD5, mods, limit, 0)
+	scores, err := db.GetRateScoresForMap(dbMap.MD5, mods, limit)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving rate scoreboard", err)
@@ -153,7 +153,7 @@ func GetAllScoresForMap(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	scores, err := db.GetAllScoresForMap(dbMap.MD5, getScoreboardScoreLimit(user), 0)
+	scores, err := db.GetAllScoresForMap(dbMap.MD5, getScoreboardScoreLimit(user))
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving all scoreboard", err)
