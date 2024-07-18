@@ -101,6 +101,27 @@ func GetTotalCountryPlayersFromRedis() (int, error) {
 	return count, nil
 }
 
+// GetCountryPlayerCountFromRedis Gets the total amount of users from a given country in redis
+func GetCountryPlayerCountFromRedis(country string) (int, error) {
+	result, err := Redis.HGet(RedisCtx, countryPlayersRedisKey, strings.ToLower(country)).Result()
+
+	if err != nil {
+		if err == redis.Nil {
+			return 0, nil
+		}
+
+		return 0, err
+	}
+
+	count, err := strconv.Atoi(result)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 // CacheCountryPlayersInRedis Caches the amount of country players in redis
 func CacheCountryPlayersInRedis() (map[string]string, error) {
 	totalUserCount, err := GetTotalUnbannedUserCount()

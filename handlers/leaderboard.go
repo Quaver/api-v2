@@ -29,7 +29,17 @@ func GetGlobalLeaderboardForMode(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving users for global leaderboard", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	userCount, err := db.GetTotalUnbannedUserCount()
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving unbanned user count", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_users": userCount,
+		"users":       users,
+	})
+
 	return nil
 }
 
@@ -60,7 +70,17 @@ func GetCountryLeaderboard(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving users for country leaderboard", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	userCount, err := db.GetCountryPlayerCountFromRedis(country)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving country player count from db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_users": userCount,
+		"users":       users,
+	})
+
 	return nil
 }
 
@@ -79,6 +99,16 @@ func GetTotalHitsLeaderboard(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving users for total hits leaderboard", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	userCount, err := db.GetTotalUnbannedUserCount()
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving unbanned user count", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_users": userCount,
+		"users":       users,
+	})
+
 	return nil
 }
