@@ -286,6 +286,10 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 	}
 
 	for _, score := range scores {
+		if err := score.AfterFind(SQL); err != nil {
+			return nil, err
+		}
+
 		if err := score.User.AfterFind(SQL); err != nil {
 			return nil, err
 		}
@@ -338,6 +342,10 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 	}
 
 	for _, score := range scores {
+		if err := score.AfterFind(SQL); err != nil {
+			return nil, err
+		}
+
 		if err := score.User.AfterFind(SQL); err != nil {
 			return nil, err
 		}
@@ -380,6 +388,10 @@ func GetAllScoresForMap(md5 string) ([]*Score, error) {
 	}
 
 	for _, score := range scores {
+		if err := score.AfterFind(SQL); err != nil {
+			return nil, err
+		}
+
 		if err := score.User.AfterFind(SQL); err != nil {
 			return nil, err
 		}
