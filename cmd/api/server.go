@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	ratelimit "github.com/JGLTechnologies/gin-rate-limit"
+	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/handlers"
 	"github.com/Quaver/api2/middleware"
 	"github.com/gin-contrib/cors"
@@ -39,7 +40,7 @@ func initializeRateLimiter(engine *gin.Engine) {
 	engine.Use(ratelimit.RateLimiter(store, &ratelimit.Options{
 		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
 			// Ignore localhost
-			if c.ClientIP() == "::1" || c.ClientIP() == "127.0.0.1" {
+			if !config.Instance.IsProduction || c.ClientIP() == "::1" || c.ClientIP() == "127.0.0.1" {
 				c.Next()
 				return
 			}
