@@ -9,6 +9,10 @@ import (
 	"strconv"
 )
 
+const (
+	MaxNormalScoreboardLimit int = 50
+)
+
 // GetGlobalScoresForMap Retrieves the global scoreboard for a given map.
 // Endpoint: GET: /v2/scores/:md5/global
 func GetGlobalScoresForMap(c *gin.Context) *APIError {
@@ -19,16 +23,19 @@ func GetGlobalScoresForMap(c *gin.Context) *APIError {
 	}
 
 	user := getAuthedUser(c)
-	limit := getScoreboardScoreLimit(user)
 
 	if !hasDonatorScoreboardAccess(dbMap, user) {
 		return APIErrorForbidden("You must be a donator to access this scoreboard.")
 	}
 
-	scores, err := db.GetGlobalScoresForMap(dbMap.MD5, limit, 0, true)
+	scores, err := db.GetGlobalScoresForMap(dbMap.MD5, true)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving global scoreboard", err)
+	}
+
+	if len(scores) > MaxNormalScoreboardLimit && getScoreboardScoreLimit(user) == MaxNormalScoreboardLimit {
+		scores = scores[:min(len(scores), MaxNormalScoreboardLimit)]
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
@@ -54,11 +61,14 @@ func GetCountryScoresForMap(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	limit := getScoreboardScoreLimit(user)
-	scores, err := db.GetCountryScoresForMap(dbMap.MD5, c.Param("country"), limit, 0)
+	scores, err := db.GetCountryScoresForMap(dbMap.MD5, c.Param("country"))
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving country scoreboard", err)
+	}
+
+	if len(scores) > MaxNormalScoreboardLimit && getScoreboardScoreLimit(user) == MaxNormalScoreboardLimit {
+		scores = scores[:min(len(scores), MaxNormalScoreboardLimit)]
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
@@ -86,16 +96,19 @@ func GetModifierScoresForMap(c *gin.Context) *APIError {
 	}
 
 	user := getAuthedUser(c)
-	limit := getScoreboardScoreLimit(user)
 
 	if !hasDonatorScoreboardAccess(dbMap, user) {
 		return APIErrorForbidden("You must be a donator to access this scoreboard.")
 	}
 
-	scores, err := db.GetModifierScoresForMap(dbMap.MD5, mods, limit)
+	scores, err := db.GetModifierScoresForMap(dbMap.MD5, mods)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving modifier scoreboard", err)
+	}
+
+	if len(scores) > MaxNormalScoreboardLimit && getScoreboardScoreLimit(user) == MaxNormalScoreboardLimit {
+		scores = scores[:min(len(scores), MaxNormalScoreboardLimit)]
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
@@ -118,16 +131,19 @@ func GetRateScoresForMap(c *gin.Context) *APIError {
 	}
 
 	user := getAuthedUser(c)
-	limit := getScoreboardScoreLimit(user)
 
 	if !hasDonatorScoreboardAccess(dbMap, user) {
 		return APIErrorForbidden("You must be a donator to access this scoreboard.")
 	}
 
-	scores, err := db.GetRateScoresForMap(dbMap.MD5, mods, limit)
+	scores, err := db.GetRateScoresForMap(dbMap.MD5, mods)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving rate scoreboard", err)
+	}
+
+	if len(scores) > MaxNormalScoreboardLimit && getScoreboardScoreLimit(user) == MaxNormalScoreboardLimit {
+		scores = scores[:min(len(scores), MaxNormalScoreboardLimit)]
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
@@ -153,10 +169,14 @@ func GetAllScoresForMap(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	scores, err := db.GetAllScoresForMap(dbMap.MD5, getScoreboardScoreLimit(user))
+	scores, err := db.GetAllScoresForMap(dbMap.MD5)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving all scoreboard", err)
+	}
+
+	if len(scores) > MaxNormalScoreboardLimit && getScoreboardScoreLimit(user) == MaxNormalScoreboardLimit {
+		scores = scores[:min(len(scores), MaxNormalScoreboardLimit)]
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})

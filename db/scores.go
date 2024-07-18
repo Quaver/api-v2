@@ -171,7 +171,7 @@ func GetScoreById(id int) (*Score, error) {
 }
 
 // GetGlobalScoresForMap Retrieves the global scores for a map
-func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*Score, error) {
+func GetGlobalScoresForMap(md5 string, useCache bool) ([]*Score, error) {
 	if useCache {
 		cached, err := getCachedScoreboard(scoreboardGlobal, md5, 0)
 
@@ -192,8 +192,6 @@ func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*S
 			"AND scores.personal_best = 1 "+
 			"AND User.allowed = 1", md5).
 		Order("scores.performance_rating DESC").
-		Limit(limit).
-		Offset(page * limit).
 		Find(&scores)
 
 	if result.Error != nil {
@@ -210,7 +208,7 @@ func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*S
 }
 
 // GetCountryScoresForMap Retrieves the country scores for a map
-func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]*Score, error) {
+func GetCountryScoresForMap(md5 string, country string) ([]*Score, error) {
 	cached, err := getCachedScoreboard(scoreboardCountry, md5, 0)
 
 	if err != nil {
@@ -230,8 +228,7 @@ func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]
 			"AND User.country = ? "+
 			"AND User.allowed = 1", md5, country).
 		Order("scores.performance_rating DESC").
-		Limit(limit).
-		Offset(page * limit).
+		Limit(100).
 		Find(&scores)
 
 	if result.Error != nil {
@@ -246,7 +243,7 @@ func GetCountryScoresForMap(md5 string, country string, limit int, page int) ([]
 }
 
 // GetModifierScoresForMap Retrieves the modifier scores for a map
-func GetModifierScoresForMap(md5 string, mods int64, limit int) ([]*Score, error) {
+func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 	cached, err := getCachedScoreboard(scoreboardMods, md5, mods)
 
 	if err != nil {
@@ -268,7 +265,7 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int) ([]*Score, error
 			  AND (mods & ?) != 0
 			GROUP BY user_id
 		)
-		%v`, getSelectUserScoreboardQuery(limit)), md5, mods).
+		%v`, getSelectUserScoreboardQuery()), md5, mods).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -283,7 +280,7 @@ func GetModifierScoresForMap(md5 string, mods int64, limit int) ([]*Score, error
 }
 
 // GetRateScoresForMap Retrieves the rate scores for a map
-func GetRateScoresForMap(md5 string, mods int64, limit int) ([]*Score, error) {
+func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 	cached, err := getCachedScoreboard(scoreboardRate, md5, mods)
 
 	if err != nil {
@@ -314,7 +311,7 @@ func GetRateScoresForMap(md5 string, mods int64, limit int) ([]*Score, error) {
 			  %v
 			GROUP BY user_id
 		)
-		%v`, modsQuery, getSelectUserScoreboardQuery(limit)), md5, mods).
+		%v`, modsQuery, getSelectUserScoreboardQuery()), md5, mods).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -329,7 +326,7 @@ func GetRateScoresForMap(md5 string, mods int64, limit int) ([]*Score, error) {
 }
 
 // GetAllScoresForMap Retrieves all scores for a map
-func GetAllScoresForMap(md5 string, limit int) ([]*Score, error) {
+func GetAllScoresForMap(md5 string) ([]*Score, error) {
 	cached, err := getCachedScoreboard(scoreboardAll, md5, 0)
 
 	if err != nil {
@@ -350,7 +347,7 @@ func GetAllScoresForMap(md5 string, limit int) ([]*Score, error) {
 			  AND failed = 0
 			GROUP BY user_id
 		)
-		%v`, getSelectUserScoreboardQuery(limit)), md5).
+		%v`, getSelectUserScoreboardQuery()), md5).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -572,8 +569,8 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*
 }
 
 // Returns a query to select user scores from non personal best scoreboards.
-func getSelectUserScoreboardQuery(limit int) string {
-	return fmt.Sprintf(`
+func getSelectUserScoreboardQuery() string {
+	return `
 		SELECT s.user_id,
 			   s.*,
 			   u.id AS User__id,
@@ -602,5 +599,5 @@ func getSelectUserScoreboardQuery(limit int) string {
 		JOIN users u ON s.user_id = u.id
 		WHERE u.allowed = 1
 		ORDER BY s.performance_rating DESC
-		LIMIT %v;`, limit)
+		LIMIT 100;`
 }
