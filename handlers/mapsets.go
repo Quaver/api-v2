@@ -316,11 +316,9 @@ func UpdateElasticSearchMapset(c *gin.Context) *APIError {
 		return nil
 	}
 
-	const quaverBotId int = 2
-
 	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupSwan) &&
 		!enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) &&
-		user.Id != quaverBotId {
+		!enums.HasUserGroup(user.UserGroups, enums.UserGroupBot) {
 		return APIErrorForbidden("You do not have permission to access this route.")
 	}
 

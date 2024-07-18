@@ -84,5 +84,6 @@ func canAuthedUserViewBannedUsers(c *gin.Context) bool {
 	return enums.HasUserGroup(user.UserGroups, enums.UserGroupSwan) ||
 		enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) ||
 		enums.HasUserGroup(user.UserGroups, enums.UserGroupAdmin) ||
-		enums.HasUserGroup(user.UserGroups, enums.UserGroupModerator)
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupModerator) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupBot)
 }
