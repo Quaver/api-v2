@@ -24,7 +24,7 @@ type MapQua struct {
 	BPM                  float32            `gorm:"column:bpm" json:"bpm"`
 	DifficultyRating     float64            `gorm:"column:difficulty_rating" json:"difficulty_rating"`
 	CountHitObjectNormal int                `gorm:"column:count_hitobject_normal" json:"count_hitobject_normal"`
-	CountHitObjectLong   int                `gorm:"column:count_hitobject_long" json:"count_hit_object_long"`
+	CountHitObjectLong   int                `gorm:"column:count_hitobject_long" json:"count_hitobject_long"`
 	LongNotePercentage   float32            `gorm:"-:all" json:"long_note_percentage"`
 	MaxCombo             int                `gorm:"-:all" json:"max_combo"`
 	PlayCount            int                `gorm:"column:play_count" json:"play_count"`
