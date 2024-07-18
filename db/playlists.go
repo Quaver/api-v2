@@ -186,3 +186,22 @@ func SearchPlaylists(query string, limit int, page int) ([]*Playlist, error) {
 
 	return playlists, nil
 }
+
+// GetTotalPlaylistCount Retrieves the total amount of playlists that match a given query
+func GetTotalPlaylistCount(query string) (int, error) {
+	likeQuery := fmt.Sprintf("%%%s%%", query)
+
+	var count int
+
+	result := SQL.Raw(`
+		SELECT COUNT(*) as count FROM playlists 
+		INNER JOIN users ON users.id = playlists.user_id
+		WHERE (playlists.name LIKE ? OR users.username LIKE ?) AND playlists.visible = 1`, likeQuery, likeQuery).
+		Scan(&count)
+
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return count, nil
+}

@@ -226,13 +226,25 @@ func SearchPlaylists(c *gin.Context) *APIError {
 		page = 0
 	}
 
-	playlists, err := db.SearchPlaylists(c.Query("query"), 50, page)
+	query := c.Query("query")
+
+	playlists, err := db.SearchPlaylists(query, 50, page)
 
 	if err != nil {
 		return APIErrorServerError("Error searching playlists", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"playlists": playlists})
+	totalCount, err := db.GetTotalPlaylistCount(query)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving total playlist count", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_playlist_count": totalCount,
+		"playlists":            playlists,
+	})
+
 	return nil
 }
 
