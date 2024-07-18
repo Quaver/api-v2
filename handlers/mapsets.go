@@ -328,12 +328,9 @@ func UpdateElasticSearchMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving mapset in database", err)
 	}
 
-	if mapset == nil {
-		return APIErrorNotFound("Mapset")
-	}
-
-	if !mapset.IsVisible {
-		return APIErrorBadRequest("This mapset has been deleted, so you cannot update it.")
+	if mapset == nil || !mapset.IsVisible {
+		c.JSON(http.StatusOK, gin.H{"message": "Mapset not found, so skipping."})
+		return nil
 	}
 
 	if err := db.UpdateElasticSearchMapset(*mapset); err != nil {
