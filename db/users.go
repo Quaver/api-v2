@@ -208,6 +208,20 @@ func (u *User) IsTrialRankingSupervisor() bool {
 	return strings.Contains(*u.Title, "Trial 4K") || strings.Contains(*u.Title, "Trial 7K")
 }
 
+// GetTotalUnbannedUserCount Returns the total amount of users
+func GetTotalUnbannedUserCount() (int, error) {
+	var count int
+
+	result := SQL.Raw("SELECT COUNT(*) as count FROM users WHERE allowed = 1").
+		Scan(&count)
+
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return count, nil
+}
+
 // GetUserById Retrieves a user from the database by their user id
 func GetUserById(id int) (*User, error) {
 	var user *User

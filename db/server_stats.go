@@ -103,7 +103,7 @@ func GetTotalCountryPlayersFromRedis() (int, error) {
 
 // CacheCountryPlayersInRedis Caches the amount of country players in redis
 func CacheCountryPlayersInRedis() (map[string]string, error) {
-	totalUserCount, err := GetTotalUserCountFromRedis()
+	totalUserCount, err := GetTotalUnbannedUserCount()
 
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func CacheCountryPlayersInRedis() (map[string]string, error) {
 	// Total user count does match the amount of country players we have cached, so re-cache.
 	if totalUserCount != countryPlayerCount {
 		result := SQL.
-			Raw("SELECT country, count(country) as total FROM users GROUP BY country").
+			Raw("SELECT country, count(country) as total FROM users WHERE allowed = 1 GROUP BY country").
 			Scan(&countries)
 
 		if result.Error != nil {
