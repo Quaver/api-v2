@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"slices"
 	"time"
 )
 
@@ -39,8 +40,9 @@ func initializeRateLimiter(engine *gin.Engine) {
 
 	engine.Use(ratelimit.RateLimiter(store, &ratelimit.Options{
 		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
-			// Ignore localhost
-			if !config.Instance.IsProduction || c.ClientIP() == "::1" || c.ClientIP() == "127.0.0.1" {
+			isWhitelisted := slices.Contains(config.Instance.Server.RateLimitIpWhitelist, c.ClientIP())
+
+			if !config.Instance.IsProduction || isWhitelisted {
 				c.Next()
 				return
 			}

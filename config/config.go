@@ -15,7 +15,8 @@ type Config struct {
 	JWTSecret string `json:"jwt_secret"`
 
 	Server struct {
-		Port int `json:"port"`
+		Port                 int      `json:"port"`
+		RateLimitIpWhitelist []string `json:"rate_limit_ip_whitelist"`
 	} `json:"server"`
 
 	Steam struct {

@@ -3,7 +3,11 @@
   "api_url": "https://api.quavergame.com",
   "jwt_secret": "",
   "server": {
-    "port": 8080
+    "port": 8080,
+    "rate_limit_ip_whitelist": [
+      "::1",
+      "127.0.0.1"
+    ]
   },
   "steam": {
     "app_id": 980610,
