@@ -192,6 +192,7 @@ func GetGlobalScoresForMap(md5 string, useCache bool) ([]*Score, error) {
 			"AND scores.personal_best = 1 "+
 			"AND User.allowed = 1", md5).
 		Order("scores.performance_rating DESC").
+		Limit(100).
 		Find(&scores)
 
 	if result.Error != nil {
