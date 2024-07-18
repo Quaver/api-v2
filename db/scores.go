@@ -172,17 +172,17 @@ func GetScoreById(id int) (*Score, error) {
 
 // GetGlobalScoresForMap Retrieves the global scores for a map
 func GetGlobalScoresForMap(md5 string, limit int, page int, useCache bool) ([]*Score, error) {
-	//if useCache {
-	//	cached, err := getCachedScoreboard(scoreboardGlobal, md5, 0)
-	//
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//
-	//	if cached != nil {
-	//		return cached, nil
-	//	}
-	//}
+	if useCache {
+		cached, err := getCachedScoreboard(scoreboardGlobal, md5, 0)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if cached != nil {
+			return cached, nil
+		}
+	}
 
 	var scores = make([]*Score, 0)
 
