@@ -199,6 +199,12 @@ func GetGlobalScoresForMap(md5 string, useCache bool) ([]*Score, error) {
 		return nil, result.Error
 	}
 
+	for _, score := range scores {
+		if err := score.User.AfterFind(SQL); err != nil {
+			return nil, err
+		}
+	}
+
 	if useCache {
 		if err := cacheScoreboard(scoreboardGlobal, md5, scores, 0); err != nil {
 			return nil, err
@@ -236,6 +242,12 @@ func GetCountryScoresForMap(md5 string, country string) ([]*Score, error) {
 		return nil, result.Error
 	}
 
+	for _, score := range scores {
+		if err := score.User.AfterFind(SQL); err != nil {
+			return nil, err
+		}
+	}
+
 	if err := cacheScoreboard(scoreboardCountry, md5, scores, 0); err != nil {
 		return nil, err
 	}
@@ -271,6 +283,12 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	for _, score := range scores {
+		if err := score.User.AfterFind(SQL); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := cacheScoreboard(scoreboardMods, md5, scores, mods); err != nil {
@@ -319,6 +337,12 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 		return nil, result.Error
 	}
 
+	for _, score := range scores {
+		if err := score.User.AfterFind(SQL); err != nil {
+			return nil, err
+		}
+	}
+
 	if err := cacheScoreboard(scoreboardRate, md5, scores, mods); err != nil {
 		return nil, err
 	}
@@ -353,6 +377,12 @@ func GetAllScoresForMap(md5 string) ([]*Score, error) {
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	for _, score := range scores {
+		if err := score.User.AfterFind(SQL); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := cacheScoreboard(scoreboardAll, md5, scores, 0); err != nil {
