@@ -226,6 +226,9 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.DELETE("/v2/developers/applications/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteUserApplication))
 	engine.POST("/v2/developers/applications/:id/secret", middleware.RequireAuth, handlers.CreateHandler(handlers.ResetApplicationSecret))
 
+	// Notifications
+	engine.POST("/v2/notifications", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateUserNotification))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return

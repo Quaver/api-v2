@@ -316,10 +316,8 @@ func UpdateElasticSearchMapset(c *gin.Context) *APIError {
 		return nil
 	}
 
-	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupSwan) &&
-		!enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) &&
-		!enums.HasUserGroup(user.UserGroups, enums.UserGroupBot) {
-		return APIErrorForbidden("You do not have permission to access this route.")
+	if !canUserAccessAdminRoute(c) {
+		return APIErrorForbidden("You do not have permission to access this endpoint.")
 	}
 
 	mapset, err := db.GetMapsetById(id)

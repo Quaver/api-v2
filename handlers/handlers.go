@@ -87,3 +87,17 @@ func canAuthedUserViewBannedUsers(c *gin.Context) bool {
 		enums.HasUserGroup(user.UserGroups, enums.UserGroupModerator) ||
 		enums.HasUserGroup(user.UserGroups, enums.UserGroupBot)
 }
+
+// Returns if a user can access an admin only route
+func canUserAccessAdminRoute(c *gin.Context) bool {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return false
+	}
+
+	return enums.HasUserGroup(user.UserGroups, enums.UserGroupSwan) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupAdmin) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupBot)
+}
