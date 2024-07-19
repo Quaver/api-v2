@@ -66,7 +66,7 @@ func GetUserNotifications(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Categories []db.UserNotificationCategory `form:"categories" json:"categories"`
+		Categories []db.UserNotificationCategory `form:"category" json:"category"`
 		Unread     bool                          `form:"unread" json:"unread"`
 		Page       int                           `form:"page" json:"page"`
 	}{}
