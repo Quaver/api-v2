@@ -124,6 +124,39 @@ func MarkUserNotificationAsUnread(c *gin.Context) *APIError {
 	return nil
 }
 
+// DeleteNotification Deletes a notification from the DB
+// Endpoint: DELETE /v2/notifications/:id
+func DeleteNotification(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	notification, err := db.GetNotificationById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving notification from db", err)
+	}
+
+	if notification == nil {
+		return APIErrorNotFound("Notification")
+	}
+
+	if err := db.SQL.Delete(&notification).Error; err != nil {
+		return APIErrorServerError("Error deleting notification", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your notification has been deleted."})
+	return nil
+}
+
 // Performs authentication/validation & Sets the notification read status
 func updateNotificationReadStatus(c *gin.Context, isRead bool) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
