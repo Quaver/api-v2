@@ -21,7 +21,7 @@ type MultiplayerGameMatches struct {
 	Lives           int                      `gorm:"column:lives" json:"-"`
 	Aborted         bool                     `gorm:"column:aborted" json:"aborted"`
 	Map             *MapQua                  `gorm:"foreignKey:MapMD5; references:MD5" json:"map"`
-	Scores          []*MultiplayerMatchScore `gorm:"foreignKey:MatchId;" json:"scores"`
+	Scores          []*MultiplayerMatchScore `gorm:"foreignKey:MatchId;" json:"scores,omitempty"`
 }
 
 func (*MultiplayerGameMatches) TableName() string {
