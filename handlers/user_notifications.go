@@ -54,6 +54,52 @@ func CreateUserNotification(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetUserNotifications Gets a user's notification
+// Endpoint /v2/notifications
+func GetUserNotifications(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	body := struct {
+		Type   []int `form:"type" json:"type"`
+		Unread bool  `form:"unread" json:"unread"`
+		Page   int   `form:"page" json:"page"`
+	}{}
+
+	if err := c.ShouldBindQuery(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	notifications, err := db.GetNotifications(user.Id, body.Unread, body.Page, 20, body.Type...)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving notifications", err)
+	}
+
+	filteredCount, err := db.GetNotificationCount(user.Id, body.Unread, body.Type...)
+
+	if err != nil {
+		return APIErrorServerError("Error getting notification filtered notification count", err)
+	}
+
+	unreadCount, err := db.GetTotalUnreadNotifications(user.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error getting user unread notification count", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_count_unread":   unreadCount,
+		"total_count_filtered": filteredCount,
+		"notifications":        notifications,
+	})
+
+	return nil
+}
+
 // MarkUserNotificationAsRead Marks an individual notification as read
 // Endpoint: POST /v2/notifications/:id/read
 func MarkUserNotificationAsRead(c *gin.Context) *APIError {
