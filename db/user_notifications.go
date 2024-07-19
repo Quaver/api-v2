@@ -38,3 +38,35 @@ func (n *UserNotification) Insert() error {
 	n.Timestamp = time.Now().UnixMilli()
 	return SQL.Create(&n).Error
 }
+
+// GetNotificationById Retrieves a user notification by id
+func GetNotificationById(id int) (*UserNotification, error) {
+	var notification *UserNotification
+
+	result := SQL.
+		Where("id = ?", id).
+		First(&notification)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return notification, nil
+}
+
+// UpdateReadStatus Updates the read status of a notification
+func (n *UserNotification) UpdateReadStatus(isRead bool) error {
+	if isRead {
+		n.ReadAt = time.Now().UnixMilli()
+	} else {
+		n.ReadAt = 0
+	}
+
+	n.ReadAtJSON = time.UnixMilli(n.ReadAt)
+
+	result := SQL.Model(&UserNotification{}).
+		Where("id = ?", n.Id).
+		Update("read_at", n.ReadAt)
+
+	return result.Error
+}

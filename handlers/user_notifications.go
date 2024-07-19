@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
 // CreateUserNotification Inserts a user notification into the db
@@ -29,7 +30,6 @@ func CreateUserNotification(c *gin.Context) *APIError {
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
-		fmt.Println(err)
 		return APIErrorBadRequest("Invalid request body")
 	}
 
@@ -51,5 +51,62 @@ func CreateUserNotification(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your notification has been successfully created."})
+	return nil
+}
+
+// MarkUserNotificationAsRead Marks an individual notification as read
+// Endpoint: POST /v2/notifications/:id/read
+func MarkUserNotificationAsRead(c *gin.Context) *APIError {
+	if apiErr := updateNotificationReadStatus(c, true); apiErr != nil {
+		return apiErr
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your notification has been marked as read."})
+	return nil
+}
+
+// MarkUserNotificationAsUnread Marks an individual notification as unread
+// Endpoint: POST /v2/notifications/:id/unread
+func MarkUserNotificationAsUnread(c *gin.Context) *APIError {
+	if apiErr := updateNotificationReadStatus(c, false); apiErr != nil {
+		return apiErr
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your notification has been marked as unread."})
+	return nil
+}
+
+// Performs authentication/validation & Sets the notification read status
+func updateNotificationReadStatus(c *gin.Context, isRead bool) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	notification, err := db.GetNotificationById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving notification from db", err)
+	}
+
+	if notification == nil {
+		return APIErrorNotFound("Notification")
+	}
+
+	if notification.ReceiverId != user.Id {
+		return APIErrorForbidden("You are not the receiver of this notification.")
+	}
+
+	if err := notification.UpdateReadStatus(isRead); err != nil {
+		return APIErrorServerError("Error updating notification read status", err)
+	}
+
 	return nil
 }
