@@ -43,6 +43,19 @@ func GetRecentMultiplayerGames(limit int, page int) ([]*MultiplayerGame, error) 
 	return games, nil
 }
 
+// GetTotalMultiplayerGameCount Gets the total amount of multiplayer game
+func GetTotalMultiplayerGameCount() (int, error) {
+	var count int
+
+	result := SQL.Raw("SELECT COUNT(*) as count FROM multiplayer_games").Scan(&count)
+
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return count, nil
+}
+
 // GetMultiplayerGame Gets an individual multiplayer game from the database
 func GetMultiplayerGame(id int) (*MultiplayerGame, error) {
 	var game *MultiplayerGame

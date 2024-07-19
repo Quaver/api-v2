@@ -23,7 +23,17 @@ func GetRecentMultiplayerGames(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving most recent multiplayer games", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"games": games})
+	count, err := db.GetTotalMultiplayerGameCount()
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving multiplayer game count", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_game_count": count,
+		"games":            games,
+	})
+
 	return nil
 }
 
