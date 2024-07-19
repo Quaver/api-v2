@@ -6,18 +6,41 @@ import (
 	"time"
 )
 
+type UserNotificationType int
+
+const (
+	NotificationMapsetRanked UserNotificationType = iota + 1
+	NotificationMapsetAction
+	UserNotificationMapMod
+	NotificationMapModComment
+	NotificationClanInvite
+	NotificationMuted
+	NotificationReceivedOrderItemGift
+	NotificationDonatorExpired
+)
+
+type UserNotificationCategory int
+
+const (
+	NotificationCategoryProfile UserNotificationCategory = iota + 1
+	NotificationCategoryClan
+	NotificationCategoryRankingQueue
+	NotificationCategoryMapModding
+)
+
 type UserNotification struct {
-	Id            int             `gorm:"column:id; PRIMARY KEY" json:"id"`
-	SenderId      int             `gorm:"column:sender_id" json:"sender_id"`
-	ReceiverId    int             `gorm:"column:receiver_id" json:"receiver_id"`
-	Type          int8            `gorm:"column:type" json:"type"`
-	RawData       string          `gorm:"column:data" json:"-"`
-	Data          json.RawMessage `gorm:"-:all" json:"data"`
-	ReadAt        int64           `gorm:"column:read_at" json:"-"`
-	ReadAtJSON    time.Time       `gorm:"-:all" json:"read_at"`
-	Timestamp     int64           `gorm:"column:timestamp" json:"-"`
-	TimestampJSON time.Time       `gorm:"-:all" json:"timestamp"`
-	User          *User           `gorm:"foreignKey:SenderId; references:Id" json:"user"`
+	Id            int                      `gorm:"column:id; PRIMARY KEY" json:"id"`
+	SenderId      int                      `gorm:"column:sender_id" json:"sender_id"`
+	ReceiverId    int                      `gorm:"column:receiver_id" json:"receiver_id"`
+	Type          UserNotificationType     `gorm:"column:type" json:"type"`
+	Category      UserNotificationCategory `gorm:"column:category" json:"category"`
+	RawData       string                   `gorm:"column:data" json:"-"`
+	Data          json.RawMessage          `gorm:"-:all" json:"data"`
+	ReadAt        int64                    `gorm:"column:read_at" json:"-"`
+	ReadAtJSON    time.Time                `gorm:"-:all" json:"read_at"`
+	Timestamp     int64                    `gorm:"column:timestamp" json:"-"`
+	TimestampJSON time.Time                `gorm:"-:all" json:"timestamp"`
+	User          *User                    `gorm:"foreignKey:SenderId; references:Id" json:"user"`
 }
 
 func (*UserNotification) TableName() string {
@@ -41,7 +64,8 @@ func (n *UserNotification) Insert() error {
 }
 
 // GetNotifications Retrieves a user's notifications
-func GetNotifications(userId int, unreadOnly bool, page int, limit int, notifTypes ...int) ([]*UserNotification, error) {
+func GetNotifications(userId int, unreadOnly bool, page int, limit int,
+	categories ...UserNotificationCategory) ([]*UserNotification, error) {
 	notifications := make([]*UserNotification, 0)
 
 	query := SQL.Where("receiver_id = ?", userId)
@@ -50,8 +74,8 @@ func GetNotifications(userId int, unreadOnly bool, page int, limit int, notifTyp
 		query = query.Where("read_at = 0")
 	}
 
-	for _, notifType := range notifTypes {
-		query = query.Where("type = ?", notifType)
+	for _, category := range categories {
+		query = query.Where("category = ?", category)
 	}
 
 	result := query.
@@ -69,7 +93,7 @@ func GetNotifications(userId int, unreadOnly bool, page int, limit int, notifTyp
 }
 
 // GetNotificationCount Gets the total amount of notifications that match a given filter
-func GetNotificationCount(userId int, unreadOnly bool, notifTypes ...int) (int64, error) {
+func GetNotificationCount(userId int, unreadOnly bool, categories ...UserNotificationCategory) (int64, error) {
 	var count int64
 
 	query := SQL.Model(&UserNotification{}).Where("receiver_id = ?", userId)
@@ -78,8 +102,8 @@ func GetNotificationCount(userId int, unreadOnly bool, notifTypes ...int) (int64
 		query = query.Where("read_at = 0")
 	}
 
-	for _, notifType := range notifTypes {
-		query = query.Where("type = ?", notifType)
+	for _, category := range categories {
+		query = query.Where("category = ?", category)
 	}
 
 	result := query.Count(&count)

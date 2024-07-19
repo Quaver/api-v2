@@ -23,10 +23,11 @@ func CreateUserNotification(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		SenderId   int    `form:"sender_id" json:"sender_id" binding:"required"`
-		ReceiverId int    `form:"receiver_id" json:"receiver_id" binding:"required"`
-		Type       int    `form:"type" json:"type" binding:"required"`
-		Data       string `form:"data" json:"data" binding:"required"`
+		SenderId   int                         `form:"sender_id" json:"sender_id" binding:"required"`
+		ReceiverId int                         `form:"receiver_id" json:"receiver_id" binding:"required"`
+		Type       db.UserNotificationType     `form:"type" json:"type" binding:"required"`
+		Category   db.UserNotificationCategory `form:"category" json:"category" binding:"required"`
+		Data       string                      `form:"data" json:"data" binding:"required"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -42,7 +43,8 @@ func CreateUserNotification(c *gin.Context) *APIError {
 	notification := &db.UserNotification{
 		SenderId:   body.SenderId,
 		ReceiverId: body.ReceiverId,
-		Type:       int8(body.Type),
+		Type:       body.Type,
+		Category:   body.Category,
 		RawData:    body.Data,
 	}
 
@@ -64,22 +66,22 @@ func GetUserNotifications(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Type   []int `form:"type" json:"type"`
-		Unread bool  `form:"unread" json:"unread"`
-		Page   int   `form:"page" json:"page"`
+		Categories []db.UserNotificationCategory `form:"categories" json:"categories"`
+		Unread     bool                          `form:"unread" json:"unread"`
+		Page       int                           `form:"page" json:"page"`
 	}{}
 
 	if err := c.ShouldBindQuery(&body); err != nil {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	notifications, err := db.GetNotifications(user.Id, body.Unread, body.Page, 20, body.Type...)
+	notifications, err := db.GetNotifications(user.Id, body.Unread, body.Page, 20, body.Categories...)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving notifications", err)
 	}
 
-	filteredCount, err := db.GetNotificationCount(user.Id, body.Unread, body.Type...)
+	filteredCount, err := db.GetNotificationCount(user.Id, body.Unread, body.Categories...)
 
 	if err != nil {
 		return APIErrorServerError("Error getting notification filtered notification count", err)
