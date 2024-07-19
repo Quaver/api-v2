@@ -66,22 +66,22 @@ func GetUserNotifications(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Categories []db.UserNotificationCategory `form:"category" json:"category"`
-		Unread     bool                          `form:"unread" json:"unread"`
-		Page       int                           `form:"page" json:"page"`
+		Category db.UserNotificationCategory `form:"category" json:"category"`
+		Unread   bool                        `form:"unread" json:"unread"`
+		Page     int                         `form:"page" json:"page"`
 	}{}
 
 	if err := c.ShouldBindQuery(&body); err != nil {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	notifications, err := db.GetNotifications(user.Id, body.Unread, body.Page, 20, body.Categories...)
+	notifications, err := db.GetNotifications(user.Id, body.Unread, body.Page, 20, body.Category)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving notifications", err)
 	}
 
-	filteredCount, err := db.GetNotificationCount(user.Id, body.Unread, body.Categories...)
+	filteredCount, err := db.GetNotificationCount(user.Id, body.Unread, body.Category)
 
 	if err != nil {
 		return APIErrorServerError("Error getting notification filtered notification count", err)

@@ -64,8 +64,7 @@ func (n *UserNotification) Insert() error {
 }
 
 // GetNotifications Retrieves a user's notifications
-func GetNotifications(userId int, unreadOnly bool, page int, limit int,
-	categories ...UserNotificationCategory) ([]*UserNotification, error) {
+func GetNotifications(userId int, unreadOnly bool, page int, limit int, category UserNotificationCategory) ([]*UserNotification, error) {
 	notifications := make([]*UserNotification, 0)
 
 	query := SQL.Where("receiver_id = ?", userId)
@@ -74,7 +73,7 @@ func GetNotifications(userId int, unreadOnly bool, page int, limit int,
 		query = query.Where("read_at = 0")
 	}
 
-	for _, category := range categories {
+	if category > 0 {
 		query = query.Where("category = ?", category)
 	}
 
@@ -93,7 +92,7 @@ func GetNotifications(userId int, unreadOnly bool, page int, limit int,
 }
 
 // GetNotificationCount Gets the total amount of notifications that match a given filter
-func GetNotificationCount(userId int, unreadOnly bool, categories ...UserNotificationCategory) (int64, error) {
+func GetNotificationCount(userId int, unreadOnly bool, category UserNotificationCategory) (int64, error) {
 	var count int64
 
 	query := SQL.Model(&UserNotification{}).Where("receiver_id = ?", userId)
@@ -102,7 +101,7 @@ func GetNotificationCount(userId int, unreadOnly bool, categories ...UserNotific
 		query = query.Where("read_at = 0")
 	}
 
-	for _, category := range categories {
+	if category > 0 {
 		query = query.Where("category = ?", category)
 	}
 
