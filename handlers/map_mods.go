@@ -99,6 +99,10 @@ func SubmitMapMod(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting mod to db", err)
 	}
 
+	if err := db.NewMapModNotification(songMap, mod).Insert(); err != nil {
+		return APIErrorServerError("Error inserting map mod notification", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Your mod has been successfully added."})
 	return nil
 }

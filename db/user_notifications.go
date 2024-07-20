@@ -187,6 +187,7 @@ func NewMapsetRankedNotification(mapset *Mapset) *UserNotification {
 	return notif
 }
 
+// Returns a new mapset ranking queue action notification
 func NewMapsetActionNotification(mapset *Mapset, comment *MapsetRankingQueueComment) *UserNotification {
 	notif := &UserNotification{
 		SenderId:   comment.UserId,
@@ -216,6 +217,27 @@ func NewMapsetActionNotification(mapset *Mapset, comment *MapsetRankingQueueComm
 		"mapset_id":    mapset.Id,
 		"mapset_title": mapset.String(),
 		"action":       action,
+	}
+
+	marshaled, _ := json.Marshal(data)
+	notif.RawData = string(marshaled)
+	return notif
+}
+
+// NewMapModNotification Returns a new map mod notification
+func NewMapModNotification(mapQua *MapQua, mod *MapMod) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   mod.AuthorId,
+		ReceiverId: mapQua.CreatorId,
+		Type:       UserNotificationMapMod,
+		Category:   NotificationCategoryMapModding,
+	}
+
+	data := map[string]interface{}{
+		"mod_id":         mod.Id,
+		"map_id":         mapQua.Id,
+		"map_title":      mapQua.String(),
+		"truncated_text": mod.Comment,
 	}
 
 	marshaled, _ := json.Marshal(data)
