@@ -11,7 +11,7 @@ type UserNotificationType int
 const (
 	NotificationMapsetRanked UserNotificationType = iota + 1
 	NotificationMapsetAction
-	UserNotificationMapMod
+	NotificationMapMod
 	NotificationMapModComment
 	NotificationClanInvite
 	NotificationMuted
@@ -229,7 +229,7 @@ func NewMapModNotification(mapQua *MapQua, mod *MapMod) *UserNotification {
 	notif := &UserNotification{
 		SenderId:   mod.AuthorId,
 		ReceiverId: mapQua.CreatorId,
-		Type:       UserNotificationMapMod,
+		Type:       NotificationMapMod,
 		Category:   NotificationCategoryMapModding,
 	}
 
@@ -238,6 +238,28 @@ func NewMapModNotification(mapQua *MapQua, mod *MapMod) *UserNotification {
 		"map_id":         mapQua.Id,
 		"map_title":      mapQua.String(),
 		"truncated_text": mod.Comment,
+	}
+
+	marshaled, _ := json.Marshal(data)
+	notif.RawData = string(marshaled)
+	return notif
+}
+
+// NewMapModCommentNotification Returns a new map mod comment notification
+func NewMapModCommentNotification(mapQua *MapQua, mod *MapMod, comment *MapModComment) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   comment.AuthorId,
+		ReceiverId: mod.AuthorId,
+		Type:       NotificationMapModComment,
+		Category:   NotificationCategoryMapModding,
+	}
+
+	data := map[string]interface{}{
+		"mod_id":         mod.Id,
+		"mod_comment_id": comment.Id,
+		"map_id":         mapQua.Id,
+		"map_title":      mapQua.String(),
+		"truncated_text": comment.Comment,
 	}
 
 	marshaled, _ := json.Marshal(data)
