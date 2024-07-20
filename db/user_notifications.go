@@ -286,3 +286,22 @@ func NewClanInviteNotification(clan *Clan, invite *ClanInvite) *UserNotification
 	notif.RawData = string(marshaled)
 	return notif
 }
+
+// NewOrderItemGiftNotification Returns a new order gift notification
+func NewOrderItemGiftNotification(order *Order) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   order.UserId,
+		ReceiverId: order.ReceiverUserId,
+		Type:       NotificationReceivedOrderItemGift,
+		Category:   NotificationCategoryProfile,
+	}
+
+	data := map[string]interface{}{
+		"order_item_id":   order.ItemId,
+		"order_item_name": order.Description,
+	}
+
+	marshaled, _ := json.Marshal(data)
+	notif.RawData = string(marshaled)
+	return notif
+}
