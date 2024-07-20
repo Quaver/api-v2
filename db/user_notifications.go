@@ -305,3 +305,16 @@ func NewOrderItemGiftNotification(order *Order) *UserNotification {
 	notif.RawData = string(marshaled)
 	return notif
 }
+
+// NewDonatorExpiredNotification Returns a new donator expired notification
+func NewDonatorExpiredNotification(userId int) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   QuaverBotId,
+		ReceiverId: userId,
+		Type:       NotificationDonatorExpired,
+		Category:   NotificationCategoryProfile,
+	}
+
+	notif.RawData = ""
+	return notif
+}
