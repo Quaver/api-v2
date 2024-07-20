@@ -99,6 +99,10 @@ func SubmitMapMod(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting mod to db", err)
 	}
 
+	if err := db.NewMapModNotification(songMap, mod).Insert(); err != nil {
+		return APIErrorServerError("Error inserting map mod notification", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Your mod has been successfully added."})
 	return nil
 }
@@ -201,6 +205,16 @@ func SubmitMapModComment(c *gin.Context) *APIError {
 		return APIErrorNotFound("Mod")
 	}
 
+	mapQua, err := db.GetMapById(mod.MapId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error getting map by id", err)
+	}
+
+	if mapQua == nil {
+		return APIErrorNotFound("Map")
+	}
+
 	comment := &db.MapModComment{
 		MapModId: modId,
 		AuthorId: user.Id,
@@ -209,6 +223,10 @@ func SubmitMapModComment(c *gin.Context) *APIError {
 
 	if err := comment.Insert(); err != nil {
 		return APIErrorServerError("Error inserting map mod comment into database", err)
+	}
+
+	if err := db.NewMapModCommentNotification(mapQua, mod, comment).Insert(); err != nil {
+		return APIErrorServerError("Error inserting map mod comment notification", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully added."})

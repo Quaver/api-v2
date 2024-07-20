@@ -843,6 +843,10 @@ func resolveMapsetInRankingQueue(user *db.User, mapset *db.Mapset) *APIError {
 		return APIErrorServerError("Error inserting new ranking queue on hold action.", err)
 	}
 
+	if err := db.NewMapsetActionNotification(mapset, resolvedAction).Insert(); err != nil {
+		return APIErrorServerError("Error inserting resolve notification", err)
+	}
+
 	if err := rankingQueueMapset.UpdateStatus(db.RankingQueueResolved); err != nil {
 		return APIErrorServerError("Error updating ranking queue mapset status", err)
 	}

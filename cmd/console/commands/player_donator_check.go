@@ -16,12 +16,20 @@ var PlayerDonatorCheckCmd = &cobra.Command{
 	Use:   "player:donator:check",
 	Short: "Checks if a player is a donator",
 	Run: func(cmd *cobra.Command, args []string) {
-		removeExpiredDonator()
-		addDiscordPremiumDonator()
+		expiredUsers := map[int]*db.UserNotification{}
+
+		removeExpiredDonator(expiredUsers)
+		addDiscordPremiumDonator(expiredUsers)
+
+		for _, notification := range expiredUsers {
+			if err := notification.Insert(); err != nil {
+				logrus.Error("Error inserting donator expired notification: ", err)
+			}
+		}
 	},
 }
 
-func removeExpiredDonator() {
+func removeExpiredDonator(expiredUsers map[int]*db.UserNotification) {
 	batchSize := 1000
 	offset := 0
 
@@ -58,6 +66,8 @@ func removeExpiredDonator() {
 				if result.Error != nil {
 					logrus.Println(result.Error)
 				}
+
+				expiredUsers[user.Id] = db.NewDonatorExpiredNotification(user.Id)
 			}
 		}
 
@@ -65,7 +75,7 @@ func removeExpiredDonator() {
 	}
 }
 
-func addDiscordPremiumDonator() {
+func addDiscordPremiumDonator(expiredUsers map[int]*db.UserNotification) {
 	batchSize := 1000
 	offset := 0
 
@@ -100,6 +110,7 @@ func addDiscordPremiumDonator() {
 				}
 
 				logrus.Info("Gave donator to Discord premium user: ", user.Username)
+				delete(expiredUsers, user.Id)
 			}
 		}
 		offset += batchSize

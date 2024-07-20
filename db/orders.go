@@ -105,7 +105,17 @@ func (order *Order) Finalize() error {
 		Where("id = ?", order.Id).
 		Update("status", order.Status)
 
-	return result.Error
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if order.UserId != order.ReceiverUserId {
+		if err := NewOrderItemGiftNotification(order).Insert(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // FinalizeDonator Finalizes a donator item

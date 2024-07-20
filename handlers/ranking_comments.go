@@ -80,6 +80,10 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting comment into DB", err)
 	}
 
+	if err := db.NewMapsetActionNotification(queueMapset.Mapset, comment).Insert(); err != nil {
+		return APIErrorServerError("Error inserting comment notification", err)
+	}
+
 	_ = webhooks.SendQueueWebhook(user, queueMapset.Mapset, db.RankingQueueActionComment)
 	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully added."})
 	return nil

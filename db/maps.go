@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 )
@@ -52,6 +53,10 @@ func (m *MapQua) AfterFind(*gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (m *MapQua) String() string {
+	return fmt.Sprintf("%v - %v [%v]", m.Artist, m.Title, m.DifficultyName)
 }
 
 // GetMapById Retrieves a map from the database by id

@@ -227,7 +227,11 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/developers/applications/:id/secret", middleware.RequireAuth, handlers.CreateHandler(handlers.ResetApplicationSecret))
 
 	// Notifications
+	engine.GET("/v2/notifications", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserNotifications))
 	engine.POST("/v2/notifications", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateUserNotification))
+	engine.POST("/v2/notifications/:id/read", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkUserNotificationAsRead))
+	engine.POST("/v2/notifications/:id/unread", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkUserNotificationAsUnread))
+	engine.DELETE("/v2/notifications/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteNotification))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
