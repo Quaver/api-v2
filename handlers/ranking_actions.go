@@ -120,6 +120,10 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting new ranking queue vote", err)
 	}
 
+	if err := db.NewMapsetActionNotification(data.QueueMapset.Mapset, newVoteAction).Insert(); err != nil {
+		return APIErrorServerError("Error inserting vote notification", err)
+	}
+
 	// Handle ranking the mapset
 	if len(existingVotes) >= config.Instance.RankingQueue.VotesRequired {
 		if err := queueMapset.UpdateStatus(db.RankingQueueRanked); err != nil {
@@ -141,6 +145,10 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 
 		if err := db.UpdateElasticSearchMapset(*data.QueueMapset.Mapset); err != nil {
 			return APIErrorServerError("Failed to index ranked mapset in elastic search", err)
+		}
+
+		if err := db.NewMapsetRankedNotification(data.QueueMapset.Mapset).Insert(); err != nil {
+			return APIErrorServerError("Error inserting ranked mapset notification", err)
 		}
 
 		_ = webhooks.SendRankedWebhook(data.QueueMapset.Mapset, existingVotes)
@@ -202,6 +210,10 @@ func DenyRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting new ranking queue denial", err)
 	}
 
+	if err := db.NewMapsetActionNotification(data.QueueMapset.Mapset, denyAction).Insert(); err != nil {
+		return APIErrorServerError("Error inserting deny notification", err)
+	}
+
 	if len(existingDenies)+1 == config.Instance.RankingQueue.DenialsRequired {
 		if err := queueMapset.UpdateStatus(db.RankingQueueDenied); err != nil {
 			return APIErrorServerError("Error updating ranking queue mapset status", err)
@@ -249,6 +261,10 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting new ranking queue blacklist action", err)
 	}
 
+	if err := db.NewMapsetActionNotification(data.QueueMapset.Mapset, blacklistAction).Insert(); err != nil {
+		return APIErrorServerError("Error inserting blacklist notification", err)
+	}
+
 	if err := queueMapset.UpdateStatus(db.RankingQueueBlacklisted); err != nil {
 		return APIErrorServerError("Error updating ranking queue mapset status", err)
 	}
@@ -287,6 +303,10 @@ func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
 
 	if err := onHoldAction.Insert(); err != nil {
 		return APIErrorServerError("Error inserting new ranking queue on hold action.", err)
+	}
+
+	if err := db.NewMapsetActionNotification(data.QueueMapset.Mapset, onHoldAction).Insert(); err != nil {
+		return APIErrorServerError("Error inserting on hold notification", err)
 	}
 
 	if err := queueMapset.UpdateStatus(db.RankingQueueOnHold); err != nil {

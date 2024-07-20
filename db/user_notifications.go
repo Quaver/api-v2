@@ -28,6 +28,10 @@ const (
 	NotificationCategoryMapModding
 )
 
+const (
+	QuaverBotId int = 2
+)
+
 type UserNotification struct {
 	Id            int                      `gorm:"column:id; PRIMARY KEY" json:"id"`
 	SenderId      int                      `gorm:"column:sender_id" json:"sender_id"`
@@ -162,4 +166,59 @@ func (n *UserNotification) UpdateReadStatus(isRead bool) error {
 		Update("read_at", n.ReadAt)
 
 	return result.Error
+}
+
+// NewMapsetRankedNotification Returns a new ranked mapset notification
+func NewMapsetRankedNotification(mapset *Mapset) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   QuaverBotId,
+		ReceiverId: mapset.CreatorID,
+		Type:       NotificationMapsetRanked,
+		Category:   NotificationCategoryRankingQueue,
+	}
+
+	data := map[string]interface{}{
+		"mapset_id":    mapset.Id,
+		"mapset_title": mapset.String(),
+	}
+
+	marshaled, _ := json.Marshal(data)
+	notif.RawData = string(marshaled)
+	return notif
+}
+
+func NewMapsetActionNotification(mapset *Mapset, comment *MapsetRankingQueueComment) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   comment.UserId,
+		ReceiverId: mapset.CreatorID,
+		Type:       NotificationMapsetAction,
+		Category:   NotificationCategoryRankingQueue,
+	}
+
+	action := ""
+
+	switch comment.ActionType {
+	case RankingQueueActionComment:
+		action = "commented on"
+	case RankingQueueActionDeny:
+		action = "denied"
+	case RankingQueueActionBlacklist:
+		action = "blacklisted"
+	case RankingQueueActionOnHold:
+		action = "put on-hold"
+	case RankingQueueActionVote:
+		action = "voted for"
+	case RankingQueueActionResolved:
+		action = "resolved"
+	}
+
+	data := map[string]interface{}{
+		"mapset_id":    mapset.Id,
+		"mapset_title": mapset.String(),
+		"action":       action,
+	}
+
+	marshaled, _ := json.Marshal(data)
+	notif.RawData = string(marshaled)
+	return notif
 }
