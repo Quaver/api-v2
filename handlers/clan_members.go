@@ -132,6 +132,10 @@ func KickClanMember(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting clan activity", err)
 	}
 
+	if err := db.NewClanKickedNotification(target.Clan, target.TargetUser.Id).Insert(); err != nil {
+		return APIErrorServerError("Error inserting clan kicked notification", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully kicked that user from the clan."})
 	return nil
 }

@@ -17,6 +17,7 @@ const (
 	NotificationMuted
 	NotificationReceivedOrderItemGift
 	NotificationDonatorExpired
+	NotificationClanKicked
 )
 
 type UserNotificationCategory int
@@ -316,5 +317,24 @@ func NewDonatorExpiredNotification(userId int) *UserNotification {
 	}
 
 	notif.RawData = ""
+	return notif
+}
+
+// NewClanKickedNotification Returns a new clan kicked notification
+func NewClanKickedNotification(clan *Clan, userId int) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   clan.OwnerId,
+		ReceiverId: userId,
+		Type:       NotificationClanKicked,
+		Category:   NotificationCategoryClan,
+	}
+
+	data := map[string]interface{}{
+		"clan_id":   clan.Id,
+		"clan_name": clan.Name,
+	}
+
+	marshaled, _ := json.Marshal(data)
+	notif.RawData = string(marshaled)
 	return notif
 }
