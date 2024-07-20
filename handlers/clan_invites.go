@@ -75,6 +75,10 @@ func InviteUserToClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting invite into database", err)
 	}
 
+	if err := db.NewClanInviteNotification(clan, clanInvite).Insert(); err != nil {
+		return APIErrorServerError("Error inserting clan invite notification", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "You have successfully invited the user to the clan.",
 		"invite":  clanInvite,

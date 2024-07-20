@@ -266,3 +266,23 @@ func NewMapModCommentNotification(mapQua *MapQua, mod *MapMod, comment *MapModCo
 	notif.RawData = string(marshaled)
 	return notif
 }
+
+// NewClanInviteNotification Returns a new clan invite notification
+func NewClanInviteNotification(clan *Clan, invite *ClanInvite) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   clan.OwnerId,
+		ReceiverId: invite.UserId,
+		Type:       NotificationClanInvite,
+		Category:   NotificationCategoryClan,
+	}
+
+	data := map[string]interface{}{
+		"clan_id":        clan.Id,
+		"clan_name":      clan.Name,
+		"clan_invite_id": invite.Id,
+	}
+
+	marshaled, _ := json.Marshal(data)
+	notif.RawData = string(marshaled)
+	return notif
+}
