@@ -11,15 +11,15 @@ import (
 )
 
 type Qua struct {
-	RawBytes                       []byte `yaml:"-"`
-	AudioFile                      string `yaml:"AudioFile"`
-	SongPreviewTime                int    `yaml:"SongPreviewTime"`
-	BackgroundFile                 string `yaml:"BackgroundFile"`
-	BannerFile                     string `yaml:"BannerFile"`
-	MapId                          int    `yaml:"MapId"`
-	MapSetId                       int    `yaml:"MapSetId"`
-	RawMode                        string `yaml:"Mode"`
-	Mode                           enums.GameMode
+	RawBytes                       []byte           `yaml:"-"`
+	AudioFile                      string           `yaml:"AudioFile"`
+	SongPreviewTime                int              `yaml:"SongPreviewTime"`
+	BackgroundFile                 string           `yaml:"BackgroundFile"`
+	BannerFile                     string           `yaml:"BannerFile"`
+	MapId                          int              `yaml:"MapId"`
+	MapSetId                       int              `yaml:"MapSetId"`
+	RawMode                        string           `yaml:"Mode"`
+	Mode                           enums.GameMode   `yaml:"-"`
 	Title                          string           `yaml:"Title"`
 	Artist                         string           `yaml:"Artist"`
 	Source                         string           `yaml:"Source"`
