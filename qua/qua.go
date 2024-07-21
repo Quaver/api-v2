@@ -50,11 +50,28 @@ func Parse(file []byte) (*Qua, error) {
 	}
 
 	switch qua.RawMode {
+	case "Keys1", "3":
+		qua.Mode = enums.GameModeKeys1
+	case "Keys2", "4":
+		qua.Mode = enums.GameModeKeys2
+	case "Keys3", "5":
+		qua.Mode = enums.GameModeKeys3
+	// 4K is always #1
 	case "Keys4", "1":
 		qua.Mode = enums.GameModeKeys4
-		break
+	case "Keys5", "6":
+		qua.Mode = enums.GameModeKeys5
+	case "Keys6", "7":
+		qua.Mode = enums.GameModeKeys6
+	// 7K is always #2
 	case "Keys7", "2":
 		qua.Mode = enums.GameModeKeys7
+	case "Keys8", "8":
+		qua.Mode = enums.GameModeKeys8
+	case "Keys9", "9":
+		qua.Mode = enums.GameModeKeys9
+	case "Keys10", "10":
+		qua.Mode = enums.GameModeKeys10
 		break
 	}
 
