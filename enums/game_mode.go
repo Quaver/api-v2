@@ -74,3 +74,31 @@ func GetShorthandGameModeString(mode GameMode) string {
 		return "not_implemented"
 	}
 }
+
+func GetModeFromString(str string) GameMode {
+	switch str {
+	case "Keys1", "3":
+		return GameModeKeys1
+	case "Keys2", "4":
+		return GameModeKeys2
+	case "Keys3", "5":
+		return GameModeKeys3
+	case "Keys4", "1":
+		return GameModeKeys4
+	case "Keys5", "6":
+		return GameModeKeys5
+	case "Keys6", "7":
+		return GameModeKeys6
+	// 7K is always #2
+	case "Keys7", "2":
+		return GameModeKeys7
+	case "Keys8", "8":
+		return GameModeKeys8
+	case "Keys9", "9":
+		return GameModeKeys9
+	case "Keys10", "10":
+		return GameModeKeys10
+	default:
+		return 0
+	}
+}
