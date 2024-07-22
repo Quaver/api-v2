@@ -169,9 +169,38 @@ func DeclineClanInvite(c *gin.Context) *APIError {
 	return nil
 }
 
-// GetPendingClanInvites Retrieves all pending clan invites for the user
+// GetClanPendingInvites Returns a clan's pending invites
 // Endpoint: GET /v2/clan/invites
-func GetPendingClanInvites(c *gin.Context) *APIError {
+func GetClanPendingInvites(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if user.ClanId == nil {
+		return APIErrorForbidden("You are not currently in a clan.")
+	}
+
+	clan, apiErr := getClanAndCheckOwnership(user, *user.ClanId)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	invites, err := db.GetPendingClanInvites(clan.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving clan invites from db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pending_invites": invites})
+	return nil
+}
+
+// GetUserPendingClanInvites Retrieves all pending clan invites for the user
+// Endpoint: GET /v2/clan/invites
+func GetUserPendingClanInvites(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 
 	if user == nil {

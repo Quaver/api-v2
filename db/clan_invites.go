@@ -11,7 +11,8 @@ type ClanInvite struct {
 	UserId        int       `gorm:"column:user_id" json:"user_id"`
 	CreatedAt     int64     `gorm:"column:created_at" json:"-"`
 	CreatedAtJSON time.Time `gorm:"-:all" json:"created_at"`
-	Clan          *Clan     `gorm:"foreignKey:ClanId" json:"clan"`
+	Clan          *Clan     `gorm:"foreignKey:ClanId" json:"clan,omitempty"`
+	User          *User     `gorm:"foreignKey:UserId" json:"user,omitempty"`
 }
 
 func (*ClanInvite) TableName() string {
@@ -26,6 +27,22 @@ func (invite *ClanInvite) BeforeCreate(*gorm.DB) (err error) {
 func (invite *ClanInvite) AfterFind(*gorm.DB) (err error) {
 	invite.CreatedAtJSON = time.UnixMilli(invite.CreatedAt)
 	return nil
+}
+
+// GetPendingClanInvites Gets all of a clan's pending invites
+func GetPendingClanInvites(clanId int) ([]*ClanInvite, error) {
+	var invites = make([]*ClanInvite, 0)
+
+	result := SQL.
+		Preload("User").
+		Where("clan_invites.clan_id = ?", clanId).
+		Find(&invites)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return invites, nil
 }
 
 // GetPendingClanInvite Retrieves a clan invite for a given user

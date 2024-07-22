@@ -60,7 +60,8 @@ func initializeRoutes(engine *gin.Engine) {
 	// Clan Invites
 	engine.POST("/v2/clan/invite", middleware.RequireAuth, handlers.CreateHandler(handlers.InviteUserToClan))
 	engine.GET("/v2/clan/invite/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.GetClanInvite))
-	engine.GET("/v2/clan/invites", middleware.RequireAuth, handlers.CreateHandler(handlers.GetPendingClanInvites))
+	engine.GET("/v2/clan/invites", middleware.RequireAuth, handlers.CreateHandler(handlers.GetClanPendingInvites))
+	engine.GET("/v2/clan/user/invites", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserPendingClanInvites))
 	engine.POST("/v2/clan/invite/:id/accept", middleware.RequireAuth, handlers.CreateHandler(handlers.AcceptClanInvite))
 	engine.POST("/v2/clan/invite/:id/decline", middleware.RequireAuth, handlers.CreateHandler(handlers.DeclineClanInvite))
 
