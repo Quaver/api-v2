@@ -28,6 +28,15 @@ func ConnectMySQL() {
 		logrus.Panic(err)
 	}
 
+	sqlDB, err := db.DB()
+
+	if err != nil {
+		logrus.Panic(err)
+	}
+
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(10)
+
 	SQL = db
 	logrus.Infof("Connected to MySQL database: %v/%v", cfg.Host, cfg.Database)
 }
