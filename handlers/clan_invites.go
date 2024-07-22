@@ -146,21 +146,43 @@ func AcceptClanInvite(c *gin.Context) *APIError {
 // DeclineClanInvite Declines a clan invite and deletes it
 // Endpoint: POST /v2/clan/invite/:id/decline
 func DeclineClanInvite(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
 	user := getAuthedUser(c)
 
 	if user == nil {
 		return nil
 	}
 
-	invite, apiErr := parseAndGetClanInvite(c, user)
+	invite, err := db.GetClanInviteById(id)
 
-	if apiErr != nil {
-		return apiErr
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving clan invite from db", err)
 	}
 
-	err := db.DeleteClanInviteById(invite.Id)
+	if invite == nil {
+		return APIErrorNotFound("Invite")
+	}
 
-	if err != nil {
+	clan, err := db.GetClanById(invite.ClanId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving clan from db", err)
+	}
+
+	if clan == nil {
+		return APIErrorNotFound("Clan")
+	}
+
+	if invite.UserId != user.Id && user.Id != clan.OwnerId {
+		return APIErrorForbidden(errClanInviteDoesntBelong)
+	}
+
+	if err := db.DeleteClanInviteById(invite.Id); err != nil {
 		return APIErrorServerError("Error deleting clan invite", err)
 	}
 
