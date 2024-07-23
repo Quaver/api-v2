@@ -92,6 +92,7 @@ type Config struct {
 		UserRank            CronJob `json:"user_rank"`
 		CacheLeaderboard    CronJob `json:"cache_leaderboard"`
 		MigratePlaylists    CronJob `json:"migrate_playlists"`
+		DatabaseBackup      CronJob `json:"database_backup"`
 	} `json:"cron"`
 }
 

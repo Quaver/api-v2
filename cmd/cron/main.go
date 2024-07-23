@@ -34,6 +34,7 @@ func main() {
 	registerCronJob(c, jobs.UserRank.Job, func() { commands.UserRankCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.CacheLeaderboard.Job, func() { commands.CacheLeaderboardCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.MigratePlaylists.Job, func() { migrations.MigrationPlaylistMapsetCmd.Run(nil, nil) })
+	registerCronJob(c, jobs.DatabaseBackup.Job, func() { commands.DatabaseBackupCmd.Run(nil, nil) })
 
 	c.Start()
 
