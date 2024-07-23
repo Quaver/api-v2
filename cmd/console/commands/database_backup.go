@@ -21,9 +21,7 @@ var DatabaseBackupCmd = &cobra.Command{
 		backupDir := fmt.Sprintf("%v/backups", config.Instance.Cache.DataDirectory)
 
 		if err := os.MkdirAll(backupDir, os.ModePerm); err != nil {
-			logrus.Error("[Database Backup] Error creating backup directory", err)
-			_ = webhooks.SendBackupWebhook(false, err)
-			return
+			logrus.Error("[Database Backup] Error creating backup directory: ", err)
 		}
 
 		var err error
