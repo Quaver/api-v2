@@ -38,6 +38,7 @@ func init() {
 	RootCmd.AddCommand(commands.WeeklyMostPlayedMapsetsCmd)
 	RootCmd.AddCommand(commands.UserRankCmd)
 	RootCmd.AddCommand(commands.CacheScoreboardClearCmd)
+	RootCmd.AddCommand(commands.DatabaseBackupCmd)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)
