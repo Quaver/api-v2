@@ -21,7 +21,9 @@ var DatabaseBackupCmd = &cobra.Command{
 		backupDir := fmt.Sprintf("%v/backups", config.Instance.Cache.DataDirectory)
 
 		if err := os.MkdirAll(backupDir, os.ModePerm); err != nil {
-			logrus.Error("[Database Backup] Error creating backup directory: ", err)
+			logrus.Error("[Database Backup] Error creating backup directory", err)
+			_ = webhooks.SendBackupWebhook(false, err)
+			return
 		}
 
 		var err error
@@ -29,8 +31,6 @@ var DatabaseBackupCmd = &cobra.Command{
 
 		if err := os.Remove(path); err != nil {
 			logrus.Error("[Database Backup] Error deleting existing backup")
-			_ = webhooks.SendBackupWebhook(false, err)
-			return
 		}
 
 		logrus.Info("[Database Backup] Dumping database...")
