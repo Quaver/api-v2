@@ -217,6 +217,44 @@ func SendOrderWebhook(purchasedOrders []*db.Order) error {
 	return nil
 }
 
+func SendBackupWebhook(successful bool, failureError ...error) error {
+	var title string
+	var description string
+	var color int
+
+	if successful {
+		title = "✅ Database Backup Complete!"
+		description = "A database backup has been successfully created."
+		color = 0x00FF00
+	} else {
+		title = "❌Database Backup Failed!"
+		description = fmt.Sprintf("Database backup failed.\n"+
+			"Reason: \n"+
+			"```%v```", failureError[0])
+		color = 0x00FF00
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle(title).
+		SetDescription(description).
+		SetThumbnail(quaverLogo).
+		SetFooter("Quaver", quaverLogo).
+		SetTimestamp(time.Now()).
+		SetColor(color).
+		Build()
+
+	_, err := orders.CreateMessage(discord.WebhookMessageCreate{
+		Embeds: []discord.Embed{embed},
+	})
+
+	if err != nil {
+		logrus.Error("Failed to send backup  webhook: ", err)
+		return err
+	}
+
+	return nil
+}
+
 func getUserPingText(mapset *db.Mapset) string {
 	content := ""
 

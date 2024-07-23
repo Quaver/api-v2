@@ -3,7 +3,9 @@ package commands
 import (
 	"bytes"
 	"fmt"
+	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/config"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
@@ -19,19 +21,40 @@ var DatabaseBackupCmd = &cobra.Command{
 		backupDir := fmt.Sprintf("%v/backups", config.Instance.Cache.DataDirectory)
 
 		if err := os.MkdirAll(backupDir, os.ModePerm); err != nil {
-			logrus.Error("Error creating backup directory", err)
+			logrus.Error("[Database Backup] Error creating backup directory", err)
+			_ = webhooks.SendBackupWebhook(false, err)
 			return
 		}
 
+		var err error
 		path, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql", backupDir))
 
-		if err := dumpDatabase(path); err != nil {
-			logrus.Error("Error dumping database: ", err)
+		if err := os.Remove(path); err != nil {
+			logrus.Error("[Database Backup] Error deleting existing backup")
+			_ = webhooks.SendBackupWebhook(false, err)
 			return
 		}
 
-		logrus.Info("Finished dumping database at path: ", path)
+		logrus.Info("[Database Backup] Dumping database...")
 
+		if err := dumpDatabase(path); err != nil {
+			logrus.Error("[Database Backup] Error dumping database: ", err)
+			_ = webhooks.SendBackupWebhook(false, err)
+			return
+		}
+
+		logrus.Info("[Database Backup] Finished dumping database at path: ", path)
+
+		err = azure.Client.UploadFileFromDisk("databasebackup", "latest-backup.sql", path, nil)
+
+		if err != nil {
+			logrus.Error("[Database Backup] Error uploading database backup", err)
+			_ = webhooks.SendBackupWebhook(false, err)
+			return
+		}
+
+		logrus.Info("[Database Backup] Database backup complete!")
+		_ = webhooks.SendBackupWebhook(true)
 	},
 }
 
