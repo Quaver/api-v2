@@ -227,11 +227,11 @@ func SendBackupWebhook(successful bool, failureError ...error) error {
 		description = "A database backup has been successfully created."
 		color = 0x00FF00
 	} else {
-		title = "❌Database Backup Failed!"
+		title = "❌ Database Backup Failed!"
 		description = fmt.Sprintf("Database backup failed.\n"+
 			"Reason: \n"+
 			"```%v```", failureError[0])
-		color = 0x00FF00
+		color = 0xFF0000
 	}
 
 	embed := discord.NewEmbedBuilder().
