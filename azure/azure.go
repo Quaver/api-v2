@@ -89,7 +89,7 @@ func (c *StorageClient) UploadFileFromDisk(container string, name string, path s
 	defer file.Close()
 
 	_, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
-		BlockSize:   4 * 1024 * 1024,
+		BlockSize:   azblob.BlockBlobMaxStageBlockBytes,
 		Parallelism: 16,
 		Progress:    progress,
 	})
