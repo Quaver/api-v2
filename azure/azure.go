@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"net/url"
+	"os"
 )
 
 type StorageClient struct {
@@ -64,6 +65,33 @@ func (c *StorageClient) UploadFile(container string, fileName string, data []byt
 	_, err := azblob.UploadBufferToBlockBlob(ctx, data, blobURL, azblob.UploadToBlockBlobOptions{
 		BlockSize:   4 * 1024 * 1024,
 		Parallelism: 16,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UploadFileFromDisk Uploads a file to azure from disk
+func (c *StorageClient) UploadFileFromDisk(container string, name string, path string, progress pipeline.ProgressReceiver) error {
+	containerURL := c.createContainerURL(container)
+	blobURL := containerURL.NewBlockBlobURL(name)
+	ctx := context.Background()
+
+	file, err := os.Open(path)
+
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	_, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
+		BlockSize:   4 * 1024 * 1024,
+		Parallelism: 16,
+		Progress:    progress,
 	})
 
 	if err != nil {
