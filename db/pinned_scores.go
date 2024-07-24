@@ -3,10 +3,11 @@ package db
 import "github.com/Quaver/api2/enums"
 
 type PinnedScore struct {
-	UserId   int            `gorm:"column:user_id" json:"user_id"`
-	GameMode enums.GameMode `gorm:"column:game_mode" json:"game_mode"`
-	ScoreId  int            `gorm:"column:score_id" json:"score_id"`
-	Score    *Score         `gorm:"foreignKey:ScoreId; references:Id" json:"score"`
+	UserId    int            `gorm:"column:user_id" json:"user_id"`
+	GameMode  enums.GameMode `gorm:"column:game_mode" json:"game_mode"`
+	ScoreId   int            `gorm:"column:score_id" json:"score_id"`
+	SortOrder int            `gorm:"column:sort_order" json:"sort_order"`
+	Score     *Score         `gorm:"foreignKey:ScoreId; references:Id" json:"score"`
 }
 
 func (*PinnedScore) TableName() string {
@@ -25,6 +26,7 @@ func GetUserPinnedScores(userId int, mode enums.GameMode) ([]*PinnedScore, error
 		Preload("Score").
 		Preload("Score.Map").
 		Where("user_id = ? AND game_mode = ?", userId, mode).
+		Order("sort_order ASC").
 		Find(&scores)
 
 	if result.Error != nil {

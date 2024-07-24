@@ -5,6 +5,7 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"slices"
 	"strconv"
 )
 
@@ -153,5 +154,61 @@ func GetPinnedScoresForMode(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
+
+// CreatePinnedScore Adds a pinned score
+// Endpoint: POST /v2/scores/:id/pin
+func CreatePinnedScore(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	score, err := db.GetScoreById(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving score by id", err)
+	}
+
+	if score.UserId != user.Id {
+		return APIErrorBadRequest("You cannot pin a score that isn't yours.")
+	}
+
+	pinnedScores, err := db.GetUserPinnedScores(user.Id, score.Mode)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving user's pinned scores", err)
+	}
+
+	if len(pinnedScores) == 20 {
+		return APIErrorBadRequest("You cannot exceed more than 20 pinned scores.")
+	}
+
+	if slices.ContainsFunc(pinnedScores, func(s *db.PinnedScore) bool {
+		return s.ScoreId == score.Id
+	}) {
+		return APIErrorBadRequest("This score is already pinned to your profile.")
+	}
+
+	newPinned := db.PinnedScore{
+		UserId:    user.Id,
+		GameMode:  score.Mode,
+		ScoreId:   score.Id,
+		SortOrder: len(pinnedScores),
+	}
+
+	if err := newPinned.Insert(); err != nil {
+		return APIErrorServerError("Error inserting new pinned score", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully pinned your score."})
 	return nil
 }
