@@ -283,7 +283,7 @@ func SortPinnedScores(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		ScoreIds []int `form:"scores_id" json:"score_ids" binding:"required"`
+		ScoreIds []int `form:"score_ids" json:"score_ids" binding:"required"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
