@@ -14,6 +14,7 @@ type Score struct {
 	UserId                      int              `gorm:"column:user_id" json:"user_id"`
 	MapMD5                      string           `gorm:"column:map_md5" json:"map_md5"`
 	ReplayMD5                   string           `gorm:"column:replay_md5" json:"replay_md5"`
+	Mode                        enums.GameMode   `gorm:"column:mode" json:"mode"`
 	Timestamp                   int64            `gorm:"column:timestamp" json:"-"`
 	TimestampJSON               time.Time        `gorm:"-:all" json:"timestamp"`
 	IsPersonalBest              bool             `gorm:"column:personal_best" json:"is_personal_best"`

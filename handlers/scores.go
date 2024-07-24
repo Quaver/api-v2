@@ -4,12 +4,15 @@ import (
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net/http"
+	"slices"
 	"strconv"
 )
 
 type userScoreParams struct {
 	Id   int
+	User *db.User
 	Mode enums.GameMode
 	Page int
 }
@@ -35,12 +38,15 @@ func parseUserScoreParams(c *gin.Context) (*userScoreParams, *APIError) {
 		page = 0
 	}
 
-	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
+	user, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c))
+
+	if apiErr != nil {
 		return nil, apiErr
 	}
 
 	return &userScoreParams{
 		Id:   id,
+		User: user,
 		Mode: enums.GameMode(mode),
 		Page: page,
 	}, nil
@@ -125,5 +131,197 @@ func GetUserGradesForMode(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
+
+// GetPinnedScoresForMode Gets a user's pinned scores for a given game mode
+// Endpoint: GET /v2/user/:id/scores/:mode/pinned
+func GetPinnedScoresForMode(c *gin.Context) *APIError {
+	query, apiErr := parseUserScoreParams(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	if !enums.HasUserGroup(query.User.UserGroups, enums.UserGroupDonator) {
+		c.JSON(http.StatusOK, gin.H{"scores": []*db.PinnedScore{}})
+		return nil
+	}
+
+	scores, err := db.GetUserPinnedScores(query.Id, query.Mode)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving user pinned scores", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
+
+// CreatePinnedScore Adds a pinned score
+// Endpoint: POST /v2/scores/:id/pin
+func CreatePinnedScore(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this endpoint.")
+	}
+
+	score, err := db.GetScoreById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving score by id", err)
+	}
+
+	if score == nil {
+		return APIErrorBadRequest("Score")
+	}
+
+	if score.UserId != user.Id {
+		return APIErrorBadRequest("You cannot pin a score that isn't yours.")
+	}
+
+	pinnedScores, err := db.GetUserPinnedScores(user.Id, score.Mode)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving user's pinned scores", err)
+	}
+
+	if len(pinnedScores) == 20 {
+		return APIErrorBadRequest("You cannot exceed more than 20 pinned scores.")
+	}
+
+	if slices.ContainsFunc(pinnedScores, func(s *db.PinnedScore) bool {
+		return s.ScoreId == score.Id
+	}) {
+		return APIErrorBadRequest("This score is already pinned to your profile.")
+	}
+
+	newPinned := db.PinnedScore{
+		UserId:    user.Id,
+		GameMode:  score.Mode,
+		ScoreId:   score.Id,
+		SortOrder: len(pinnedScores),
+	}
+
+	if err := newPinned.Insert(); err != nil {
+		return APIErrorServerError("Error inserting new pinned score", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully pinned your score."})
+	return nil
+}
+
+// RemovePinnedScore Removes a user's pinned score
+// Endpoint: POST /v2/scores/:id/unpin
+func RemovePinnedScore(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this endpoint.")
+	}
+
+	score, err := db.GetScoreById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving score by id", err)
+	}
+
+	if score == nil {
+		return APIErrorBadRequest("Score")
+	}
+
+	if err := db.DeletePinnedScore(user.Id, id); err != nil {
+		return APIErrorBadRequest("Error deleting pinned score.")
+	}
+
+	if err := db.SyncPinnedScoreSortOrder(user.Id, score.Mode); err != nil {
+		return APIErrorServerError("Error syncing pinned score sort order", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your score has been unpinned."})
+	return nil
+}
+
+// SortPinnedScores Sorts pins scores by a custom sort order
+// Endpoint: POST /v2/scores/pinned/:mode/sort
+func SortPinnedScores(c *gin.Context) *APIError {
+	mode, err := strconv.Atoi(c.Param("mode"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid mode")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this endpoint.")
+	}
+
+	body := struct {
+		ScoreIds []int `form:"score_ids" json:"score_ids" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	pinnedScores, err := db.GetUserPinnedScores(user.Id, enums.GameMode(mode))
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving pinned scores from db", err)
+	}
+
+	if len(body.ScoreIds) != len(pinnedScores) {
+		return APIErrorBadRequest("You must provide all of the score ids in the order to sort them by.")
+	}
+
+	for i, scoreId := range body.ScoreIds {
+		var foundScore bool
+
+		for _, pinnedScore := range pinnedScores {
+			if scoreId != pinnedScore.ScoreId {
+				continue
+			}
+
+			pinnedScore.SortOrder = i
+
+			if err := db.UpdatePinnedScoreSortOrder(user.Id, pinnedScore.ScoreId, pinnedScore.SortOrder); err != nil {
+				return APIErrorServerError("Error updating pinned score sort order.", err)
+			}
+
+			foundScore = true
+		}
+
+		if !foundScore {
+			return APIErrorBadRequest("You have provided a score id that isn't in your pinned scores.")
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your pinned scores have been sorted."})
 	return nil
 }
