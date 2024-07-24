@@ -360,6 +360,17 @@ func UpdateUserAllowed(userId int, isAllowed bool) error {
 	return nil
 }
 
+// UpdateUserDiscordId Updates a user's discord id
+func UpdateUserDiscordId(userId int, discordId *string) error {
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("discord_id", discordId)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
 // GetUserClientStatus Retrieves a user's client status from Redis
 func GetUserClientStatus(id int) (*UserClientStatus, error) {
 	result, err := Redis.HGetAll(RedisCtx, fmt.Sprintf("quaver:server:user_status:%v", id)).Result()

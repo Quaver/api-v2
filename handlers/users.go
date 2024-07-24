@@ -71,7 +71,7 @@ func GetUser(c *gin.Context) *APIError {
 }
 
 // UpdateUserAboutMe Updates a user's about me
-// Endpoint: PATCH /v2/user/profile/aboutme
+// Endpoint: POST /v2/user/profile/aboutme
 func UpdateUserAboutMe(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 
@@ -216,5 +216,40 @@ func BanUser(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "User has been successfully banned."})
+	return nil
+}
+
+// UpdateUserDiscordId Updates a user's discord id
+// Endpoint: POST /v2/user/:id/discord
+func UpdateUserDiscordId(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must supply a valid username or id.")
+	}
+
+	body := struct {
+		DiscordId *string `form:"discord_id" json:"discord_id" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeEditUsers) {
+		return APIErrorForbidden("You do not have permission to access this resource.")
+	}
+
+	if err := db.UpdateUserDiscordId(id, body.DiscordId); err != nil {
+		return APIErrorServerError("Error updating user discord id", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The user's Discord id has been updated."})
 	return nil
 }

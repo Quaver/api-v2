@@ -100,6 +100,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/user/:id/statistics/:mode/rank", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserRankStatisticsForMode))
 	engine.POST("/v2/user/:id/ban", middleware.RequireAuth, handlers.CreateHandler(handlers.BanUser))
 	engine.POST("/v2/user/:id/unban", middleware.RequireAuth, handlers.CreateHandler(handlers.UnbanUser))
+	engine.POST("/v2/user/:id/discord", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateUserDiscordId))
 	engine.GET("/v2/user/search/:name", handlers.CreateHandler(handlers.SearchUsers))
 	engine.GET("/v2/user/team/members", handlers.CreateHandler(handlers.GetTeamMembers))
 
