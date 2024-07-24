@@ -50,6 +50,10 @@ func SyncPinnedScoreSortOrder(userId int, mode enums.GameMode) error {
 	}
 
 	for i, score := range pinnedScores {
+		if score.SortOrder == i {
+			continue
+		}
+
 		if err := UpdatePinnedScoreSortOrder(userId, score.ScoreId, i); err != nil {
 			return err
 		}
