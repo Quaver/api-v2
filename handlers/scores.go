@@ -10,6 +10,7 @@ import (
 
 type userScoreParams struct {
 	Id   int
+	User *db.User
 	Mode enums.GameMode
 	Page int
 }
@@ -35,12 +36,15 @@ func parseUserScoreParams(c *gin.Context) (*userScoreParams, *APIError) {
 		page = 0
 	}
 
-	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
+	user, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c))
+
+	if apiErr != nil {
 		return nil, apiErr
 	}
 
 	return &userScoreParams{
 		Id:   id,
+		User: user,
 		Mode: enums.GameMode(mode),
 		Page: page,
 	}, nil
@@ -122,6 +126,30 @@ func GetUserGradesForMode(c *gin.Context) *APIError {
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving scores from database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": scores})
+	return nil
+}
+
+// GetPinnedScoresForMode Gets a user's pinned scores for a given game mode
+// Endpoint: GET /v2/user/:id/scores/:mode/pinned
+func GetPinnedScoresForMode(c *gin.Context) *APIError {
+	query, apiErr := parseUserScoreParams(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	if !enums.HasUserGroup(query.User.UserGroups, enums.UserGroupDonator) {
+		c.JSON(http.StatusOK, gin.H{"scores": []*db.PinnedScore{}})
+		return nil
+	}
+
+	scores, err := db.GetUserPinnedScores(query.Id, query.Mode)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving user pinned scores", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"scores": scores})

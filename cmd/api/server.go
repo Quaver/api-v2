@@ -97,6 +97,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/user/:id/scores/:mode/recent", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserRecentScoresForMode))
 	engine.GET("/v2/user/:id/scores/:mode/firstplace", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserFirstPlaceScoresForMode))
 	engine.GET("/v2/user/:id/scores/:mode/grades/:grade", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserGradesForMode))
+	engine.GET("/v2/user/:id/scores/:mode/pinned", middleware.AllowAuth, handlers.CreateHandler(handlers.GetPinnedScoresForMode))
 	engine.GET("/v2/user/:id/statistics/:mode/rank", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserRankStatisticsForMode))
 	engine.POST("/v2/user/:id/ban", middleware.RequireAuth, handlers.CreateHandler(handlers.BanUser))
 	engine.POST("/v2/user/:id/unban", middleware.RequireAuth, handlers.CreateHandler(handlers.UnbanUser))
