@@ -183,9 +183,9 @@ func CreatePinnedScore(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Score")
 	}
 
-	//if score.UserId != user.Id {
-	//	return APIErrorBadRequest("You cannot pin a score that isn't yours.")
-	//}
+	if score.UserId != user.Id {
+		return APIErrorBadRequest("You cannot pin a score that isn't yours.")
+	}
 
 	pinnedScores, err := db.GetUserPinnedScores(user.Id, score.Mode)
 
