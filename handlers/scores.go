@@ -4,6 +4,7 @@ import (
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net/http"
 	"slices"
 	"strconv"
@@ -174,13 +175,17 @@ func CreatePinnedScore(c *gin.Context) *APIError {
 
 	score, err := db.GetScoreById(id)
 
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return APIErrorServerError("Error retrieving score by id", err)
 	}
 
-	if score.UserId != user.Id {
-		return APIErrorBadRequest("You cannot pin a score that isn't yours.")
+	if score == nil {
+		return APIErrorBadRequest("Score")
 	}
+
+	//if score.UserId != user.Id {
+	//	return APIErrorBadRequest("You cannot pin a score that isn't yours.")
+	//}
 
 	pinnedScores, err := db.GetUserPinnedScores(user.Id, score.Mode)
 
@@ -210,5 +215,42 @@ func CreatePinnedScore(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully pinned your score."})
+	return nil
+}
+
+// RemovePinnedScore Removes a user's pinned score
+// Endpoint: POST /v2/scores/:id/unpin
+func RemovePinnedScore(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	score, err := db.GetScoreById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving score by id", err)
+	}
+
+	if score == nil {
+		return APIErrorBadRequest("Score")
+	}
+
+	if err := db.DeletePinnedScore(user.Id, id); err != nil {
+		return APIErrorBadRequest("Error deleting pinned score.")
+	}
+
+	if err := db.SyncPinnedScoreSortOrder(user.Id, score.Mode); err != nil {
+		return APIErrorServerError("Error syncing pinned score sort order", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your score has been unpinned."})
 	return nil
 }

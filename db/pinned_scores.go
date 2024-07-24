@@ -40,3 +40,27 @@ func GetUserPinnedScores(userId int, mode enums.GameMode) ([]*PinnedScore, error
 func DeletePinnedScore(userId int, scoreId int) error {
 	return SQL.Delete(&PinnedScore{}, "user_id = ? AND score_id = ?", userId, scoreId).Error
 }
+
+// SyncPinnedScoreSortOrder Resets the order of pinned scores to keep things in sync
+func SyncPinnedScoreSortOrder(userId int, mode enums.GameMode) error {
+	pinnedScores, err := GetUserPinnedScores(userId, mode)
+
+	if err != nil {
+		return err
+	}
+
+	for i, score := range pinnedScores {
+		if err := UpdatePinnedScoreSortOrder(userId, score.ScoreId, i); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// UpdatePinnedScoreSortOrder Updates the sort order of a given pinned score.
+func UpdatePinnedScoreSortOrder(userId int, scoreId int, sortOrder int) error {
+	return SQL.Model(&PinnedScore{}).
+		Where("user_id = ? AND score_id = ?", userId, scoreId).
+		Update("sort_order", sortOrder).Error
+}
