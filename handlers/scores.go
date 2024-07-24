@@ -173,6 +173,10 @@ func CreatePinnedScore(c *gin.Context) *APIError {
 		return nil
 	}
 
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this endpoint.")
+	}
+
 	score, err := db.GetScoreById(id)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -233,6 +237,10 @@ func RemovePinnedScore(c *gin.Context) *APIError {
 		return nil
 	}
 
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this endpoint.")
+	}
+
 	score, err := db.GetScoreById(id)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -268,6 +276,10 @@ func SortPinnedScores(c *gin.Context) *APIError {
 
 	if user == nil {
 		return nil
+	}
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return APIErrorForbidden("You must be a donator to access this endpoint.")
 	}
 
 	body := struct {
