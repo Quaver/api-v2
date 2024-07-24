@@ -229,6 +229,15 @@ func SubmitMapModComment(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting map mod comment notification", err)
 	}
 
+	if mod.AuthorId != mapQua.CreatorId && comment.AuthorId != mapQua.CreatorId {
+		notif := db.NewMapModCommentNotification(mapQua, mod, comment)
+		notif.ReceiverId = mapQua.CreatorId
+
+		if err := notif.Insert(); err != nil {
+			return APIErrorServerError("Error inserting map mod comment notif for map creator", err)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully added."})
 	return nil
 }
