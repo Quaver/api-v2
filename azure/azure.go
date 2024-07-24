@@ -64,7 +64,7 @@ func (c *StorageClient) UploadFile(container string, fileName string, data []byt
 
 	_, err := azblob.UploadBufferToBlockBlob(ctx, data, blobURL, azblob.UploadToBlockBlobOptions{
 		BlockSize:   4 * 1024 * 1024,
-		Parallelism: 10,
+		Parallelism: 16,
 	})
 
 	if err != nil {
@@ -89,7 +89,9 @@ func (c *StorageClient) UploadFileFromDisk(container string, name string, path s
 	defer file.Close()
 
 	_, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
-		Progress: progress,
+		BlockSize:   4 * 1024 * 1024,
+		Parallelism: 16,
+		Progress:    progress,
 	})
 
 	if err != nil {
