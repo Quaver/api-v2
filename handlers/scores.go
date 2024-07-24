@@ -254,3 +254,62 @@ func RemovePinnedScore(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "Your score has been unpinned."})
 	return nil
 }
+
+// SortPinnedScores Sorts pins scores by a custom sort order
+// Endpoint: POST /v2/scores/pinned/:mode/sort
+func SortPinnedScores(c *gin.Context) *APIError {
+	mode, err := strconv.Atoi(c.Param("mode"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid mode")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	body := struct {
+		ScoreIds []int `form:"scores_id" json:"score_ids" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	pinnedScores, err := db.GetUserPinnedScores(user.Id, enums.GameMode(mode))
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving pinned scores from db", err)
+	}
+
+	if len(body.ScoreIds) != len(pinnedScores) {
+		return APIErrorBadRequest("You must provide all of the score ids in the order to sort them by.")
+	}
+
+	for i, scoreId := range body.ScoreIds {
+		var foundScore bool
+
+		for _, pinnedScore := range pinnedScores {
+			if scoreId != pinnedScore.ScoreId {
+				continue
+			}
+
+			pinnedScore.SortOrder = i
+
+			if err := db.UpdatePinnedScoreSortOrder(user.Id, pinnedScore.ScoreId, pinnedScore.SortOrder); err != nil {
+				return APIErrorServerError("Error updating pinned score sort order.", err)
+			}
+
+			foundScore = true
+		}
+
+		if !foundScore {
+			return APIErrorBadRequest("You have provided a score id that isn't in your pinned scores.")
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your pinned scores have been sorted."})
+	return nil
+}

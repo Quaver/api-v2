@@ -174,8 +174,11 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/scores/:md5/:user_id/all", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreAll))
 	engine.GET("/v2/scores/:md5/:user_id/mods/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreMods))
 	engine.GET("/v2/scores/:md5/:user_id/rate/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreRate))
+
+	// Pinned Scores
 	engine.POST("/v2/scores/:id/pin", middleware.RequireAuth, handlers.CreateHandler(handlers.CreatePinnedScore))
 	engine.POST("/v2/scores/:id/unpin", middleware.RequireAuth, handlers.CreateHandler(handlers.RemovePinnedScore))
+	engine.POST("/v2/scores/pinned/:mode/sort", middleware.RequireAuth, handlers.CreateHandler(handlers.SortPinnedScores))
 
 	// Ranking Queue
 	engine.GET("/v2/ranking/config", handlers.CreateHandler(handlers.GetRankingQueueConfig))
