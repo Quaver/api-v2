@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/cmd/console/commands"
 	"github.com/Quaver/api2/cmd/console/migrations"
 	"github.com/Quaver/api2/config"
@@ -24,6 +25,7 @@ func main() {
 	db.ConnectMySQL()
 	db.InitializeRedis()
 	db.InitializeElasticSearch()
+	azure.InitializeClient()
 
 	c := cron.New()
 	jobs := config.Instance.Cron

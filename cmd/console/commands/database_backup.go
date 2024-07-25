@@ -42,7 +42,6 @@ var DatabaseBackupCmd = &cobra.Command{
 		}
 
 		logrus.Info("[Database Backup] Finished dumping database at path: ", path)
-
 		logrus.Info("[Database Backup] Uploading to azure...: ", path)
 
 		err = azure.Client.UploadFileFromDisk("databasebackup", "latest-backup.sql", path, nil)
