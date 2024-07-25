@@ -12,12 +12,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var DatabaseBackupCmd = &cobra.Command{
 	Use:   "backup:database",
 	Short: "Backs up the database and uploads to azure",
 	Run: func(cmd *cobra.Command, args []string) {
+		currentTime := time.Now()
+
 		backupDir := fmt.Sprintf("%v/backups", config.Instance.Cache.DataDirectory)
 
 		if err := os.MkdirAll(backupDir, os.ModePerm); err != nil {
@@ -26,7 +29,6 @@ var DatabaseBackupCmd = &cobra.Command{
 			return
 		}
 
-		var err error
 		path, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql", backupDir))
 
 		if err := os.Remove(path); err != nil {
@@ -44,7 +46,9 @@ var DatabaseBackupCmd = &cobra.Command{
 		logrus.Info("[Database Backup] Finished dumping database at path: ", path)
 		logrus.Info("[Database Backup] Uploading to azure...: ", path)
 
-		err = azure.Client.UploadFileFromDisk("databasebackup", "latest-backup.sql", path, nil)
+		fileName := fmt.Sprintf("%d-%d-%d-time-%d-%d.sql", currentTime.Year(), currentTime.Month(), currentTime.Day(), currentTime.Hour(), currentTime.Minute())
+
+		err := azure.Client.UploadFileFromDisk("databasebackup", fileName, path, nil)
 
 		if err != nil {
 			logrus.Error("[Database Backup] Error uploading database backup", err)
