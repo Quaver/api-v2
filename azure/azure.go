@@ -139,3 +139,43 @@ func (c *StorageClient) DownloadFile(container string, name string, path string)
 
 	return downloadedData, nil
 }
+
+// ListBlobs Lists blobs in a given container
+func (c *StorageClient) ListBlobs(container string) ([]string, error) {
+	containerURL := c.createContainerURL(container)
+	ctx := context.Background()
+
+	blobs := make([]string, 0)
+
+	for marker := (azblob.Marker{}); marker.NotDone(); {
+		listBlob, err := containerURL.ListBlobsFlatSegment(ctx, marker, azblob.ListBlobsSegmentOptions{})
+
+		if err != nil {
+			return nil, err
+		}
+
+		marker = listBlob.NextMarker
+
+		// Process the blobs returned in this result segment (if the segment is empty, the loop body won't execute)
+		for _, blobInfo := range listBlob.Segment.BlobItems {
+			blobs = append(blobs, blobInfo.Name)
+		}
+	}
+
+	return blobs, nil
+}
+
+// DeleteBlob Delete a blob from a given container
+func (c *StorageClient) DeleteBlob(container string, fileName string) error {
+	containerURL := c.createContainerURL(container)
+	blobURL := containerURL.NewBlockBlobURL(fileName)
+	ctx := context.Background()
+
+	_, err := blobURL.Delete(ctx, azblob.DeleteSnapshotsOptionNone, azblob.BlobAccessConditions{})
+
+	if err != nil {
+		return nil
+	}
+
+	return nil
+}

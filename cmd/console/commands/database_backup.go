@@ -15,11 +15,20 @@ import (
 	"time"
 )
 
+const (
+	databaseBackupContainer string = "databasebackup"
+)
+
 var DatabaseBackupCmd = &cobra.Command{
 	Use:   "backup:database",
 	Short: "Backs up the database and uploads to azure",
 	Run: func(cmd *cobra.Command, args []string) {
 		currentTime := time.Now()
+
+		if err := deletePreviousBackups(); err != nil {
+			logrus.Error(err)
+			return
+		}
 
 		backupDir := fmt.Sprintf("%v/backups", config.Instance.Cache.DataDirectory)
 
@@ -48,7 +57,7 @@ var DatabaseBackupCmd = &cobra.Command{
 
 		fileName := fmt.Sprintf("%d-%d-%d-time-%d-%d.sql", currentTime.Year(), currentTime.Month(), currentTime.Day(), currentTime.Hour(), currentTime.Minute())
 
-		err := azure.Client.UploadFileFromDisk("databasebackup", fileName, path, nil)
+		err := azure.Client.UploadFileFromDisk(databaseBackupContainer, fileName, path, nil)
 
 		if err != nil {
 			logrus.Error("[Database Backup] Error uploading database backup", err)
@@ -59,6 +68,25 @@ var DatabaseBackupCmd = &cobra.Command{
 		logrus.Info("[Database Backup] Database backup complete!")
 		_ = webhooks.SendBackupWebhook(true)
 	},
+}
+
+func deletePreviousBackups() error {
+	blobs, err := azure.Client.ListBlobs(databaseBackupContainer)
+
+	if err != nil {
+		return err
+	}
+
+	if len(blobs) < 12 {
+		return nil
+	}
+
+	if err := azure.Client.DeleteBlob(databaseBackupContainer, blobs[0]); err != nil {
+		return err
+	}
+
+	logrus.Info("[Database Backup] Deleted previous backup: ", blobs[0])
+	return nil
 }
 
 func dumpDatabase(path string) error {
