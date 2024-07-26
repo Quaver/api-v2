@@ -43,6 +43,7 @@ func init() {
 	RootCmd.AddCommand(commands.UserRankCmd)
 	RootCmd.AddCommand(commands.CacheScoreboardClearCmd)
 	RootCmd.AddCommand(commands.DatabaseBackupCmd)
+	RootCmd.AddCommand(commands.DatabaseBackupHourlyCmd)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)

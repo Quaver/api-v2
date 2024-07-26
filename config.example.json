@@ -94,8 +94,13 @@
     },
     "database_backup": {
       "enabled": true,
-      "name": "Performs a full backup of the DB",
+      "name": "Performs a full backup of the DB / 6hrs",
       "schedule": "0 */6 * * *"
+    },
+    "database_backup_hourly": {
+      "enabled": true,
+      "name": "Performs a full backup of the DB hourly",
+      "schedule": "0 * * * *"
     }
   }
 }

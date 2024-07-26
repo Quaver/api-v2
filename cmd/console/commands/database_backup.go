@@ -65,7 +65,7 @@ var DatabaseBackupCmd = &cobra.Command{
 			return
 		}
 
-		if err := uploadToAzure(zipPath, azureFileName); err != nil {
+		if err := uploadToAzure(zipPath, databaseBackupContainer, azureFileName); err != nil {
 			logrus.Error("[Database Backup] Error uploading database backup", err)
 			_ = webhooks.SendBackupWebhook(false, err)
 			return
@@ -163,10 +163,10 @@ func zipBackup(inputPath string, outputPath string) error {
 	return nil
 }
 
-func uploadToAzure(path string, fileName string) error {
+func uploadToAzure(path string, container string, fileName string) error {
 	logrus.Info("[Database Backup] Uploading to azure...:")
 
-	err := azure.Client.UploadFileFromDisk(databaseBackupContainer, fileName, path, azblob.AccessTierHot)
+	err := azure.Client.UploadFileFromDisk(container, fileName, path, azblob.AccessTierHot)
 
 	if err != nil {
 		return err
