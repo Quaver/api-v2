@@ -82,7 +82,7 @@ func deletePreviousBackups() error {
 		return err
 	}
 
-	if len(blobs) < 12 {
+	if len(blobs) < 28 {
 		return nil
 	}
 
