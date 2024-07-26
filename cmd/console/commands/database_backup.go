@@ -30,7 +30,7 @@ var DatabaseBackupCmd = &cobra.Command{
 		sqlPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql", files.GetBackupsDirectory()))
 		zipPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql.zip", files.GetBackupsDirectory()))
 
-		if err := deletePreviousBackups(databaseBackupContainer, 2); err != nil {
+		if err := deletePreviousBackups(databaseBackupContainer, 28); err != nil {
 			logrus.Error(err)
 			_ = webhooks.SendBackupWebhook(false, err)
 			return
