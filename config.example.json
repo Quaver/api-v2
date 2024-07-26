@@ -100,7 +100,7 @@
     "database_backup_hourly": {
       "enabled": true,
       "name": "Performs a full backup of the DB hourly",
-      "schedule": "0 * * * *"
+      "schedule": "0 1-5,7-11,13-17,19-23 * * *"
     }
   }
 }
