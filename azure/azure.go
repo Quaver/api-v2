@@ -75,7 +75,7 @@ func (c *StorageClient) UploadFile(container string, fileName string, data []byt
 }
 
 // UploadFileFromDisk Uploads a file to azure from disk
-func (c *StorageClient) UploadFileFromDisk(container string, name string, path string, progress pipeline.ProgressReceiver) error {
+func (c *StorageClient) UploadFileFromDisk(container string, name string, path string, tier azblob.AccessTierType) error {
 	containerURL := c.createContainerURL(container)
 	blobURL := containerURL.NewBlockBlobURL(name)
 	ctx := context.WithoutCancel(context.Background())
@@ -89,9 +89,9 @@ func (c *StorageClient) UploadFileFromDisk(container string, name string, path s
 	defer file.Close()
 
 	_, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
-		BlockSize:   4 * 1024 * 1024,
-		Parallelism: 16,
-		Progress:    progress,
+		BlockSize:      4 * 1024 * 1024,
+		Parallelism:    16,
+		BlobAccessTier: tier,
 	})
 
 	if err != nil {
