@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/config"
+	"github.com/Quaver/api2/files"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -27,46 +28,18 @@ var DatabaseBackupCmd = &cobra.Command{
 	Short: "Backs up the database and uploads to azure",
 	Run: func(cmd *cobra.Command, args []string) {
 		currentTime := time.Now()
-		backupDir := fmt.Sprintf("%v/backups", config.Instance.Cache.DataDirectory)
-		sqlPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql", backupDir))
-		zipPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql.zip", backupDir))
+		sqlPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql", files.GetBackupsDirectory()))
+		zipPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql.zip", files.GetBackupsDirectory()))
 		azureFileName := fmt.Sprintf("%d-%d-%d-time-%d-%d.zip", currentTime.Year(),
 			currentTime.Month(), currentTime.Day(), currentTime.Hour(), currentTime.Minute())
 
-		if err := deletePreviousBackups(); err != nil {
+		if err := deletePreviousBackups(databaseBackupContainer, 28); err != nil {
 			logrus.Error(err)
 			_ = webhooks.SendBackupWebhook(false, err)
 			return
 		}
 
-		if err := os.MkdirAll(backupDir, os.ModePerm); err != nil {
-			logrus.Error("[Database Backup] Error creating backup directory", err)
-			_ = webhooks.SendBackupWebhook(false, err)
-			return
-		}
-
-		if err := os.Remove(sqlPath); err != nil {
-			logrus.Error("[Database Backup] Error deleting existing backup")
-		}
-
-		if err := os.Remove(zipPath); err != nil {
-			logrus.Error("[Database Backup] Error deleting existing backup")
-		}
-
-		if err := dumpDatabase(sqlPath); err != nil {
-			logrus.Error("[Database Backup] Error dumping database: ", err)
-			_ = webhooks.SendBackupWebhook(false, err)
-			return
-		}
-
-		if err := zipBackup(sqlPath, zipPath); err != nil {
-			logrus.Error("[Database Backup] Error zipping database: ", err)
-			_ = webhooks.SendBackupWebhook(false, err)
-			return
-		}
-
-		if err := uploadToAzure(zipPath, databaseBackupContainer, azureFileName); err != nil {
-			logrus.Error("[Database Backup] Error uploading database backup", err)
+		if err := performDatabaseBackupBackup(sqlPath, zipPath, databaseBackupContainer, azureFileName); err != nil {
 			_ = webhooks.SendBackupWebhook(false, err)
 			return
 		}
@@ -75,18 +48,45 @@ var DatabaseBackupCmd = &cobra.Command{
 	},
 }
 
-func deletePreviousBackups() error {
-	blobs, err := azure.Client.ListBlobs(databaseBackupContainer)
+func performDatabaseBackupBackup(sqlFilePath string, zipFilePath string, azureContainer string, azureFileName string) error {
+	if err := os.Remove(sqlFilePath); err != nil {
+		logrus.Error("[Database Backup] Error deleting existing backup (sql file).")
+	}
+
+	if err := os.Remove(zipFilePath); err != nil {
+		logrus.Error("[Database Backup] Error deleting existing backup (zip file).")
+	}
+
+	if err := dumpDatabase(sqlFilePath); err != nil {
+		logrus.Error("[Database Backup] Error dumping database: ", err)
+		return err
+	}
+
+	if err := zipBackup(sqlFilePath, zipFilePath); err != nil {
+		logrus.Error("[Database Backup] Error zipping database: ", err)
+		return err
+	}
+
+	if err := uploadToAzure(zipFilePath, azureContainer, azureFileName); err != nil {
+		logrus.Error("[Database Backup] Error uploading database backup", err)
+		return err
+	}
+
+	return nil
+}
+
+func deletePreviousBackups(container string, maxBackups int) error {
+	blobs, err := azure.Client.ListBlobs(container)
 
 	if err != nil {
 		return err
 	}
 
-	if len(blobs) < 28 {
+	if len(blobs) < maxBackups {
 		return nil
 	}
 
-	if err := azure.Client.DeleteBlob(databaseBackupContainer, blobs[0]); err != nil {
+	if err := azure.Client.DeleteBlob(container, blobs[0]); err != nil {
 		return err
 	}
 

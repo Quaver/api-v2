@@ -22,6 +22,7 @@ func CreateDirectories() {
 		getMapsDirectory(),
 		getMapsetDirectory(),
 		getReplayDirectory(),
+		GetBackupsDirectory(),
 		GetTempDirectory(),
 		fmt.Sprintf("%v/multiplayer", GetTempDirectory()),
 	}
@@ -133,6 +134,10 @@ func getMapsetDirectory() string {
 
 func getReplayDirectory() string {
 	return fmt.Sprintf("%v/replays", config.Instance.Cache.DataDirectory)
+}
+
+func GetBackupsDirectory() string {
+	return fmt.Sprintf("%v/backups", config.Instance.Cache.DataDirectory)
 }
 
 func GetTempDirectory() string {
