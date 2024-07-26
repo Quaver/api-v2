@@ -143,9 +143,9 @@ func zipBackup(inputPath string, outputPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create zip file: %w", err)
 	}
+
 	defer zipFile.Close()
 
-	// Create a new zip writer
 	zipWriter := zip.NewWriter(zipFile)
 	defer zipWriter.Close()
 
@@ -157,7 +157,6 @@ func zipBackup(inputPath string, outputPath string) error {
 
 	if _, err = io.Copy(zipEntry, inputFile); err != nil {
 		return fmt.Errorf("failed to copy file content into zip entry: %w", err)
-
 	}
 
 	logrus.Info("[Database Backup] Successfully zipped backup file")
