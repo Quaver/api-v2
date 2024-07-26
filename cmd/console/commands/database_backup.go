@@ -92,6 +92,10 @@ func performDatabaseBackupBackup(sqlFilePath string, zipFilePath string, azureCo
 		return err
 	}
 
+	if err := os.Remove(sqlFilePath); err != nil {
+		logrus.Error("[Database Backup] Error deleting existing backup (sql file).")
+	}
+
 	return nil
 }
 
