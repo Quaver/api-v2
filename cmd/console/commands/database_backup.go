@@ -15,8 +15,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -27,16 +27,36 @@ var DatabaseBackupCmd = &cobra.Command{
 	Use:   "backup:database",
 	Short: "Backs up the database and uploads to azure",
 	Run: func(cmd *cobra.Command, args []string) {
-		currentTime := time.Now()
 		sqlPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql", files.GetBackupsDirectory()))
 		zipPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql.zip", files.GetBackupsDirectory()))
-		azureFileName := fmt.Sprintf("%d-%d-%d-time-%d-%d.zip", currentTime.Year(),
-			currentTime.Month(), currentTime.Day(), currentTime.Hour(), currentTime.Minute())
 
-		if err := deletePreviousBackups(databaseBackupContainer, 28); err != nil {
+		if err := deletePreviousBackups(databaseBackupContainer, 2); err != nil {
 			logrus.Error(err)
 			_ = webhooks.SendBackupWebhook(false, err)
 			return
+		}
+
+		azureFileName := "1.zip"
+
+		blobs, err := azure.Client.ListBlobs(databaseBackupContainer)
+
+		if err != nil {
+			logrus.Error(err)
+			_ = webhooks.SendBackupWebhook(false, err)
+			return
+		}
+
+		// Get incremented value for azureFileName
+		if len(blobs) > 0 {
+			fileNumber, err := strconv.Atoi(strings.Replace(blobs[len(blobs)-1], ".zip", "", -1))
+
+			if err != nil {
+				logrus.Error(err)
+				_ = webhooks.SendBackupWebhook(false, err)
+				return
+			}
+
+			azureFileName = fmt.Sprintf("%v.zip", fileNumber+1)
 		}
 
 		if err := performDatabaseBackupBackup(sqlPath, zipPath, databaseBackupContainer, azureFileName); err != nil {
