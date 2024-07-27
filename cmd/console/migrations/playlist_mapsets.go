@@ -25,7 +25,7 @@ func RunPlaylistMapset() {
 
 	logrus.Infof("Found: %v playlists", len(playlists))
 
-	for index, playlist := range playlists {
+	for _, playlist := range playlists {
 		// Delete playlist mapsets that have zero maps in them
 		for _, playlistMapset := range playlist.Mapsets {
 			if len(playlistMapset.Maps) == 0 {
@@ -42,7 +42,7 @@ func RunPlaylistMapset() {
 			continue
 		}
 
-		logrus.Infof("[%v/%v] Updating Playlist", index+1, len(playlists))
+		// logrus.Infof("[%v/%v] Updating Playlist", index+1, len(playlists))
 
 		for _, songMap := range playlist.Maps {
 			// Check if there's a playlist_mapset with the playlist id and mapset id
