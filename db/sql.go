@@ -18,7 +18,8 @@ const testConfigPath string = "../config.json"
 func ConnectMySQL() {
 	cfg := config.Instance.SQL
 
-	dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=True&loc=Local", cfg.Username, cfg.Password, cfg.Host, cfg.Database)
+	dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true",
+		cfg.Username, cfg.Password, cfg.Host, cfg.Database)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
