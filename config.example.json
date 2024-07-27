@@ -46,7 +46,7 @@
     "resubmission_days": 14
   },
   "bundled_mapsets": [919, 536, 563, 523, 922, 919, 9, 923, 994, 954, 822, 21846],
-  "orders_webhook": "",
+  "events_webhook": "",
   "stripe": {
     "api_key": "",
     "webhook_signing_secret": "",

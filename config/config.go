@@ -65,7 +65,7 @@ type Config struct {
 
 	BundledMapsets []int `json:"bundled_mapsets"`
 
-	OrdersWebhook string `json:"orders_webhook"`
+	EventsWebhook string `json:"events_webhook"`
 
 	Stripe struct {
 		APIKey                  string `json:"api_key"`

@@ -16,7 +16,7 @@ import (
 var (
 	rankingQueue  webhook.Client
 	rankedMapsets webhook.Client
-	orders        webhook.Client
+	events        webhook.Client
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 func InitializeWebhooks() {
 	rankingQueue, _ = webhook.NewWithURL(config.Instance.RankingQueue.Webhook)
 	rankedMapsets, _ = webhook.NewWithURL(config.Instance.RankingQueue.RankedWebhook)
-	orders, _ = webhook.NewWithURL(config.Instance.OrdersWebhook)
+	events, _ = webhook.NewWithURL(config.Instance.EventsWebhook)
 }
 
 // SendQueueSubmitWebhook Sends a webhook displaying that the user submitted a mapset to the ranking queue
@@ -205,7 +205,7 @@ func SendOrderWebhook(purchasedOrders []*db.Order) error {
 		SetColor(0x00FF00).
 		Build()
 
-	_, err := orders.CreateMessage(discord.WebhookMessageCreate{
+	_, err := events.CreateMessage(discord.WebhookMessageCreate{
 		Embeds: []discord.Embed{embed},
 	})
 
@@ -243,7 +243,7 @@ func SendBackupWebhook(successful bool, failureError ...error) error {
 		SetColor(color).
 		Build()
 
-	_, err := orders.CreateMessage(discord.WebhookMessageCreate{
+	_, err := events.CreateMessage(discord.WebhookMessageCreate{
 		Embeds: []discord.Embed{embed},
 	})
 
