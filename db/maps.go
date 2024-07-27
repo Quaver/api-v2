@@ -2,8 +2,10 @@ package db
 
 import (
 	"fmt"
+	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type MapQua struct {
@@ -122,7 +124,7 @@ func UpdateMapMD5(id int, md5 string) error {
 	return result.Error
 }
 
-// Deletes a map from the DB
+// DeleteMap Deletes a map from the DB
 func DeleteMap(id int) error {
 	result := SQL.Delete(&MapQua{}, "id = ?", id)
 	return result.Error
@@ -135,4 +137,25 @@ func UpdateMapDifficultyRating(id int, difficultyRating float64) error {
 		Update("difficulty_rating", difficultyRating)
 
 	return result.Error
+}
+
+func GetBundledMapMd5s() ([]string, error) {
+	md5s := make([]string, 0)
+	bundledStringSlice := make([]string, len(config.Instance.BundledMapsets))
+
+	for i, num := range config.Instance.BundledMapsets {
+		bundledStringSlice[i] = fmt.Sprintf("%d", num)
+	}
+
+	bundled := fmt.Sprintf("(%v)", strings.Join(bundledStringSlice, ", "))
+
+	result := SQL.Raw("SELECT md5 FROM maps " +
+		"INNER JOIN mapsets ON maps.mapset_id = mapsets.id " +
+		"WHERE maps.mapset_id IN " + bundled).Scan(&md5s)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return md5s, nil
 }
