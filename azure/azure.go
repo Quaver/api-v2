@@ -75,10 +75,10 @@ func (c *StorageClient) UploadFile(container string, fileName string, data []byt
 }
 
 // UploadFileFromDisk Uploads a file to azure from disk
-func (c *StorageClient) UploadFileFromDisk(container string, name string, path string, progress pipeline.ProgressReceiver) error {
+func (c *StorageClient) UploadFileFromDisk(container string, name string, path string, tier azblob.AccessTierType) error {
 	containerURL := c.createContainerURL(container)
 	blobURL := containerURL.NewBlockBlobURL(name)
-	ctx := context.Background()
+	ctx := context.WithoutCancel(context.Background())
 
 	file, err := os.Open(path)
 
@@ -89,9 +89,9 @@ func (c *StorageClient) UploadFileFromDisk(container string, name string, path s
 	defer file.Close()
 
 	_, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
-		BlockSize:   azblob.BlockBlobMaxStageBlockBytes,
-		Parallelism: 16,
-		Progress:    progress,
+		BlockSize:      4 * 1024 * 1024,
+		Parallelism:    16,
+		BlobAccessTier: tier,
 	})
 
 	if err != nil {
@@ -138,4 +138,44 @@ func (c *StorageClient) DownloadFile(container string, name string, path string)
 	}
 
 	return downloadedData, nil
+}
+
+// ListBlobs Lists blobs in a given container
+func (c *StorageClient) ListBlobs(container string) ([]string, error) {
+	containerURL := c.createContainerURL(container)
+	ctx := context.Background()
+
+	blobs := make([]string, 0)
+
+	for marker := (azblob.Marker{}); marker.NotDone(); {
+		listBlob, err := containerURL.ListBlobsFlatSegment(ctx, marker, azblob.ListBlobsSegmentOptions{})
+
+		if err != nil {
+			return nil, err
+		}
+
+		marker = listBlob.NextMarker
+
+		// Process the blobs returned in this result segment (if the segment is empty, the loop body won't execute)
+		for _, blobInfo := range listBlob.Segment.BlobItems {
+			blobs = append(blobs, blobInfo.Name)
+		}
+	}
+
+	return blobs, nil
+}
+
+// DeleteBlob Delete a blob from a given container
+func (c *StorageClient) DeleteBlob(container string, fileName string) error {
+	containerURL := c.createContainerURL(container)
+	blobURL := containerURL.NewBlockBlobURL(fileName)
+	ctx := context.Background()
+
+	_, err := blobURL.Delete(ctx, azblob.DeleteSnapshotsOptionNone, azblob.BlobAccessConditions{})
+
+	if err != nil {
+		return nil
+	}
+
+	return nil
 }

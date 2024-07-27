@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/cmd/console/commands"
 	"github.com/Quaver/api2/cmd/console/migrations"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -24,6 +26,8 @@ func main() {
 	db.ConnectMySQL()
 	db.InitializeRedis()
 	db.InitializeElasticSearch()
+	azure.InitializeClient()
+	webhooks.InitializeWebhooks()
 
 	c := cron.New()
 	jobs := config.Instance.Cron
@@ -34,6 +38,8 @@ func main() {
 	registerCronJob(c, jobs.UserRank.Job, func() { commands.UserRankCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.CacheLeaderboard.Job, func() { commands.CacheLeaderboardCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.MigratePlaylists.Job, func() { migrations.MigrationPlaylistMapsetCmd.Run(nil, nil) })
+	registerCronJob(c, jobs.DatabaseBackup.Job, func() { commands.DatabaseBackupCmd.Run(nil, nil) })
+	registerCronJob(c, jobs.DatabaseBackupHourly.Job, func() { commands.DatabaseBackupHourlyCmd.Run(nil, nil) })
 
 	c.Start()
 

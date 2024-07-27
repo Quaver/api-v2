@@ -86,12 +86,14 @@ type Config struct {
 	} `json:"cache_server"`
 
 	Cron struct {
-		DonatorCheck        CronJob `json:"donator_check"`
-		ElasticIndexMapsets CronJob `json:"elastic_index_mapsets"`
-		WeeklyMostPlayed    CronJob `json:"weekly_most_played"`
-		UserRank            CronJob `json:"user_rank"`
-		CacheLeaderboard    CronJob `json:"cache_leaderboard"`
-		MigratePlaylists    CronJob `json:"migrate_playlists"`
+		DonatorCheck         CronJob `json:"donator_check"`
+		ElasticIndexMapsets  CronJob `json:"elastic_index_mapsets"`
+		WeeklyMostPlayed     CronJob `json:"weekly_most_played"`
+		UserRank             CronJob `json:"user_rank"`
+		CacheLeaderboard     CronJob `json:"cache_leaderboard"`
+		MigratePlaylists     CronJob `json:"migrate_playlists"`
+		DatabaseBackup       CronJob `json:"database_backup"`
+		DatabaseBackupHourly CronJob `json:"database_backup_hourly"`
 	} `json:"cron"`
 }
 

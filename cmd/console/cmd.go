@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/cmd/console/commands"
 	"github.com/Quaver/api2/cmd/console/migrations"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -29,6 +31,8 @@ func init() {
 	db.ConnectMySQL()
 	db.InitializeRedis()
 	db.InitializeElasticSearch()
+	azure.InitializeClient()
+	webhooks.InitializeWebhooks()
 
 	// Commands
 	RootCmd.AddCommand(commands.CacheClearCmd)
@@ -38,6 +42,8 @@ func init() {
 	RootCmd.AddCommand(commands.WeeklyMostPlayedMapsetsCmd)
 	RootCmd.AddCommand(commands.UserRankCmd)
 	RootCmd.AddCommand(commands.CacheScoreboardClearCmd)
+	RootCmd.AddCommand(commands.DatabaseBackupCmd)
+	RootCmd.AddCommand(commands.DatabaseBackupHourlyCmd)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)

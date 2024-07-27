@@ -91,6 +91,16 @@
       "enabled": true,
       "name": "Migrates playlists from v1 to v2",
       "schedule": "*/30 * * * *"
+    },
+    "database_backup": {
+      "enabled": true,
+      "name": "Performs a full backup of the DB / 6hrs",
+      "schedule": "0 */6 * * *"
+    },
+    "database_backup_hourly": {
+      "enabled": true,
+      "name": "Performs a full backup of the DB hourly",
+      "schedule": "0 1-5,7-11,13-17,19-23 * * *"
     }
   }
 }
