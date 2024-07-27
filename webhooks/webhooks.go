@@ -243,9 +243,15 @@ func SendBackupWebhook(successful bool, failureError ...error) error {
 		SetColor(color).
 		Build()
 
-	_, err := events.CreateMessage(discord.WebhookMessageCreate{
+	msg := discord.WebhookMessageCreate{
 		Embeds: []discord.Embed{embed},
-	})
+	}
+
+	if !successful {
+		msg.Content = "@everyone"
+	}
+	
+	_, err := events.CreateMessage(msg)
 
 	if err != nil {
 		logrus.Error("Failed to send backup  webhook: ", err)
