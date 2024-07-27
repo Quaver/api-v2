@@ -102,7 +102,7 @@ func SendQueueWebhook(user *db.User, mapset *db.Mapset, action db.RankingQueueAc
 		SetColor(color).
 		Build()
 
-	_, err := rankedMapsets.CreateMessage(discord.WebhookMessageCreate{
+	_, err := rankingQueue.CreateMessage(discord.WebhookMessageCreate{
 		Content: getUserPingText(mapset),
 		Embeds:  []discord.Embed{embed},
 	})
@@ -188,6 +188,10 @@ func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment)
 }
 
 func SendOrderWebhook(purchasedOrders []*db.Order) error {
+	if events == nil {
+		return nil
+	}
+
 	description := "**A new order has been purchased!**"
 
 	for _, order := range purchasedOrders {
@@ -218,6 +222,10 @@ func SendOrderWebhook(purchasedOrders []*db.Order) error {
 }
 
 func SendBackupWebhook(successful bool, failureError ...error) error {
+	if events == nil {
+		return nil
+	}
+
 	var title string
 	var description string
 	var color int
@@ -250,7 +258,7 @@ func SendBackupWebhook(successful bool, failureError ...error) error {
 	if !successful {
 		msg.Content = "@everyone"
 	}
-	
+
 	_, err := events.CreateMessage(msg)
 
 	if err != nil {
