@@ -194,6 +194,8 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/leaderboard/hits", handlers.CreateHandler(handlers.GetTotalHitsLeaderboard))
 
 	// Scores
+	engine.GET("/v2/scores/:md5/stats", middleware.RequireAuth, handlers.CreateHandler(handlers.GetVirtualReplayPlayerOutput))
+
 	engine.GET("/v2/scores/:md5/global", middleware.AllowAuth, handlers.CreateHandler(handlers.GetGlobalScoresForMap))
 	engine.GET("/v2/scores/:md5/country/:country", middleware.RequireAuth, handlers.CreateHandler(handlers.GetCountryScoresForMap))
 	engine.GET("/v2/scores/:md5/mods/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetModifierScoresForMap))
@@ -205,8 +207,6 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/scores/:md5/:user_id/all", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreAll))
 	engine.GET("/v2/scores/:md5/:user_id/mods/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreMods))
 	engine.GET("/v2/scores/:md5/:user_id/rate/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreRate))
-
-	engine.GET("/v2/scores/:id/replaystats", middleware.RequireAuth, handlers.CreateHandler(handlers.GetVirtualReplayPlayerOutput))
 
 	// Pinned Scores
 	engine.POST("/v2/scores/:id/pin", middleware.RequireAuth, handlers.CreateHandler(handlers.CreatePinnedScore))

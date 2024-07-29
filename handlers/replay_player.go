@@ -3,15 +3,17 @@ package handlers
 import (
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/files"
+	"github.com/Quaver/api2/tools"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"net/http"
 	"strconv"
 )
 
 // GetVirtualReplayPlayerOutput Plays the virtual replay player & returns the output
 // Endpoint: GET /v2/scores/:id/stats
 func GetVirtualReplayPlayerOutput(c *gin.Context) *APIError {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("md5")) // Have to name the id as MD5 due to gin limitation...
 
 	if err != nil {
 		return APIErrorBadRequest("Invalid id")
@@ -31,19 +33,37 @@ func GetVirtualReplayPlayerOutput(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Failed scores do not have replay data.")
 	}
 
-	// Cache Map
 	quaPath, err := files.CacheQuaFile(score.Map)
 
 	if err != nil {
 		return APIErrorServerError("Failed to cache qua file", err)
 	}
 
-	// Cache Replay
 	replayPath, err := files.CacheReplay(score.Id)
 
 	if err != nil {
 		return APIErrorServerError("Failed to cache replay file", err)
 	}
 
+	replayStats, err := tools.PlayReplayVirtually(quaPath, replayPath, score.Modifiers)
+
+	if err != nil {
+		return APIErrorServerError("Error playing replay virtually", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"stats": map[string]interface{}{
+			"score":           replayStats.Score,
+			"accuracy":        replayStats.Accuracy,
+			"max_combo":       replayStats.MaxCombo,
+			"count_marvelous": replayStats.CountMarv,
+			"count_perfect":   replayStats.CountPerf,
+			"count_great":     replayStats.CountGreat,
+			"count_good":      replayStats.CountGood,
+			"count_okay":      replayStats.CountOkay,
+			"count_miss":      replayStats.CountMiss,
+		},
+		"deviance": replayStats.Hits,
+	})
 	return nil
 }
