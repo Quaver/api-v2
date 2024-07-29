@@ -125,11 +125,11 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 
 	go func() {
 		if err := createMapsetBanner(zipReader, quaFiles); err != nil {
-			logrus.Error("Error creating mapset banner: ", err)
+			logrus.Warning("Error creating mapset banner: ", err)
 		}
 
 		if err := createAudioPreviewFromZip(zipReader, quaFiles); err != nil {
-			logrus.Error("Error creating audio file: ", err)
+			logrus.Warning("Error creating audio file: ", err)
 		}
 	}()
 
