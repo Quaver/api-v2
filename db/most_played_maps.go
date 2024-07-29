@@ -2,8 +2,6 @@ package db
 
 import (
 	"fmt"
-	"github.com/Quaver/api2/config"
-	"strings"
 	"time"
 )
 
@@ -56,14 +54,29 @@ func GetWeeklyMostPlayedMapsets(ignoreCache bool) ([]*WeeklyMostPlayedMapsets, e
 	var mapsets = make([]*WeeklyMostPlayedMapsets, 0)
 	redisKey := "quaver:weekly_most_played"
 
-	// Convert bundled mapset int slice to string slice, so we can use strings.Join
-	bundledStringSlice := make([]string, len(config.Instance.BundledMapsets))
+	bundledMd5s, err := GetBundledMapMd5s()
 
-	for i, num := range config.Instance.BundledMapsets {
-		bundledStringSlice[i] = fmt.Sprintf("%d", num)
+	if err != nil {
+		return nil, err
 	}
 
-	bundled := fmt.Sprintf("(%v)", strings.Join(bundledStringSlice, ", "))
+	bundled := "("
+
+	for index, md5 := range bundledMd5s {
+		bundled += fmt.Sprintf("'%v'", md5)
+
+		if index != len(bundledMd5s)-1 {
+			bundled += ","
+		}
+	}
+
+	bundled += ")"
+
+	scoreCount, err := GetTotalScoreCountFromRedis()
+
+	if err != nil {
+		return nil, err
+	}
 
 	if err := cacheJsonInRedis(redisKey, &mapsets, time.Hour*24, ignoreCache, func() error {
 		return SQL.Raw("SELECT "+
@@ -72,11 +85,11 @@ func GetWeeklyMostPlayedMapsets(ignoreCache bool) ([]*WeeklyMostPlayedMapsets, e
 			"INNER JOIN "+
 			"maps ON maps.md5 = s.map_md5 "+
 			"WHERE "+
-			"s.timestamp > ? AND maps.mapset_id NOT IN "+bundled+" AND maps.mapset_id != -1 AND maps.ranked_status = 2 "+
+			"s.id > ? - 300000 AND s.map_md5 NOT IN "+bundled+" AND s.is_donator_score = 0 "+
 			"GROUP BY "+
 			"maps.mapset_id "+
 			"ORDER BY COUNT(*) DESC "+
-			"LIMIT 10", time.Now().AddDate(0, 0, -7).UnixMilli()).
+			"LIMIT 10", scoreCount).
 			Scan(&mapsets).Error
 	}); err != nil {
 		return nil, err
