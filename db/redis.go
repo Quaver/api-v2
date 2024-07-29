@@ -51,7 +51,7 @@ func parseRedisIntWithDefault(str string, defaultVal int) int {
 
 // Helper function to cache json data in redis. The data parameter should be a pointer to the object
 // that you're populating
-func cacheJsonInRedis(key string, data interface{}, duration time.Duration, ignoreCache bool, fetch func() error) error {
+func CacheJsonInRedis(key string, data interface{}, duration time.Duration, ignoreCache bool, fetch func() error) error {
 	if !ignoreCache {
 		result, err := Redis.Get(RedisCtx, key).Result()
 

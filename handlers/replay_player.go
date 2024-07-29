@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/files"
 	"github.com/Quaver/api2/tools"
@@ -8,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // GetVirtualReplayPlayerOutput Plays the virtual replay player & returns the output
@@ -45,25 +47,38 @@ func GetVirtualReplayPlayerOutput(c *gin.Context) *APIError {
 		return APIErrorServerError("Failed to cache replay file", err)
 	}
 
-	replayStats, err := tools.PlayReplayVirtually(quaPath, replayPath, score.Modifiers)
+	var data interface{}
+	key := fmt.Sprintf("quaver:score:%v:stats", score.Id)
+
+	err = db.CacheJsonInRedis(key, &data, time.Hour*24, false, func() error {
+		replayStats, err := tools.PlayReplayVirtually(quaPath, replayPath, score.Modifiers)
+
+		if err != nil {
+			return err
+		}
+
+		data = map[string]interface{}{
+			"stats": map[string]interface{}{
+				"score":           replayStats.Score,
+				"accuracy":        replayStats.Accuracy,
+				"max_combo":       replayStats.MaxCombo,
+				"count_marvelous": replayStats.CountMarv,
+				"count_perfect":   replayStats.CountPerf,
+				"count_great":     replayStats.CountGreat,
+				"count_good":      replayStats.CountGood,
+				"count_okay":      replayStats.CountOkay,
+				"count_miss":      replayStats.CountMiss,
+			},
+			"deviance": replayStats.Hits,
+		}
+
+		return nil
+	})
 
 	if err != nil {
-		return APIErrorServerError("Error playing replay virtually", err)
+		return APIErrorServerError("Error getting replay stats", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"stats": map[string]interface{}{
-			"score":           replayStats.Score,
-			"accuracy":        replayStats.Accuracy,
-			"max_combo":       replayStats.MaxCombo,
-			"count_marvelous": replayStats.CountMarv,
-			"count_perfect":   replayStats.CountPerf,
-			"count_great":     replayStats.CountGreat,
-			"count_good":      replayStats.CountGood,
-			"count_okay":      replayStats.CountOkay,
-			"count_miss":      replayStats.CountMiss,
-		},
-		"deviance": replayStats.Hits,
-	})
+	c.JSON(http.StatusOK, data)
 	return nil
 }
