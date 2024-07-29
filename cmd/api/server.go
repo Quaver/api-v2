@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	ratelimit "github.com/JGLTechnologies/gin-rate-limit"
 	"github.com/Quaver/api2/config"
@@ -9,8 +10,12 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"slices"
+	"syscall"
 	"time"
 )
 
@@ -26,9 +31,36 @@ func initializeServer(port int) {
 	initializeRateLimiter(engine)
 	initializeRoutes(engine)
 
-	logrus.Info(fmt.Sprintf("API is now being served on port :%v", port))
-	logrus.Fatal(engine.Run(fmt.Sprintf(":%v", port)))
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%v", port),
+		Handler: engine.Handler(),
+	}
 
+	go func() {
+		logrus.Info(fmt.Sprintf("API is now being served on port :%v", port))
+
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	logrus.Info("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logrus.Fatal("Server Shutdown: ", err)
+	}
+
+	select {
+	case <-ctx.Done():
+		logrus.Infof("Server Shutdown")
+	}
 }
 
 // Initializes the rate limiter for the server
