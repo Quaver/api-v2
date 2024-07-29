@@ -50,7 +50,7 @@ func GetVirtualReplayPlayerOutput(c *gin.Context) *APIError {
 	var data interface{}
 	key := fmt.Sprintf("quaver:score:%v:stats", score.Id)
 
-	err = db.CacheJsonInRedis(key, &data, time.Hour*24, false, func() error {
+	err = db.CacheJsonInRedis(key, &data, time.Hour*1, false, func() error {
 		replayStats, err := tools.PlayReplayVirtually(quaPath, replayPath, score.Modifiers)
 
 		if err != nil {
