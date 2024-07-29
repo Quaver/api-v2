@@ -10,7 +10,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -40,7 +39,7 @@ func initializeServer(port int) {
 		logrus.Info(fmt.Sprintf("API is now being served on port :%v", port))
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			logrus.Fatalf("Listen: %s\n", err)
 		}
 	}()
 
