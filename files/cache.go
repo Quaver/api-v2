@@ -9,6 +9,7 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 )
 
 // CreateDirectories Creates the directories needed for the cache
@@ -39,7 +40,7 @@ func CreateDirectories() {
 // CacheQuaFile Caches a .qua file. Returns the path of the file
 func CacheQuaFile(mapQua *db.MapQua) (string, error) {
 	fileName := fmt.Sprintf("%v.qua", mapQua.Id)
-	path := fmt.Sprintf("%v/%v", getMapsDirectory(), fileName)
+	path, _ := filepath.Abs(fmt.Sprintf("%v/%v", getMapsDirectory(), fileName))
 
 	// Check for existing file & see if md5 hash matches
 	if _, err := os.Stat(path); err == nil {
@@ -85,7 +86,7 @@ func CacheQuaFile(mapQua *db.MapQua) (string, error) {
 // CacheMapset Caches a mapset file and returns the path to it
 func CacheMapset(mapset *db.Mapset) (string, error) {
 	fileName := fmt.Sprintf("%v.qp", mapset.Id)
-	path := fmt.Sprintf("%v/%v", getMapsetDirectory(), fileName)
+	path, _ := filepath.Abs(fmt.Sprintf("%v/%v", getMapsetDirectory(), fileName))
 
 	// Check MD5 hash of existing file
 	if _, err := os.Stat(path); err == nil {
@@ -110,7 +111,7 @@ func CacheMapset(mapset *db.Mapset) (string, error) {
 // CacheReplay Caches a replay file and returns the path to it
 func CacheReplay(scoreId int) (string, error) {
 	fileName := fmt.Sprintf("%v.qr", scoreId)
-	path := fmt.Sprintf("%v/%v", getReplayDirectory(), fileName)
+	path, _ := filepath.Abs(fmt.Sprintf("%v/%v", getReplayDirectory(), fileName))
 
 	if _, err := os.Stat(path); err == nil {
 		return path, nil

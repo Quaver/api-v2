@@ -194,6 +194,8 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/leaderboard/hits", handlers.CreateHandler(handlers.GetTotalHitsLeaderboard))
 
 	// Scores
+	engine.GET("/v2/scores/:md5/stats", middleware.RequireAuth, handlers.CreateHandler(handlers.GetVirtualReplayPlayerOutput))
+
 	engine.GET("/v2/scores/:md5/global", middleware.AllowAuth, handlers.CreateHandler(handlers.GetGlobalScoresForMap))
 	engine.GET("/v2/scores/:md5/country/:country", middleware.RequireAuth, handlers.CreateHandler(handlers.GetCountryScoresForMap))
 	engine.GET("/v2/scores/:md5/mods/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetModifierScoresForMap))
