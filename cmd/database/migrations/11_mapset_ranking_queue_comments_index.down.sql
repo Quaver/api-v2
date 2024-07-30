@@ -1,0 +1,1 @@
+DROP INDEX mapset_ranking_queue_comments_actions_index ON mapset_ranking_queue_comments;

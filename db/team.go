@@ -1,6 +1,9 @@
 package db
 
-import "github.com/Quaver/api2/enums"
+import (
+	"github.com/Quaver/api2/enums"
+	"time"
+)
 
 type Team struct {
 	Developers         []*User `json:"developers"`
@@ -42,4 +45,28 @@ func GetTeamMembers() (*Team, error) {
 	}
 
 	return team, nil
+}
+
+// GetRankingSupervisors Returns users who are Ranking Supervisors
+func GetRankingSupervisors() ([]*User, error) {
+	var users = make([]*User, 0)
+
+	err := CacheJsonInRedis("quaver:supervisors", &users, time.Hour*1, false, func() error {
+		result := SQL.
+			Where("(users.usergroups & ? != 0) AND users.allowed = 1", enums.UserGroupRankingSupervisor).
+			Order("users.id ASC").
+			Find(&users)
+
+		if result.Error != nil {
+			return result.Error
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

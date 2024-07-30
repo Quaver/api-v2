@@ -27,7 +27,7 @@ type MapsetRankingQueueComment struct {
 	Comment             string             `gorm:"comment" json:"comment"`
 	DateLastUpdated     int64              `gorm:"date_last_updated" json:"-"`
 	DateLastUpdatedJSON time.Time          `gorm:"-:all" json:"date_last_updated"`
-	User                *User              `gorm:"foreignKey:UserId; references:Id" json:"user"`
+	User                *User              `gorm:"foreignKey:UserId; references:Id" json:"user,omitempty"`
 }
 
 func (*MapsetRankingQueueComment) TableName() string {
@@ -159,4 +159,19 @@ func GetRankingQueueDenies(mapsetId int) ([]*MapsetRankingQueueComment, error) {
 	}
 
 	return votes, nil
+}
+
+// GetUserRankingQueueComments Retrieves a user's ranking queue comments between two times
+func GetUserRankingQueueComments(userId int, timeStart int64, timeEnd int64) ([]*MapsetRankingQueueComment, error) {
+	var comments = make([]*MapsetRankingQueueComment, 0)
+
+	result := SQL.
+		Where("user_id = ? AND timestamp > ? AND timestamp < ? AND action_type > 0", userId, timeStart, timeEnd).
+		Find(&comments)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return comments, nil
 }
