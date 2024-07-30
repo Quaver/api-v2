@@ -100,6 +100,10 @@ func authenticateJWT(header string) (*db.User, error) {
 	header = strings.Replace(header, "Bearer", "", -1)
 	header = strings.TrimSpace(header)
 
+	if header == "" {
+		return nil, nil
+	}
+
 	jwtToken, err := jwt.ParseWithClaims(header, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(config.Instance.JWTSecret), nil
 	})
