@@ -53,8 +53,6 @@ func GetRankingSupervisors() ([]*User, error) {
 
 	err := CacheJsonInRedis("quaver:supervisors", &users, time.Hour*1, false, func() error {
 		result := SQL.
-			Joins("StatsKeys4").
-			Joins("StatsKeys7").
 			Where("(users.usergroups & ? != 0) AND users.allowed = 1", enums.UserGroupRankingSupervisor).
 			Order("users.id ASC").
 			Find(&users)
