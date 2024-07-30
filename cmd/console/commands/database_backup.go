@@ -36,8 +36,6 @@ var DatabaseBackupCmd = &cobra.Command{
 			return
 		}
 
-		azureFileName := "1.zip"
-
 		blobs, err := azure.Client.ListBlobs(databaseBackupContainer)
 
 		if err != nil {
@@ -45,6 +43,8 @@ var DatabaseBackupCmd = &cobra.Command{
 			_ = webhooks.SendBackupWebhook(false, err)
 			return
 		}
+
+		azureFileName := "001.zip"
 
 		// Get incremented value for azureFileName
 		if len(blobs) > 0 {
@@ -56,7 +56,7 @@ var DatabaseBackupCmd = &cobra.Command{
 				return
 			}
 
-			azureFileName = fmt.Sprintf("%v.zip", fileNumber+1)
+			azureFileName = fmt.Sprintf("%03d.zip", fileNumber+1)
 		}
 
 		if err := performDatabaseBackupBackup(sqlPath, zipPath, databaseBackupContainer, azureFileName); err != nil {
