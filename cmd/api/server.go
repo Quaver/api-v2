@@ -49,7 +49,13 @@ func initializeServer(port int) {
 
 	logrus.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	timeout := 5 * time.Second
+
+	if !config.Instance.IsProduction {
+		timeout = time.Second
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
