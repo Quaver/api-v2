@@ -229,6 +229,10 @@ func GetUserPersonalBestScoreGlobal(c *gin.Context) *APIError {
 		return apiErr
 	}
 
+	if !hasDonatorScoreboardAccess(dbMap, getAuthedUser(c)) {
+		return APIErrorForbidden("You must be a donator to access this score.")
+	}
+
 	userId, err := strconv.Atoi(c.Param("user_id"))
 
 	if err != nil {
@@ -256,6 +260,10 @@ func GetUserPersonalBestScoreAll(c *gin.Context) *APIError {
 
 	if apiErr != nil {
 		return apiErr
+	}
+
+	if !hasDonatorScoreboardAccess(dbMap, getAuthedUser(c)) {
+		return APIErrorForbidden("You must be a donator to access this score.")
 	}
 
 	userId, err := strconv.Atoi(c.Param("user_id"))
@@ -293,6 +301,10 @@ func GetUserPersonalBestScoreMods(c *gin.Context) *APIError {
 		return apiErr
 	}
 
+	if !hasDonatorScoreboardAccess(dbMap, getAuthedUser(c)) {
+		return APIErrorForbidden("You must be a donator to access this score.")
+	}
+
 	userId, err := strconv.Atoi(c.Param("user_id"))
 
 	if err != nil {
@@ -326,6 +338,10 @@ func GetUserPersonalBestScoreRate(c *gin.Context) *APIError {
 
 	if apiErr != nil {
 		return apiErr
+	}
+
+	if !hasDonatorScoreboardAccess(dbMap, getAuthedUser(c)) {
+		return APIErrorForbidden("You must be a donator to access this score.")
 	}
 
 	userId, err := strconv.Atoi(c.Param("user_id"))
