@@ -3,6 +3,7 @@ package commands
 import (
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"time"
@@ -23,19 +24,22 @@ var SupervisorActivityCmd = &cobra.Command{
 			return
 		}
 
-		weekAgo := time.Now().AddDate(0, 0, -7)
+		timeStart := time.Now().AddDate(0, 0, -7).UnixMilli()
+		timeEnd := time.Now().UnixMilli()
+
+		var userActions = map[*db.User]int{}
 
 		for _, supervisor := range supervisors {
-			actions, err := db.GetUserRankingQueueComments(supervisor.Id, weekAgo.UnixMilli(), time.Now().UnixMilli())
+			actions, err := db.GetUserRankingQueueComments(supervisor.Id, timeStart, timeEnd)
 
 			if err != nil {
 				logrus.Error("Error retrieving ranking queue comments: ", err)
 				return
 			}
 
-			const requiredWeeklyActions int = 3
+			userActions[supervisor] = len(actions)
 
-			if len(actions) < requiredWeeklyActions {
+			if len(actions) < 3 {
 				continue
 			}
 
@@ -65,5 +69,7 @@ var SupervisorActivityCmd = &cobra.Command{
 
 			logrus.Infof("[Supervisor Activity] Gave dono group to: %v (#%v)", supervisor.Username, supervisor.Id)
 		}
+
+		_ = webhooks.SendSupervisorActivityWebhook(userActions, timeStart, timeEnd)
 	},
 }

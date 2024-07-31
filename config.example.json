@@ -1,6 +1,7 @@
 {
   "is_production": false,
   "api_url": "https://api.quavergame.com",
+  "website_url": "http://localhost:8081",
   "jwt_secret": "",
   "server": {
     "port": 8080,
@@ -47,6 +48,7 @@
   },
   "bundled_mapsets": [919, 536, 563, 523, 922, 919, 9, 923, 994, 954, 822, 21846],
   "events_webhook": "",
+  "team_announce_webhook": "",
   "stripe": {
     "api_key": "",
     "webhook_signing_secret": "",

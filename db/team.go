@@ -49,13 +49,13 @@ func GetTeamMembers() (*Team, error) {
 
 // GetRankingSupervisors Returns users who are Ranking Supervisors
 func GetRankingSupervisors(ignoreCache bool) ([]*User, error) {
-	var users = make([]*User, 0)
+	var temp = make([]*User, 0)
 
-	err := CacheJsonInRedis("quaver:supervisors", &users, time.Hour*1, ignoreCache, func() error {
+	err := CacheJsonInRedis("quaver:supervisors", &temp, time.Hour*1, ignoreCache, func() error {
 		result := SQL.
 			Where("(users.usergroups & ? != 0) AND users.allowed = 1", enums.UserGroupRankingSupervisor).
 			Order("users.id ASC").
-			Find(&users)
+			Find(&temp)
 
 		if result.Error != nil {
 			return result.Error
@@ -66,6 +66,17 @@ func GetRankingSupervisors(ignoreCache bool) ([]*User, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	var users = make([]*User, 0)
+
+	for _, user := range temp {
+		if enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) ||
+			enums.HasUserGroup(user.UserGroups, enums.UserGroupAdmin) {
+			continue
+		}
+
+		users = append(users, user)
 	}
 
 	return users, nil

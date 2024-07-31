@@ -17,6 +17,7 @@ var (
 	rankingQueue  webhook.Client
 	rankedMapsets webhook.Client
 	events        webhook.Client
+	teamAnnounce  webhook.Client
 )
 
 const (
@@ -27,6 +28,7 @@ func InitializeWebhooks() {
 	rankingQueue, _ = webhook.NewWithURL(config.Instance.RankingQueue.Webhook)
 	rankedMapsets, _ = webhook.NewWithURL(config.Instance.RankingQueue.RankedWebhook)
 	events, _ = webhook.NewWithURL(config.Instance.EventsWebhook)
+	teamAnnounce, _ = webhook.NewWithURL(config.Instance.TeamAnnounceWebhook)
 }
 
 // SendQueueSubmitWebhook Sends a webhook displaying that the user submitted a mapset to the ranking queue
@@ -262,7 +264,52 @@ func SendBackupWebhook(successful bool, failureError ...error) error {
 	_, err := events.CreateMessage(msg)
 
 	if err != nil {
-		logrus.Error("Failed to send backup  webhook: ", err)
+		logrus.Error("Failed to send backup webhook: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func SendSupervisorActivityWebhook(results map[*db.User]int, timeStart int64, timeEnd int64) error {
+	if teamAnnounce == nil {
+		return nil
+	}
+
+	var description = "Below, you can find last week's supervisor activity report. " +
+		"1 week of donator has been automatically given to users with at least 3 actions.\n\n"
+
+	for user, actionCount := range results {
+		var emoji string
+
+		if actionCount >= 3 {
+			emoji = "✅"
+		} else {
+			emoji = "❌"
+		}
+
+		description += fmt.Sprintf("- %v **%v**: %v\n", emoji, user.Username, actionCount)
+	}
+
+	link := fmt.Sprintf("[View](%v/ranking-queue/supervisors/actions?start=%v&end=%v)",
+		config.Instance.WebsiteUrl, timeStart, timeEnd)
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle("📝 Ranking Supervisor Activity Report").
+		SetDescription(description).
+		AddField("Detailed Report", link, false).
+		SetThumbnail(quaverLogo).
+		SetFooter("Quaver", quaverLogo).
+		SetTimestamp(time.Now()).
+		SetColor(0x49E6EF).
+		Build()
+
+	_, err := teamAnnounce.CreateMessage(discord.WebhookMessageCreate{
+		Embeds: []discord.Embed{embed},
+	})
+
+	if err != nil {
+		logrus.Error("Failed to send supervisor webhook: ", err)
 		return err
 	}
 
