@@ -44,7 +44,7 @@ var SupervisorActivityCmd = &cobra.Command{
 			if supervisor.DonatorEndTime == 0 {
 				endTime = time.Now().AddDate(0, 0, 7).UnixMilli()
 			} else {
-				endTime = supervisor.DonatorEndTime + int64(7*24*60*60*1000)
+				endTime = time.UnixMilli(supervisor.DonatorEndTime).AddDate(0, 0, 7).UnixMilli()
 			}
 
 			if err := supervisor.UpdateDonatorEndTime(endTime); err != nil {
