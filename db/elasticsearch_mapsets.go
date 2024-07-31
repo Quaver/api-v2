@@ -18,8 +18,8 @@ import (
 
 type ElasticMapsetSearchOptions struct {
 	Search       string               `form:"search" json:"search"`
-	RankedStatus []enums.RankedStatus `form:"ranked_status" json:"ranked_status"`
-	Mode         []enums.GameMode     `form:"mode" json:"mode"`
+	RankedStatus []enums.RankedStatus `form:"ranked_status[]" json:"ranked_status"`
+	Mode         []enums.GameMode     `form:"mode[]" json:"mode"`
 	Page         int                  `form:"page" json:"page"`
 	Limit        int                  `form:"limit" json:"limit"`
 
