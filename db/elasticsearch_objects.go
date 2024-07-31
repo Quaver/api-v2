@@ -6,6 +6,7 @@ type Query struct {
 	Collapse Collapse               `json:"collapse,omitempty"`
 	Query    BoolQuery              `json:"query,omitempty"`
 	Sort     []map[string]SortOrder `json:"sort,omitempty"`
+	Aggs     interface{}            `json:"aggs"`
 }
 
 type Collapse struct {
