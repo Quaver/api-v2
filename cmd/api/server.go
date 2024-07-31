@@ -43,23 +43,7 @@ func initializeServer(port int) {
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	logrus.Info("Shutting down server...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := server.Shutdown(ctx); err != nil {
-		logrus.Fatal("Server Shutdown: ", err)
-	}
-
-	select {
-	case <-ctx.Done():
-		logrus.Infof("Server Shutdown")
-	}
+	handleGracefulShutdown(server)
 }
 
 // Initializes the rate limiter for the server
@@ -279,4 +263,30 @@ func initializeRoutes(engine *gin.Engine) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
 	})
+}
+
+func handleGracefulShutdown(server *http.Server) {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	logrus.Info("Shutting down server...")
+
+	timeout := 5 * time.Second
+
+	if !config.Instance.IsProduction {
+		timeout = time.Second
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logrus.Fatal("Server Shutdown: ", err)
+	}
+
+	select {
+	case <-ctx.Done():
+		logrus.Infof("Server Shutdown")
+	}
 }
