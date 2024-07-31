@@ -48,10 +48,10 @@ func GetTeamMembers() (*Team, error) {
 }
 
 // GetRankingSupervisors Returns users who are Ranking Supervisors
-func GetRankingSupervisors() ([]*User, error) {
+func GetRankingSupervisors(ignoreCache bool) ([]*User, error) {
 	var users = make([]*User, 0)
 
-	err := CacheJsonInRedis("quaver:supervisors", &users, time.Hour*1, false, func() error {
+	err := CacheJsonInRedis("quaver:supervisors", &users, time.Hour*1, ignoreCache, func() error {
 		result := SQL.
 			Where("(users.usergroups & ? != 0) AND users.allowed = 1", enums.UserGroupRankingSupervisor).
 			Order("users.id ASC").
