@@ -12,6 +12,8 @@ type Config struct {
 
 	APIUrl string `json:"api_url"`
 
+	WebsiteUrl string `json:"website_url"`
+
 	JWTSecret string `json:"jwt_secret"`
 
 	Server struct {
@@ -65,7 +67,8 @@ type Config struct {
 
 	BundledMapsets []int `json:"bundled_mapsets"`
 
-	EventsWebhook string `json:"events_webhook"`
+	EventsWebhook       string `json:"events_webhook"`
+	TeamAnnounceWebhook string `json:"team_announce_webhook"`
 
 	Stripe struct {
 		APIKey                  string `json:"api_key"`
@@ -94,6 +97,7 @@ type Config struct {
 		MigratePlaylists     CronJob `json:"migrate_playlists"`
 		DatabaseBackup       CronJob `json:"database_backup"`
 		DatabaseBackupHourly CronJob `json:"database_backup_hourly"`
+		SupervisorActivity   CronJob `json:"supervisor_activity"`
 	} `json:"cron"`
 }
 

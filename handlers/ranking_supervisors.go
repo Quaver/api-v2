@@ -18,7 +18,7 @@ func GetRankingSupervisorActions(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	supervisors, err := db.GetRankingSupervisors()
+	supervisors, err := db.GetRankingSupervisors(false)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving ranking supervisors from db", err)
