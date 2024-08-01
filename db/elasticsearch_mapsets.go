@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/sliceutil"
 	"github.com/elastic/go-elasticsearch/v8/esutil"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -17,11 +18,13 @@ import (
 )
 
 type ElasticMapsetSearchOptions struct {
-	Search       string               `form:"search" json:"search"`
-	RankedStatus []enums.RankedStatus `form:"ranked_status[]" json:"ranked_status"`
-	Mode         []enums.GameMode     `form:"mode[]" json:"mode"`
-	Page         int                  `form:"page" json:"page"`
-	Limit        int                  `form:"limit" json:"limit"`
+	Search            string               `form:"search" json:"search"`
+	RankedStatus      []enums.RankedStatus `form:"ranked_status" json:"ranked_status"`
+	RankedStatusArray []enums.RankedStatus `form:"ranked_status[]" json:"ranked_status[]"`
+	Mode              []enums.GameMode     `form:"mode" json:"mode"`
+	ModeArray         []enums.GameMode     `form:"mode[]" json:"mode[]"`
+	Page              int                  `form:"page" json:"page"`
+	Limit             int                  `form:"limit" json:"limit"`
 
 	MinDifficultyRating float64 `form:"min_difficulty_rating" json:"min_difficulty_rating"`
 	MaxDifficultyRating float64 `form:"max_difficulty_rating" json:"max_difficulty_rating"`
@@ -45,8 +48,6 @@ type ElasticMapsetSearchOptions struct {
 func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
 	return &ElasticMapsetSearchOptions{
 		Search:              "",
-		RankedStatus:        []enums.RankedStatus{enums.RankedStatusRanked},
-		Mode:                []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7},
 		Limit:               50,
 		MinDifficultyRating: 0,
 		MaxDifficultyRating: math.MaxInt32,
@@ -66,6 +67,21 @@ func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
 		MaxLastUpdated:      math.MaxInt64,
 		Explicit:            false,
 	}
+}
+
+func (options *ElasticMapsetSearchOptions) BindAndValidate() {
+	if options.Limit > 50 {
+		options.Limit = 50
+	}
+
+	options.Mode = sliceutil.BindMultiple(options.Mode, options.ModeArray, []enums.GameMode{
+		enums.GameModeKeys4,
+		enums.GameModeKeys7,
+	})
+
+	options.RankedStatus = sliceutil.BindMultiple(options.RankedStatus, options.RankedStatusArray, []enums.RankedStatus{
+		enums.RankedStatusRanked,
+	})
 }
 
 type ElasticMap struct {
