@@ -5,10 +5,14 @@ import (
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/files"
+	"github.com/Quaver/api2/tools"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -120,11 +124,49 @@ func SubmitMapsetToRankingQueue(c *gin.Context) *APIError {
 		return APIErrorForbidden("You cannot submit any more mapsets to the queue at this time.")
 	}
 
+	automodOk, err := downloadAndRunAutomod(mapset)
+
+	if err != nil {
+		return APIErrorServerError("Error running automod", err)
+	}
+
+	if !automodOk {
+		return APIErrorBadRequest("Your mapset has Auto Mod issues. Please fix them, then try again.")
+	}
+
 	if existingQueueMapset == nil {
 		return addMapsetToRankingQueue(c, mapset)
 	} else {
 		return resubmitMapsetToRankingQueue(c, existingQueueMapset)
 	}
+}
+
+// Runs the automod and returns an error if the mapset is good
+func downloadAndRunAutomod(mapset *db.Mapset) (bool, error) {
+	archivePath, err := files.CacheMapset(mapset)
+
+	if err != nil {
+		return false, err
+	}
+
+	output, _ := filepath.Abs(fmt.Sprintf("%v/%v", files.GetTempDirectory(), time.Now().UnixMilli()))
+
+	if err := files.UnzipArchive(archivePath, output); err != nil {
+		return false, err
+	}
+
+	automod, err := tools.RunAutoMod(output)
+
+	if err != nil {
+		return false, err
+	}
+
+	if automod.HasIssues {
+		return false, nil
+	}
+
+	_ = os.Remove(output)
+	return true, nil
 }
 
 // RemoveFromRankingQueue Allows a user to remove their mapset from the ranking queue (self deny)
