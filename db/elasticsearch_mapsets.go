@@ -334,7 +334,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 
 	query := Query{
 		Size: options.Limit,
-		From: options.Page, // Pages start from 0
+		From: options.Page * options.Limit,
 		Collapse: Collapse{
 			Field: "mapset_id",
 			InnerHits: InnerHits{
