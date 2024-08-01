@@ -141,7 +141,7 @@ func SubmitMapsetToRankingQueue(c *gin.Context) *APIError {
 	}
 }
 
-// Runs the automod and returns an error if the mapset is good
+// Runs the automod and returns if the mapset is ok
 func downloadAndRunAutomod(mapset *db.Mapset) (bool, error) {
 	archivePath, err := files.CacheMapset(mapset)
 
