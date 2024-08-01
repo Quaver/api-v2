@@ -27,3 +27,15 @@ func Keys[M ~map[K]V, K comparable, V any](m M) []K {
 	}
 	return r
 }
+
+func BindMultiple[T any](primary []T, secondary []T, defaults []T) []T {
+	if len(primary) > 0 {
+		return primary
+	}
+
+	if len(secondary) > 0 {
+		return secondary
+	}
+
+	return defaults
+}

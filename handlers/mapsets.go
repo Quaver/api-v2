@@ -348,9 +348,7 @@ func GetMapsetsSearch(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	if body.Limit > 50 {
-		body.Limit = 50
-	}
+	body.BindAndValidate()
 
 	mapsets, total, err := db.SearchElasticMapsets(body)
 
