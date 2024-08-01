@@ -284,7 +284,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		boolQuerySearch := BoolQuery{}
 
 		qs := NewQueryString(options.Search, []string{"title", "artist"}, "OR", 1.0)
-		qs2 := NewQueryString(options.Search, []string{"source", "creator_name", "difficulty_name"}, "OR", 0.8)
+		qs2 := NewQueryString(options.Search, []string{"source", "creator_username", "difficulty_name"}, "OR", 0.8)
 
 		m := map[string]interface{}{
 			"match": map[string]interface{}{
