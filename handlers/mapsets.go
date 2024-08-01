@@ -352,12 +352,12 @@ func GetMapsetsSearch(c *gin.Context) *APIError {
 		body.Limit = 50
 	}
 
-	mapsets, err := db.SearchElasticMapsets(body)
+	mapsets, total, err := db.SearchElasticMapsets(body)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving mapsets from elastic search", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"mapsets": mapsets})
+	c.JSON(http.StatusOK, gin.H{"total": total, "mapsets": mapsets})
 	return nil
 }

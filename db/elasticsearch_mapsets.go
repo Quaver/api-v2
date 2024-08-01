@@ -90,6 +90,11 @@ type ElasticHits struct {
 			} `json:"inner_hits"`
 		} `json:"hits"`
 	} `json:"hits"`
+	Aggregations struct {
+		Distinct struct {
+			Total int `json:"value"`
+		} `json:"distinct_mapset_ids"`
+	} `json:"aggregations"`
 }
 
 // IndexElasticSearchMapset Indexes an individual mapset in elastic
@@ -256,7 +261,7 @@ func IndexAllElasticSearchMapsets(deletePrevious bool) error {
 }
 
 // SearchElasticMapsets Searches ElasticSearch for mapsets
-func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error) {
+func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, error) {
 	boolQuery := BoolQuery{}
 
 	if options.Search != "" {
@@ -329,7 +334,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 
 	query := Query{
 		Size: options.Limit,
-		From: options.Page, // Pages start from 0
+		From: options.Page * options.Limit,
 		Collapse: Collapse{
 			Field: "mapset_id",
 			InnerHits: InnerHits{
@@ -345,12 +350,19 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 			{"_score": {Order: "desc"}},
 			{"date_last_updated": {Order: "desc"}},
 		},
+		Aggs: map[string]interface{}{
+			"distinct_mapset_ids": map[string]interface{}{
+				"cardinality": map[string]interface{}{
+					"field": "mapset_id",
+				},
+			},
+		},
 	}
 
 	queryJSON, err := json.Marshal(query)
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error marshaling the query: %s", err))
+		return nil, 0, errors.New(fmt.Sprintf("Error marshaling the query: %s", err))
 	}
 
 	resp, err := ElasticSearch.Search(
@@ -359,7 +371,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	defer resp.Body.Close()
@@ -367,13 +379,13 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	var hits ElasticHits
 
 	if err := json.Unmarshal(body, &hits); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	var mapsets = make([]*Mapset, 0)
@@ -406,5 +418,5 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, error
 		}
 	}
 
-	return mapsets, nil
+	return mapsets, hits.Aggregations.Distinct.Total, nil
 }
