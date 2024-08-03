@@ -89,6 +89,10 @@ func LeaveClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting clan activity", err)
 	}
 
+	if err := db.RemoveUserClanScores(clan.Id, user.Id); err != nil {
+		return APIErrorServerError("Error removing user clan scores", err)
+	}
+
 	if err := db.PerformFullClanRecalculation(clan.Id); err != nil {
 		return APIErrorServerError("Error performing full clan recalc", err)
 	}
@@ -138,6 +142,10 @@ func KickClanMember(c *gin.Context) *APIError {
 
 	if err := db.NewClanKickedNotification(target.Clan, target.TargetUser.Id).Insert(); err != nil {
 		return APIErrorServerError("Error inserting clan kicked notification", err)
+	}
+
+	if err := db.RemoveUserClanScores(target.Clan.Id, target.TargetUser.Id); err != nil {
+		return APIErrorServerError("Error removing user clan scores", err)
 	}
 
 	if err := db.PerformFullClanRecalculation(target.Clan.Id); err != nil {

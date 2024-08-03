@@ -563,6 +563,13 @@ func GetClanPlayerScoresOnMap(md5 string, clanId int) ([]*Score, error) {
 	return scores, nil
 }
 
+// RemoveUserClanScores Removes all user scores from a clan
+func RemoveUserClanScores(clanId int, userId int) error {
+	return SQL.Model(&Score{}).
+		Where("user_id = ? AND clan_id = ?", userId, clanId).
+		Update("clan_id", nil).Error
+}
+
 // CalculateOverallRating Calculates overall rating from a list of scores
 func CalculateOverallRating(scores []*Score) float64 {
 	if len(scores) == 0 {
