@@ -1,6 +1,8 @@
 package db
 
-import "github.com/Quaver/api2/enums"
+import (
+	"github.com/Quaver/api2/enums"
+)
 
 type ClanStats struct {
 	ClanId                   int            `gorm:"column:clan_id" json:"clan_id"`
@@ -32,6 +34,37 @@ func GetClanStatsByMode(id int, mode enums.GameMode) (*ClanStats, error) {
 	}
 
 	return &stats, nil
+}
+
+// PerformFullClanRecalculation Recalculates all of a clan's scores + stats
+func PerformFullClanRecalculation(clanId int) error {
+	for i := 1; i <= 2; i++ {
+		clanScores, err := GetClanScoresForMode(clanId, enums.GameMode(i))
+
+		if err != nil {
+			return err
+		}
+
+		for _, clanScore := range clanScores {
+			newScore, err := CalculateClanScore(clanScore.MapMD5, clanId, clanScore.Mode)
+
+			if err != nil {
+				return err
+			}
+
+			newScore.Id = clanScore.Id
+
+			if err := SQL.Save(&newScore).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := RecalculateClanStats(clanId, enums.GameMode(i)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // RecalculateClanStats Recalculates a clan stats for a given mode.

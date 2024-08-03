@@ -157,6 +157,12 @@ func UnbanUser(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting admin action log", err)
 	}
 
+	if targetUser.ClanId != nil {
+		if err := db.PerformFullClanRecalculation(*targetUser.ClanId); err != nil {
+			return APIErrorServerError("Error performing full recalc on clan", err)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "User has been successfully unbanned."})
 	return nil
 }
@@ -213,6 +219,12 @@ func BanUser(c *gin.Context) *APIError {
 
 	if err := log.Insert(); err != nil {
 		return APIErrorServerError("Error inserting admin action log", err)
+	}
+
+	if targetUser.ClanId != nil {
+		if err := db.PerformFullClanRecalculation(*targetUser.ClanId); err != nil {
+			return APIErrorServerError("Error performing full recalc on clan after ban", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "User has been successfully banned."})
