@@ -81,9 +81,11 @@ func consumeScores() {
 				score.User.Username, score.User.Id, score.Map.Id, score.Map.DifficultyRating,
 				score.Score.Id, score.Score.PerformanceRating, score.Score.Accuracy)
 
-			if err := insertClanScore(&score); err != nil {
-				logrus.Error("Error inserting clan score: ", err)
-			}
+			go func() {
+				if err := insertClanScore(&score); err != nil {
+					logrus.Error("Error inserting clan score: ", err)
+				}
+			}()
 
 			db.Redis.XAck(db.RedisCtx, subject, consumersGroup, messageID)
 		}
