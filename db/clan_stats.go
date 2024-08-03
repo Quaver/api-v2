@@ -21,6 +21,19 @@ func (*ClanStats) TableName() string {
 	return "clan_stats"
 }
 
+func (cs *ClanStats) Save() error {
+	return SQL.Model(&ClanStats{}).
+		Where("clan_id = ? AND mode = ?", cs.ClanId, cs.Mode).
+		Update("overall_accuracy", cs.OverallAccuracy).
+		Update("overall_performance_rating", cs.OverallPerformanceRating).
+		Update("total_marv", cs.TotalMarv).
+		Update("total_perf", cs.TotalPerf).
+		Update("total_great", cs.TotalGreat).
+		Update("total_good", cs.TotalGood).
+		Update("total_okay", cs.TotalOkay).
+		Update("total_miss", cs.TotalMiss).Error
+}
+
 // GetClanStatsByMode Retrieves clan stats by its game mode
 func GetClanStatsByMode(id int, mode enums.GameMode) (*ClanStats, error) {
 	var stats ClanStats
@@ -99,5 +112,5 @@ func RecalculateClanStats(id int, mode enums.GameMode, newScore ...*RedisScore) 
 	stats.OverallPerformanceRating = CalculateOverallRating(convertedScores)
 	stats.OverallAccuracy = CalculateOverallAccuracy(convertedScores)
 
-	return SQL.Where("clan_id = ? AND mode = ?", id, mode).Save(&stats).Error
+	return stats.Save()
 }
