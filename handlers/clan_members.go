@@ -89,6 +89,10 @@ func LeaveClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting clan activity", err)
 	}
 
+	if err := db.PerformFullClanRecalculation(clan.Id); err != nil {
+		return APIErrorServerError("Error performing full clan recalc", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully left the clan."})
 	logrus.Debugf("%v (#%v) has left the clan: %v (#%v)", user.Username, user.Id, clan.Name, clan.Id)
 	return nil
@@ -134,6 +138,10 @@ func KickClanMember(c *gin.Context) *APIError {
 
 	if err := db.NewClanKickedNotification(target.Clan, target.TargetUser.Id).Insert(); err != nil {
 		return APIErrorServerError("Error inserting clan kicked notification", err)
+	}
+
+	if err := db.PerformFullClanRecalculation(target.Clan.Id); err != nil {
+		return APIErrorServerError("Error performing full clan recalc", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully kicked that user from the clan."})
