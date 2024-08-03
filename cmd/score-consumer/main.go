@@ -9,6 +9,7 @@ import (
 	"github.com/Quaver/api2/webhooks"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"os"
 	"os/signal"
 	"syscall"
@@ -80,7 +81,45 @@ func consumeScores() {
 				score.User.Username, score.User.Id, score.Map.Id, score.Map.DifficultyRating,
 				score.Score.Id, score.Score.PerformanceRating, score.Score.Accuracy)
 
+			if err := insertClanScore(&score); err != nil {
+				logrus.Error("Error inserting clan score: ", err)
+			}
+
 			db.Redis.XAck(db.RedisCtx, subject, consumersGroup, messageID)
 		}
 	}
+}
+
+// Handles the insertion of a new clan score
+func insertClanScore(score *db.RedisScore) error {
+	if !score.Map.ClanRanked || score.User.ClanId <= 0 {
+		return nil
+	}
+
+	existingScore, err := db.GetClanScore(score.Map.MD5, score.User.ClanId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return err
+	}
+
+	newScore, err := db.CalculateClanScore(score.Map.MD5, score.User.ClanId, score.Map.GameMode)
+
+	if err != nil {
+		return err
+	}
+
+	// Make sure the id is the same on the newly calculated score, so it can be upserted properly.
+	if existingScore != nil {
+		newScore.Id = existingScore.Id
+	}
+
+	if err := db.SQL.Save(&newScore).Error; err != nil {
+		return err
+	}
+
+	if err := db.RecalculateClanStats(score.User.ClanId, score.Map.GameMode, score); err != nil {
+		return err
+	}
+
+	return nil
 }
