@@ -4,14 +4,25 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/enums"
 	"sort"
+	"strconv"
 	"strings"
 )
 
+func GlobalLeaderboardRedisKey(mode enums.GameMode) string {
+	return fmt.Sprintf("quaver:leaderboard:%v", mode)
+}
+
+func CountryLeaderboardRedisKey(country string, mode enums.GameMode) string {
+	return fmt.Sprintf("quaver:country_leaderboard:%v:%v", strings.ToLower(country), mode)
+}
+
+func TotalHitsLeaderboardRedisKey() string {
+	return "quaver:leaderboard:total_hits_global"
+}
+
 // GetGlobalLeaderboard Retrieves the global leaderboard for a specific game mode
 func GetGlobalLeaderboard(mode enums.GameMode, page int, limit int) ([]*User, error) {
-	key := fmt.Sprintf("quaver:leaderboard:%v", mode)
-
-	users, err := getLeaderboardUsers(key, page, limit)
+	users, err := getLeaderboardUsers(GlobalLeaderboardRedisKey(mode), page, limit)
 
 	if err != nil {
 		return []*User{}, err
@@ -33,9 +44,7 @@ func GetGlobalLeaderboard(mode enums.GameMode, page int, limit int) ([]*User, er
 
 // GetCountryLeaderboard Retrieves the country leaderboard for a given country and mode
 func GetCountryLeaderboard(country string, mode enums.GameMode, page int, limit int) ([]*User, error) {
-	key := fmt.Sprintf("quaver:country_leaderboard:%v:%v", strings.ToLower(country), mode)
-
-	users, err := getLeaderboardUsers(key, page, limit)
+	users, err := getLeaderboardUsers(CountryLeaderboardRedisKey(country, mode), page, limit)
 
 	if err != nil {
 		return []*User{}, err
@@ -57,7 +66,7 @@ func GetCountryLeaderboard(country string, mode enums.GameMode, page int, limit 
 
 // GetTotalHitsLeaderboard  Retrieves the total hits leaderboard for a specific game mode
 func GetTotalHitsLeaderboard(page int, limit int) ([]*User, error) {
-	users, err := getLeaderboardUsers("quaver:leaderboard:total_hits_global", page, limit)
+	users, err := getLeaderboardUsers(TotalHitsLeaderboardRedisKey(), page, limit)
 
 	if err != nil {
 		return []*User{}, err
@@ -95,4 +104,27 @@ func getLeaderboardUsers(key string, page int, limit int) ([]*User, error) {
 	}
 
 	return users, nil
+}
+
+// RemoveUserFromLeaderboards Removes a user from all leaderboards
+func RemoveUserFromLeaderboards(user *User) error {
+	for i := 1; i <= 2; i++ {
+		mode := enums.GameMode(i)
+		global := GlobalLeaderboardRedisKey(mode)
+		country := CountryLeaderboardRedisKey(user.Country, mode)
+
+		if err := Redis.ZRem(RedisCtx, global, strconv.Itoa(user.Id)).Err(); err != nil {
+			return err
+		}
+
+		if err := Redis.ZRem(RedisCtx, country, strconv.Itoa(user.Id)).Err(); err != nil {
+			return err
+		}
+	}
+
+	if err := Redis.ZRem(RedisCtx, TotalHitsLeaderboardRedisKey(), strconv.Itoa(user.Id)).Err(); err != nil {
+		return err
+	}
+
+	return nil
 }

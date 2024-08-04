@@ -221,6 +221,10 @@ func BanUser(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting admin action log", err)
 	}
 
+	if err := db.RemoveUserFromLeaderboards(targetUser); err != nil {
+		return APIErrorServerError("Error removing user from leaderboards", err)
+	}
+
 	if targetUser.ClanId != nil {
 		if err := db.PerformFullClanRecalculation(*targetUser.ClanId); err != nil {
 			return APIErrorServerError("Error performing full recalc on clan after ban", err)
