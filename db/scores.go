@@ -6,6 +6,7 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
+	"math"
 	"time"
 )
 
@@ -287,7 +288,7 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 			  AND (mods & ?) != 0
 			GROUP BY user_id
 		)
-		%v`, getSelectUserScoreboardQuery()), md5, mods).
+		%v`, getSelectUserScoreboardQuery(100)), md5, mods).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -343,7 +344,7 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 			  %v
 			GROUP BY user_id
 		)
-		%v`, modsQuery, getSelectUserScoreboardQuery()), md5, mods).
+		%v`, modsQuery, getSelectUserScoreboardQuery(100)), md5, mods).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -389,7 +390,7 @@ func GetAllScoresForMap(md5 string) ([]*Score, error) {
 			  AND failed = 0
 			GROUP BY user_id
 		)
-		%v`, getSelectUserScoreboardQuery()), md5).
+		%v`, getSelectUserScoreboardQuery(100)), md5).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -541,6 +542,71 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 	return score, nil
 }
 
+// GetClanPlayerScoresOnMap Fetches the top 10 scores from a clan on a given map
+func GetClanPlayerScoresOnMap(md5 string, clanId int) ([]*Score, error) {
+	scores := make([]*Score, 0)
+
+	result := SQL.Raw(fmt.Sprintf(`
+		WITH MaxRatings AS (
+			SELECT user_id, MAX(performance_rating) AS max_performance_rating
+			FROM scores
+			WHERE map_md5 = ? AND clan_id = ? AND failed = 0
+			GROUP BY user_id
+		)
+		%v`, getSelectUserScoreboardQuery(10)), md5, clanId).
+		Scan(&scores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return scores, nil
+}
+
+// RemoveUserClanScores Removes all user scores from a clan
+func RemoveUserClanScores(clanId int, userId int) error {
+	return SQL.Model(&Score{}).
+		Where("user_id = ? AND clan_id = ?", userId, clanId).
+		Update("clan_id", nil).Error
+}
+
+// CalculateOverallRating Calculates overall rating from a list of scores
+func CalculateOverallRating(scores []*Score) float64 {
+	if len(scores) == 0 {
+		return 0
+	}
+
+	sum := 0.00
+
+	for i, score := range scores {
+		sum += score.PerformanceRating * math.Pow(0.95, float64(i))
+	}
+
+	return sum
+}
+
+// CalculateOverallAccuracy Calculates overall accuracy from a list of scores
+func CalculateOverallAccuracy(scores []*Score) float64 {
+	if len(scores) == 0 {
+		return 0
+	}
+
+	var total float64
+	var divideTotal float64
+
+	for i, score := range scores {
+		add := math.Pow(0.95, float64(i)) * 100
+		total += score.Accuracy * add
+		divideTotal += add
+	}
+
+	if divideTotal == 0 {
+		return 0
+	}
+
+	return total / divideTotal
+}
+
 type scoreboardType string
 
 const (
@@ -621,8 +687,8 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*
 }
 
 // Returns a query to select user scores from non personal best scoreboards.
-func getSelectUserScoreboardQuery() string {
-	return `
+func getSelectUserScoreboardQuery(limit int) string {
+	query := `
 		SELECT s.user_id,
 			   s.*,
 			   u.id AS User__id,
@@ -651,5 +717,8 @@ func getSelectUserScoreboardQuery() string {
 		JOIN users u ON s.user_id = u.id
 		WHERE u.allowed = 1
 		ORDER BY s.performance_rating DESC
-		LIMIT 100;`
+		LIMIT`
+
+	query += fmt.Sprintf(" %v;", limit)
+	return query
 }
