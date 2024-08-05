@@ -543,7 +543,7 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 }
 
 // GetClanPlayerScoresOnMap Fetches the top 10 scores from a clan on a given map
-func GetClanPlayerScoresOnMap(md5 string, clanId int) ([]*Score, error) {
+func GetClanPlayerScoresOnMap(md5 string, clanId int, callAfterFind bool) ([]*Score, error) {
 	scores := make([]*Score, 0)
 
 	result := SQL.Raw(fmt.Sprintf(`
@@ -558,6 +558,13 @@ func GetClanPlayerScoresOnMap(md5 string, clanId int) ([]*Score, error) {
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	if callAfterFind {
+		for _, score := range scores {
+			_ = score.AfterFind(nil)
+			_ = score.User.AfterFind(nil)
+		}
 	}
 
 	return scores, nil

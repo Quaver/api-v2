@@ -101,6 +101,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Clan Scores
 	engine.GET("/v2/clan/:id/scores/:mode", handlers.CreateHandler(handlers.GetClanScoresForMode))
+	engine.GET("/v2/clan/scores/:id", handlers.CreateHandler(handlers.GetUserScoresForClanScore))
 
 	// Users
 	engine.POST("/v2/user", handlers.CreateHandler(handlers.RegisterNewUser))

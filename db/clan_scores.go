@@ -52,6 +52,21 @@ func GetClanScore(md5 string, clanId int) (*ClanScore, error) {
 	return &score, nil
 }
 
+// GetClanScoreById Retrieves a clan score by id
+func GetClanScoreById(id int) (*ClanScore, error) {
+	var score ClanScore
+
+	result := SQL.
+		Where("id = ?", id).
+		First(&score)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &score, nil
+}
+
 // GetClanScoresForMode Retrieves all clan scores for a given mode
 func GetClanScoresForMode(clanId int, mode enums.GameMode) ([]*ClanScore, error) {
 	clanScores := make([]*ClanScore, 0)
@@ -90,7 +105,7 @@ func GetClanScoresForModeFull(clanId int, mode enums.GameMode, page int) ([]*Cla
 
 // CalculateClanScore Calculates a clan score for a given map
 func CalculateClanScore(md5 string, clanId int, mode enums.GameMode) (*ClanScore, error) {
-	scores, err := GetClanPlayerScoresOnMap(md5, clanId)
+	scores, err := GetClanPlayerScoresOnMap(md5, clanId, false)
 
 	if err != nil {
 		return nil, err
