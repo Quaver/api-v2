@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/Quaver/api2/db"
-	"github.com/Quaver/api2/enums"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -36,11 +35,9 @@ var CacheClanLeaderboard = &cobra.Command{
 			}
 
 			for _, clan := range clans {
-				for i := 1; i <= 2; i++ {
-					if err := db.UpdateClanLeaderboard(clan, enums.GameMode(i)); err != nil {
-						logrus.Error(err)
-						return
-					}
+				if err := db.UpdateAllClanLeaderboards(clan); err != nil {
+					logrus.Error(err)
+					return
 				}
 			}
 

@@ -99,9 +99,6 @@ func PerformFullClanRecalculation(clan *Clan) error {
 			return err
 		}
 
-		if err := UpdateClanLeaderboard(clan, mode); err != nil {
-			return err
-		}
 	}
 
 	return nil

@@ -82,6 +82,10 @@ func CreateClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting clan activity", err)
 	}
 
+	if err := db.UpdateAllClanLeaderboards(&clan); err != nil {
+		return APIErrorServerError("Error adding clan to leaderboard", err)
+	}
+
 	c.JSON(http.StatusOK, struct {
 		Message string   `json:"message"`
 		Clan    *db.Clan `json:"clan"`

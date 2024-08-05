@@ -51,6 +51,19 @@ func UpdateClanLeaderboard(clan *Clan, mode enums.GameMode) error {
 	}).Err()
 }
 
+// UpdateAllClanLeaderboards Updates the clan leaderboards for every mode
+func UpdateAllClanLeaderboards(clan *Clan) error {
+	for i := 1; i <= 2; i++ {
+		mode := enums.GameMode(i)
+
+		if err := UpdateClanLeaderboard(clan, mode); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // RemoveClanFromLeaderboards Removes a clan from a given leaderboard
 func RemoveClanFromLeaderboards(clanId int) error {
 	for i := 1; i <= 2; i++ {
