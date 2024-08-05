@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/Quaver/api2/enums"
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"strconv"
 )
@@ -29,13 +30,12 @@ func (cs *ClanStats) AfterFind(*gorm.DB) error {
 	result, err := Redis.ZRevRank(RedisCtx, ClanLeaderboardKey(cs.Mode), strconv.Itoa(cs.ClanId)).Result()
 
 	if err != nil {
-		// Rank does not exist in the database
-		if err == redis.Nil {
-			cs.Rank = -1
+		if err != redis.Nil {
+			logrus.Error("Error fetching clan rank", err)
 		}
 
 		cs.Rank = -1
-		return err
+		return nil
 	}
 
 	cs.Rank = int(result) + 1
