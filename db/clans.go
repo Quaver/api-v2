@@ -126,6 +126,10 @@ func DeleteClan(id int) error {
 			return err
 		}
 
+		if err := tx.Model(&Score{}).Where("clan_id = ?", id).Update("clan_id", nil).Error; err != nil {
+			return err
+		}
+
 		return nil
 	})
 
