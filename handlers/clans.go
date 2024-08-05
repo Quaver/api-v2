@@ -242,6 +242,10 @@ func DeleteClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error while deleting clan", err)
 	}
 
+	if err := db.RemoveClanFromLeaderboards(clan.Id); err != nil {
+		return APIErrorServerError("Error removing clan from leaderboard", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully deleted."})
 	logrus.Debugf("%v (#%v) has deleted the clan: `%v` (#%v).", user.Username, user.Id, clan.Name, clan.Id)
 	return nil

@@ -93,7 +93,7 @@ func LeaveClan(c *gin.Context) *APIError {
 		return APIErrorServerError("Error removing user clan scores", err)
 	}
 
-	if err := db.PerformFullClanRecalculation(clan.Id); err != nil {
+	if err := db.PerformFullClanRecalculation(clan); err != nil {
 		return APIErrorServerError("Error performing full clan recalc", err)
 	}
 
@@ -148,7 +148,7 @@ func KickClanMember(c *gin.Context) *APIError {
 		return APIErrorServerError("Error removing user clan scores", err)
 	}
 
-	if err := db.PerformFullClanRecalculation(target.Clan.Id); err != nil {
+	if err := db.PerformFullClanRecalculation(target.Clan); err != nil {
 		return APIErrorServerError("Error performing full clan recalc", err)
 	}
 

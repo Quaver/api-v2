@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
@@ -158,7 +159,13 @@ func UnbanUser(c *gin.Context) *APIError {
 	}
 
 	if targetUser.ClanId != nil {
-		if err := db.PerformFullClanRecalculation(*targetUser.ClanId); err != nil {
+		clan, err := db.GetClanById(*targetUser.ClanId)
+
+		if err != nil {
+			return APIErrorServerError(fmt.Sprintf("Error fetching clan for user: #%v", targetUser.Id), err)
+		}
+
+		if err := db.PerformFullClanRecalculation(clan); err != nil {
 			return APIErrorServerError("Error performing full recalc on clan", err)
 		}
 	}
@@ -226,7 +233,13 @@ func BanUser(c *gin.Context) *APIError {
 	}
 
 	if targetUser.ClanId != nil {
-		if err := db.PerformFullClanRecalculation(*targetUser.ClanId); err != nil {
+		clan, err := db.GetClanById(*targetUser.ClanId)
+
+		if err != nil {
+			return APIErrorServerError(fmt.Sprintf("Error fetching clan for user: #%v", targetUser.Id), err)
+		}
+
+		if err := db.PerformFullClanRecalculation(clan); err != nil {
 			return APIErrorServerError("Error performing full recalc on clan after ban", err)
 		}
 	}

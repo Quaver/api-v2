@@ -112,3 +112,27 @@ func GetTotalHitsLeaderboard(c *gin.Context) *APIError {
 
 	return nil
 }
+
+// GetClanLeaderboard Retrieves the clan leaderboard for a given game mode
+func GetClanLeaderboard(c *gin.Context) *APIError {
+	mode, err := strconv.Atoi(c.Query("mode"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must supply a valid `mode` query parameter.")
+	}
+
+	page, err := strconv.Atoi(c.Query("page"))
+
+	if err != nil {
+		page = 0
+	}
+
+	clans, err := db.GetClanLeaderboardForMode(enums.GameMode(mode), page, 50)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving clan leaderboard", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"clans": clans})
+	return nil
+}

@@ -180,6 +180,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/leaderboard/global", handlers.CreateHandler(handlers.GetGlobalLeaderboardForMode))
 	engine.GET("/v2/leaderboard/country", handlers.CreateHandler(handlers.GetCountryLeaderboard))
 	engine.GET("/v2/leaderboard/hits", handlers.CreateHandler(handlers.GetTotalHitsLeaderboard))
+	engine.GET("/v2/leaderboard/clans", handlers.CreateHandler(handlers.GetClanLeaderboard))
 
 	// Scores
 	engine.GET("/v2/scores/:md5/stats", middleware.RequireAuth, handlers.CreateHandler(handlers.GetVirtualReplayPlayerOutput))

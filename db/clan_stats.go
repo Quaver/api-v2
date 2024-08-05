@@ -2,11 +2,15 @@ package db
 
 import (
 	"github.com/Quaver/api2/enums"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
+	"strconv"
 )
 
 type ClanStats struct {
-	ClanId                   int            `gorm:"column:clan_id" json:"clan_id"`
+	ClanId                   int            `gorm:"column:clan_id" json:"-"`
 	Mode                     enums.GameMode `gorm:"column:mode" json:"mode"`
+	Rank                     int            `gorm:"-:all" json:"rank"`
 	OverallAccuracy          float64        `gorm:"column:overall_accuracy" json:"overall_accuracy"`
 	OverallPerformanceRating float64        `gorm:"column:overall_performance_rating" json:"overall_performance_rating"`
 	TotalMarv                int            `gorm:"column:total_marv" json:"total_marv"`
@@ -19,6 +23,23 @@ type ClanStats struct {
 
 func (*ClanStats) TableName() string {
 	return "clan_stats"
+}
+
+func (cs *ClanStats) AfterFind(*gorm.DB) error {
+	result, err := Redis.ZRevRank(RedisCtx, ClanLeaderboardKey(cs.Mode), strconv.Itoa(cs.ClanId)).Result()
+
+	if err != nil {
+		// Rank does not exist in the database
+		if err == redis.Nil {
+			cs.Rank = -1
+		}
+
+		cs.Rank = -1
+		return err
+	}
+
+	cs.Rank = int(result) + 1
+	return nil
 }
 
 func (cs *ClanStats) Save() error {
@@ -50,16 +71,18 @@ func GetClanStatsByMode(id int, mode enums.GameMode) (*ClanStats, error) {
 }
 
 // PerformFullClanRecalculation Recalculates all of a clan's scores + stats
-func PerformFullClanRecalculation(clanId int) error {
+func PerformFullClanRecalculation(clan *Clan) error {
 	for i := 1; i <= 2; i++ {
-		clanScores, err := GetClanScoresForMode(clanId, enums.GameMode(i))
+		mode := enums.GameMode(i)
+
+		clanScores, err := GetClanScoresForMode(clan.Id, mode)
 
 		if err != nil {
 			return err
 		}
 
 		for _, clanScore := range clanScores {
-			newScore, err := CalculateClanScore(clanScore.MapMD5, clanId, clanScore.Mode)
+			newScore, err := CalculateClanScore(clanScore.MapMD5, clan.Id, clanScore.Mode)
 
 			if err != nil {
 				return err
@@ -72,7 +95,11 @@ func PerformFullClanRecalculation(clanId int) error {
 			}
 		}
 
-		if err := RecalculateClanStats(clanId, enums.GameMode(i)); err != nil {
+		if err := RecalculateClanStats(clan.Id, mode); err != nil {
+			return err
+		}
+
+		if err := UpdateClanLeaderboard(clan, mode); err != nil {
 			return err
 		}
 	}
