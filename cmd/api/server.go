@@ -99,6 +99,9 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/clan/avatar", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadClanAvatar))
 	engine.POST("/v2/clan/banner", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadClanBanner))
 
+	// Clan Scores
+	engine.GET("/v2/clan/:id/scores/:mode", handlers.CreateHandler(handlers.GetClanScoresForMode))
+
 	// Users
 	engine.POST("/v2/user", handlers.CreateHandler(handlers.RegisterNewUser))
 	engine.GET("/v2/user/:id", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUser))

@@ -2,21 +2,29 @@ package db
 
 import (
 	"github.com/Quaver/api2/enums"
+	"gorm.io/gorm"
 	"time"
 )
 
 type ClanScore struct {
-	Id              int            `gorm:"column:id; PRIMARY_KEY"`
-	ClanId          int            `gorm:"column:clan_id"`
-	MapMD5          string         `gorm:"column:map_md5"`
-	Mode            enums.GameMode `gorm:"column:mode"`
-	OverallRating   float64        `gorm:"column:overall_rating"`
-	OverallAccuracy float64        `gorm:"column:overall_accuracy"`
-	Timestamp       int64          `gorm:"column:timestamp"`
+	Id              int            `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	ClanId          int            `gorm:"column:clan_id" json:"-"`
+	MapMD5          string         `gorm:"column:map_md5" json:"-"`
+	Mode            enums.GameMode `gorm:"column:mode" json:"-"`
+	OverallRating   float64        `gorm:"column:overall_rating" json:"overall_rating"`
+	OverallAccuracy float64        `gorm:"column:overall_accuracy" json:"overall_accuracy"`
+	Timestamp       int64          `gorm:"column:timestamp" json:"-"`
+	TimestampJSON   time.Time      `gorm:"-:all" json:"timestamp"`
+	Map             *MapQua        `gorm:"foreignKey:MapMD5; references:MD5" json:"map,omitempty"`
 }
 
 func (*ClanScore) TableName() string {
 	return "clan_scores"
+}
+
+func (cs *ClanScore) AfterFind(*gorm.DB) error {
+	cs.TimestampJSON = time.UnixMilli(cs.Timestamp)
+	return nil
 }
 
 // ToScore Converts a clan score to a traditional score object, so we can reuse functions to calculate rating/acc
@@ -50,6 +58,27 @@ func GetClanScoresForMode(clanId int, mode enums.GameMode) ([]*ClanScore, error)
 
 	result := SQL.
 		Where("clan_id = ? AND mode = ?", clanId, mode).
+		Find(&clanScores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return clanScores, nil
+}
+
+// GetClanScoresForModeFull Retrieves clan scores with full data
+func GetClanScoresForModeFull(clanId int, mode enums.GameMode, page int) ([]*ClanScore, error) {
+	clanScores := make([]*ClanScore, 0)
+
+	const limit int = 50
+
+	result := SQL.
+		Preload("Map").
+		Where("clan_id = ? AND mode = ?", clanId, mode).
+		Order("overall_rating DESC").
+		Offset(page * limit).
+		Limit(limit).
 		Find(&clanScores)
 
 	if result.Error != nil {
