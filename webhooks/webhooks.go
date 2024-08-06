@@ -282,7 +282,7 @@ func SendSupervisorActivityWebhook(results map[*db.User]int, timeStart int64, ti
 	for user, actionCount := range results {
 		var emoji string
 
-		if actionCount >= 3 {
+		if actionCount >= config.Instance.RankingQueue.WeeklyRequiredSupervisorActions {
 			emoji = "✅"
 		} else {
 			emoji = "❌"

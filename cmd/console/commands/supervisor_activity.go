@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/webhooks"
@@ -39,7 +40,7 @@ var SupervisorActivityCmd = &cobra.Command{
 
 			userActions[supervisor] = len(actions)
 
-			if len(actions) < 3 {
+			if len(actions) < config.Instance.RankingQueue.WeeklyRequiredSupervisorActions {
 				continue
 			}
 
