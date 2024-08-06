@@ -9,6 +9,16 @@ import (
 // GetRankingSupervisorActions Retrieves ranking supervisor actions between a given time frame
 // Endpoint: GET /ranking/queue/supervisors/actions?start=&end=
 func GetRankingSupervisorActions(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessSupervisorRoute(c) {
+		return APIErrorForbidden("You do not have permission to access this endpoint.")
+	}
+
 	body := struct {
 		Start int64 `form:"start" json:"start"`
 		End   int64 `form:"end" json:"end"`
