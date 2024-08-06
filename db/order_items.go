@@ -5,6 +5,7 @@ type OrderItemCategory int8
 const (
 	OrderItemCategoryDonator OrderItemCategory = iota
 	OrderItemCategoryBadge
+	OrderItemCategoryClan
 )
 
 type OrderItem struct {

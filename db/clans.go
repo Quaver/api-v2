@@ -17,6 +17,7 @@ type Clan struct {
 	AboutMe                *string      `gorm:"column:about_me" json:"about_me"`
 	FavoriteMode           uint8        `gorm:"column:favorite_mode" json:"favorite_mode"`
 	LastNameChangeTime     int64        `gorm:"column:last_name_change_time" json:"-"`
+	IsCustomizable         bool         `gorm:"column:customizable" json:"customizable"`
 	CreatedAtJSON          time.Time    `gorm:"-:all" json:"created_at"`
 	LastNameChangeTimeJSON time.Time    `gorm:"-:all" json:"last_name_change_time"`
 	Stats                  []*ClanStats `gorm:"foreignKey:ClanId" json:"stats"`
@@ -205,6 +206,15 @@ func (clan *Clan) UpdateAboutMe(aboutMe string) error {
 	result := SQL.Model(&Clan{}).
 		Where("id = ?", clan.Id).
 		Update("about_me", aboutMe)
+
+	return result.Error
+}
+
+// UpdateCustomizable Updates a clan's customizability status
+func (clan *Clan) UpdateCustomizable(enabled bool) error {
+	result := SQL.Model(&Clan{}).
+		Where("id = ?", clan.Id).
+		Update("customizable", enabled)
 
 	return result.Error
 }

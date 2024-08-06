@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"fmt"
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 	"time"
@@ -13,8 +14,11 @@ type OrderItemId int
 const (
 	OrderStatusWaiting   OrderStatus = "Waiting"
 	OrderStatusCompleted OrderStatus = "Completed"
+)
 
-	OrderItemDonator OrderItemId = 1
+const (
+	OrderItemDonator OrderItemId = iota + 1
+	OrderItemClanCustomizable
 )
 
 type Order struct {
@@ -84,19 +88,24 @@ func (order *Order) Insert() error {
 
 // Finalize Finalizes an order and grants the user their purchase items
 func (order *Order) Finalize() error {
+	var err error
+
+	// Finalize items that have multiple products in its category
 	switch order.Item.Category {
 	case OrderItemCategoryDonator:
-		if err := order.FinalizeDonator(); err != nil {
-			return err
-		}
-		break
+		err = order.FinalizeDonator()
 	case OrderItemCategoryBadge:
-		if err := order.FinalizeBadge(); err != nil {
-			return err
-		}
-		break
-	default:
-		return errors.New("invalid order item category")
+		err = order.FinalizeBadge()
+	}
+
+	// Finalize Specific items
+	switch order.Item.Id {
+	case int(OrderItemClanCustomizable):
+		err = order.FinalizeClanCustomizable()
+	}
+
+	if err != nil {
+		return err
 	}
 
 	order.Status = OrderStatusCompleted
@@ -194,6 +203,31 @@ func (order *Order) FinalizeBadge() error {
 	}
 
 	return nil
+}
+
+// FinalizeClanCustomizable Finalizes a clan customizable access order
+func (order *Order) FinalizeClanCustomizable() error {
+	if order.Item.Category != OrderItemCategoryClan || order.ItemId != OrderItemClanCustomizable {
+		return errors.New("cannot call FinalizeClanCustomizable() on a mismatching order")
+	}
+
+	user, err := GetUserById(order.ReceiverUserId)
+
+	if err != nil {
+		return err
+	}
+
+	if user.ClanId == nil {
+		return fmt.Errorf("couldnt finalize clan order for user: %v, as they are not in a clan", user.Id)
+	}
+
+	clan, err := GetClanById(*user.ClanId)
+
+	if err != nil {
+		return err
+	}
+
+	return clan.UpdateCustomizable(true)
 }
 
 // GetUserOrders Gets a user's orders

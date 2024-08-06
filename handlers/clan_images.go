@@ -45,6 +45,10 @@ func uploadClanImage(c *gin.Context, imageType ClanImage) *APIError {
 		return apiErr
 	}
 
+	if !clan.IsCustomizable {
+		return APIErrorForbidden("Your clan must be customizable for you to access this endpoint")
+	}
+
 	file, apiErr := validateUploadedImage(c)
 
 	if apiErr != nil {
