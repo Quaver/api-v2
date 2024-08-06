@@ -101,3 +101,18 @@ func canUserAccessAdminRoute(c *gin.Context) bool {
 		enums.HasUserGroup(user.UserGroups, enums.UserGroupAdmin) ||
 		enums.HasUserGroup(user.UserGroups, enums.UserGroupBot)
 }
+
+// Returns if a user can access private ranking supervisor endpoints
+func canUserAccessSupervisorRoute(c *gin.Context) bool {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return false
+	}
+
+	return enums.HasUserGroup(user.UserGroups, enums.UserGroupSwan) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupAdmin) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupBot) ||
+		enums.HasUserGroup(user.UserGroups, enums.UserGroupRankingSupervisor)
+}
