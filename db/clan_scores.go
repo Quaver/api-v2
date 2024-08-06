@@ -16,6 +16,7 @@ type ClanScore struct {
 	Timestamp       int64          `gorm:"column:timestamp" json:"-"`
 	TimestampJSON   time.Time      `gorm:"-:all" json:"timestamp"`
 	Map             *MapQua        `gorm:"foreignKey:MapMD5; references:MD5" json:"map,omitempty"`
+	Clan            *Clan          `gorm:"foreignKey:ClanId; references:Id" json:"clan,omitempty"`
 }
 
 func (*ClanScore) TableName() string {
@@ -94,6 +95,25 @@ func GetClanScoresForModeFull(clanId int, mode enums.GameMode, page int) ([]*Cla
 		Order("overall_rating DESC").
 		Offset(page * limit).
 		Limit(limit).
+		Find(&clanScores)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return clanScores, nil
+}
+
+// GetClanScoreboardForMap Retrieves the clan scoreboard for a given map
+func GetClanScoreboardForMap(md5 string) ([]*ClanScore, error) {
+	clanScores := make([]*ClanScore, 0)
+
+	result := SQL.
+		Preload("Clan").
+		Preload("Clan.Stats").
+		Where("map_md5 = ?", md5).
+		Order("overall_rating DESC").
+		Limit(50).
 		Find(&clanScores)
 
 	if result.Error != nil {
