@@ -220,29 +220,6 @@ func GetFriendScoresForMap(c *gin.Context) *APIError {
 	return nil
 }
 
-// GetClanScoresForMap Retrieves the scoreboard for a clan
-// Endpoint: GET /v2/scores/:md5/clans
-func GetClanScoresForMap(c *gin.Context) *APIError {
-	dbMap, apiErr := getScoreboardMap(c)
-
-	if apiErr != nil {
-		return apiErr
-	}
-
-	if !hasDonatorScoreboardAccess(dbMap, getAuthedUser(c)) {
-		return APIErrorForbidden("You must be a donator to access this score.")
-	}
-
-	clanScores, err := db.GetClanScoreboardForMap(dbMap.MD5)
-
-	if err != nil {
-		return APIErrorServerError("Error retreiving clan scores from db", err)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"scores": clanScores})
-	return nil
-}
-
 // GetUserPersonalBestScoreGlobal Retrieves the personal best score on a map for a user
 // Endpoint: GET /v2/scores/:md5/:user_id/global
 func GetUserPersonalBestScoreGlobal(c *gin.Context) *APIError {

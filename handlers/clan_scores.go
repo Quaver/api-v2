@@ -68,3 +68,59 @@ func GetUserScoresForClanScore(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"scores": scores})
 	return nil
 }
+
+// GetClanScoresForMap Retrieves the scoreboard for a clan
+// Endpoint: GET /v2/scores/:md5/clans
+func GetClanScoresForMap(c *gin.Context) *APIError {
+	dbMap, apiErr := getScoreboardMap(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	if !hasDonatorScoreboardAccess(dbMap, getAuthedUser(c)) {
+		return APIErrorForbidden("You must be a donator to access this score.")
+	}
+
+	clanScores, err := db.GetClanScoreboardForMap(dbMap.MD5)
+
+	if err != nil {
+		return APIErrorServerError("Error retreiving clan scores from db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"scores": clanScores})
+	return nil
+}
+
+// GetClanPersonalBestScore Retrieves a clan's best score on a map
+// Endpoint: GET /v2/scores/:md5/:clan_id/clan
+func GetClanPersonalBestScore(c *gin.Context) *APIError {
+	clanId, err := strconv.Atoi(c.Param("user_id")) // Gin limitation. Need to use user_id here
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid clan id")
+	}
+
+	dbMap, apiErr := getScoreboardMap(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	if !hasDonatorScoreboardAccess(dbMap, getAuthedUser(c)) {
+		return APIErrorForbidden("You must be a donator to access this score.")
+	}
+
+	clanScore, err := db.GetClanScore(dbMap.MD5, clanId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving clan score from db", err)
+	}
+
+	if clanScore == nil {
+		return APIErrorNotFound("Clan score")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"score": clanScore})
+	return nil
+}
