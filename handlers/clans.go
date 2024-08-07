@@ -159,6 +159,10 @@ func UpdateClan(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
+	if !clan.IsCustomizable {
+		return APIErrorForbidden("Your clan must be customizable for you to access this endpoint")
+	}
+
 	if body.Name != nil {
 		if !db.IsValidClanName(*body.Name) {
 			return APIErrorBadRequest(errClanNameInvalid)
