@@ -831,6 +831,10 @@ func resolveMapsetInRankingQueue(user *db.User, mapset *db.Mapset) *APIError {
 		return nil
 	}
 
+	if err := db.DeactivateRankingQueueActions(mapset.Id); err != nil {
+		return APIErrorServerError("Error deactivating ranking queue actions", err)
+	}
+
 	resolvedAction := &db.MapsetRankingQueueComment{
 		UserId:     mapset.CreatorID,
 		MapsetId:   mapset.Id,
