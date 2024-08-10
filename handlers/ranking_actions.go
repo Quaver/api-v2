@@ -219,6 +219,10 @@ func DenyRankingQueueMapset(c *gin.Context) *APIError {
 			return APIErrorServerError("Error updating ranking queue mapset status", err)
 		}
 
+		if err := queueMapset.UpdateVoteCount(0); err != nil {
+			return APIErrorServerError("Error updating vote count for queue mapset", err)
+		}
+
 		if err := db.AddUserActivity(data.QueueMapset.Mapset.CreatorID, db.UserActivityDeniedMapset,
 			data.QueueMapset.Mapset.String(), data.MapsetId); err != nil {
 			return APIErrorServerError("Failed to add new ranked user activity", err)
@@ -269,6 +273,10 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating ranking queue mapset status", err)
 	}
 
+	if err := queueMapset.UpdateVoteCount(0); err != nil {
+		return APIErrorServerError("Error updating vote count for queue mapset", err)
+	}
+
 	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionBlacklist)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully blacklisted this mapset."})
 	return nil
@@ -311,6 +319,10 @@ func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
 
 	if err := queueMapset.UpdateStatus(db.RankingQueueOnHold); err != nil {
 		return APIErrorServerError("Error updating ranking queue mapset status", err)
+	}
+
+	if err := queueMapset.UpdateVoteCount(0); err != nil {
+		return APIErrorServerError("Error updating vote count for queue mapset", err)
 	}
 
 	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionOnHold)
