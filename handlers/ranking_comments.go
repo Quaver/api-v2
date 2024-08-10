@@ -74,6 +74,7 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 		UserId:   user.Id,
 		MapsetId: queueMapset.MapsetId,
 		Comment:  body.Comment,
+		IsActive: true,
 	}
 
 	if err := comment.Insert(); err != nil {
