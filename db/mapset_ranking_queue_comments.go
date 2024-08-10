@@ -73,7 +73,7 @@ func GetRankingQueueComments(mapsetId int) ([]*MapsetRankingQueueComment, error)
 	result := SQL.
 		Joins("User").
 		Where("mapset_id = ?", mapsetId).
-		Order("Id ASC").
+		Order("id DESC").
 		Find(&comments)
 
 	if result.Error != nil {
