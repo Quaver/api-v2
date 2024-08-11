@@ -54,6 +54,7 @@ func GetMusicArtists() ([]*MusicArtist, error) {
 	artists := make([]*MusicArtist, 0)
 
 	result := SQL.
+		Where("visible = 1").
 		Order("sort_order ASC").
 		Find(&artists)
 
