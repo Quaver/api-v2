@@ -62,6 +62,29 @@ func GetMusicArtists(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetSingleMusicArtist Retrieves a single music artist by id
+// Endpoint: GET /artists/:id
+func GetSingleMusicArtist(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	artist, err := db.GetMusicArtistById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving music artist from db", err)
+	}
+
+	if artist == nil {
+		return APIErrorNotFound("Artist")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"music_artist": artist})
+	return nil
+}
+
 // UpdateMusicArtist Updates the name, description, and links for a music artists
 // Endpoint: POST /artists/:id
 func UpdateMusicArtist(c *gin.Context) *APIError {
