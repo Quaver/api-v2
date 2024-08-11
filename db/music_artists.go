@@ -12,3 +12,7 @@ type MusicArtist struct {
 func (*MusicArtist) TableName() string {
 	return "music_artists"
 }
+
+func (ma *MusicArtist) Insert() error {
+	return SQL.Create(ma).Error
+}

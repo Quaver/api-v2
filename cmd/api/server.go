@@ -266,6 +266,9 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/notifications/:id/unread", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkUserNotificationAsUnread))
 	engine.DELETE("/v2/notifications/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteNotification))
 
+	// Artists
+	engine.POST("/v2/artists", middleware.RequireAuth, handlers.CreateHandler(handlers.InsertMusicArtist))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return
