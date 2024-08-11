@@ -149,3 +149,40 @@ func UpdateMusicArtist(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been successfully updated."})
 	return nil
 }
+
+// DeleteMusicArtist Deletes a music artist (hides)
+// Endpoint: DELETE /v2/artists/:id
+func DeleteMusicArtist(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessAdminRoute(c) {
+		return nil
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	artist, err := db.GetMusicArtistById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving artist by id", err)
+	}
+
+	if artist == nil {
+		return APIErrorNotFound("Artist")
+	}
+
+	if err := artist.UpdateVisibility(false); err != nil {
+		return APIErrorServerError("Error updating music artist visibility", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been successfully deleted."})
+	return nil
+}

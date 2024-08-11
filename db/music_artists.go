@@ -95,3 +95,12 @@ func (ma *MusicArtist) UpdateExternalLinks(externalLinks string) error {
 		Where("id = ?", ma.Id).
 		Update("external_links", ma.ExternalLinks).Error
 }
+
+// UpdateVisibility Updates the visibility of a music artist
+func (ma *MusicArtist) UpdateVisibility(visible bool) error {
+	ma.Visible = visible
+
+	return SQL.Model(&MusicArtist{}).
+		Where("id = ?", ma.Id).
+		Update("visible", ma.Visible).Error
+}
