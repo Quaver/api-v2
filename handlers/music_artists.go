@@ -32,6 +32,7 @@ func InsertMusicArtist(c *gin.Context) *APIError {
 		Name:        body.Name,
 		Description: body.Description,
 		SortOrder:   0,
+		Visible:     true,
 	}
 
 	if err := artist.Insert(); err != nil {
