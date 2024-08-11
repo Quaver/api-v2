@@ -49,6 +49,19 @@ func InsertMusicArtist(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetMusicArtists Returns all music artists
+// Endpoint: GET /artists
+func GetMusicArtists(c *gin.Context) *APIError {
+	artists, err := db.GetMusicArtists()
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving music artists", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"music_artists": artists})
+	return nil
+}
+
 // UpdateMusicArtist Updates the name, description, and links for a music artists
 // Endpoint: POST /artists/:id
 func UpdateMusicArtist(c *gin.Context) *APIError {

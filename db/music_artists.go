@@ -39,7 +39,7 @@ func GetMusicArtistById(id int) (*MusicArtist, error) {
 	var artist MusicArtist
 
 	result := SQL.
-		Where("id = ?", id).
+		Where("id = ? AND visible = 1", id).
 		First(&artist)
 
 	if result.Error != nil {
@@ -47,6 +47,21 @@ func GetMusicArtistById(id int) (*MusicArtist, error) {
 	}
 
 	return &artist, nil
+}
+
+// GetMusicArtists Retrieves all music artists
+func GetMusicArtists() ([]*MusicArtist, error) {
+	artists := make([]*MusicArtist, 0)
+
+	result := SQL.
+		Order("sort_order ASC").
+		Find(&artists)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return artists, nil
 }
 
 // UpdateName Updates a music artist's name

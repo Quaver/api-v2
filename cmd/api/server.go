@@ -268,6 +268,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Artists
 	engine.POST("/v2/artists", middleware.RequireAuth, handlers.CreateHandler(handlers.InsertMusicArtist))
+	engine.GET("/v2/artists", middleware.RequireAuth, handlers.CreateHandler(handlers.GetMusicArtists))
 	engine.POST("/v2/artists/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMusicArtist))
 
 	engine.NoRoute(func(c *gin.Context) {
