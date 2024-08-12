@@ -31,10 +31,16 @@ func InsertMusicArtist(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
+	artists, err := db.GetMusicArtists()
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving music artists", err)
+	}
+
 	artist := db.MusicArtist{
 		Name:        body.Name,
 		Description: body.Description,
-		SortOrder:   0,
+		SortOrder:   len(artists),
 		Visible:     true,
 	}
 
@@ -151,6 +157,10 @@ func DeleteMusicArtist(c *gin.Context) *APIError {
 
 	if err := artist.UpdateVisibility(false); err != nil {
 		return APIErrorServerError("Error updating music artist visibility", err)
+	}
+
+	if err := db.SyncMusicArtistSortOrders(); err != nil {
+		return APIErrorServerError("Error syncing music artist sort orders", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been successfully deleted."})

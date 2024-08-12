@@ -104,3 +104,25 @@ func (ma *MusicArtist) UpdateVisibility(visible bool) error {
 		Where("id = ?", ma.Id).
 		Update("visible", ma.Visible).Error
 }
+
+// UpdateSortOrder Updates the sort order of a single music artist
+func (ma *MusicArtist) UpdateSortOrder(sortOrder int) error {
+	ma.SortOrder = sortOrder
+
+	return SQL.Model(&MusicArtist{}).
+		Where("id = ?", ma.Id).
+		Update("sort_order", ma.SortOrder).Error
+}
+
+// SyncMusicArtistSortOrders Syncs the sort order of music artists
+func SyncMusicArtistSortOrders() error {
+	artists, err := GetMusicArtists()
+
+	if err != nil {
+		return err
+	}
+
+	return SyncSortOrder(artists, func(artist *MusicArtist, sortOrder int) error {
+		return artist.UpdateSortOrder(sortOrder)
+	})
+}
