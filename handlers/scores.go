@@ -302,14 +302,12 @@ func SortPinnedScores(c *gin.Context) *APIError {
 
 	err = db.CustomizeSortOrder(pinnedScores, body.ScoreIds, func(item *db.PinnedScore, sortOrder int) error {
 		return db.UpdatePinnedScoreSortOrder(item.UserId, item.ScoreId, sortOrder)
+	}, func() error {
+		return db.SyncPinnedScoreSortOrder(user.Id, enums.GameMode(mode))
 	})
 
 	if err != nil {
 		return APIErrorServerError("Error customizing sort order", err)
-	}
-
-	if err := db.SyncPinnedScoreSortOrder(user.Id, enums.GameMode(mode)); err != nil {
-		return APIErrorServerError("Error syncing pinned scores order", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your pinned scores have been sorted."})

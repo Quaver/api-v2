@@ -196,14 +196,12 @@ func SortMusicArtists(c *gin.Context) *APIError {
 
 	err = db.CustomizeSortOrder(artists, body.Ids, func(artist *db.MusicArtist, sortOrder int) error {
 		return artist.UpdateSortOrder(sortOrder)
+	}, func() error {
+		return db.SyncMusicArtistSortOrders()
 	})
 
 	if err != nil {
 		return APIErrorServerError("Error sorting artists", err)
-	}
-
-	if err := db.SyncMusicArtistSortOrders(); err != nil {
-		return APIErrorServerError("Error syncing music artist order", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "The music artists have been successfully sorted."})

@@ -17,7 +17,8 @@ func SyncSortOrder[T any](items []T, updateOrder func(item T, sortOrder int) err
 }
 
 // CustomizeSortOrder Customizes the sort order of values
-func CustomizeSortOrder[T Sortable](items []T, ids []int, updateOrder func(item T, sortOrder int) error) error {
+func CustomizeSortOrder[T Sortable](items []T, ids []int, updateOrder func(item T, sortOrder int) error,
+	syncSort func() error) error {
 	for i, id := range ids {
 		for _, item := range items {
 			if id != item.ID() {
@@ -30,5 +31,5 @@ func CustomizeSortOrder[T Sortable](items []T, ids []int, updateOrder func(item 
 		}
 	}
 
-	return nil
+	return syncSort()
 }
