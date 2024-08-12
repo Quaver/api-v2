@@ -167,6 +167,49 @@ func DeleteMusicArtist(c *gin.Context) *APIError {
 	return nil
 }
 
+// SortMusicArtists Custom sort music artists
+// Endpoint: POST /v2/artists/sort
+func SortMusicArtists(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessAdminRoute(c) {
+		return nil
+	}
+
+	body := struct {
+		Ids []int `form:"ids" json:"ids" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	artists, err := db.GetMusicArtists()
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving music artists", err)
+	}
+
+	err = db.CustomizeSortOrder(artists, body.Ids, func(artist *db.MusicArtist, sortOrder int) error {
+		return artist.UpdateSortOrder(sortOrder)
+	})
+
+	if err != nil {
+		return APIErrorServerError("Error sorting artists", err)
+	}
+
+	if err := db.SyncMusicArtistSortOrders(); err != nil {
+		return APIErrorServerError("Error syncing music artist order", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The music artists have been successfully sorted."})
+	return nil
+}
+
 // Retrieves a music artist object from the incoming request
 func getMusicArtistFromParams(c *gin.Context) (*db.MusicArtist, *APIError) {
 	id, err := strconv.Atoi(c.Param("id"))

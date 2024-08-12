@@ -300,26 +300,16 @@ func SortPinnedScores(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide all of the score ids in the order to sort them by.")
 	}
 
-	for i, scoreId := range body.ScoreIds {
-		var foundScore bool
+	err = db.CustomizeSortOrder(pinnedScores, body.ScoreIds, func(item *db.PinnedScore, sortOrder int) error {
+		return db.UpdatePinnedScoreSortOrder(item.UserId, item.ScoreId, sortOrder)
+	})
 
-		for _, pinnedScore := range pinnedScores {
-			if scoreId != pinnedScore.ScoreId {
-				continue
-			}
+	if err != nil {
+		return APIErrorServerError("Error customizing sort order", err)
+	}
 
-			pinnedScore.SortOrder = i
-
-			if err := db.UpdatePinnedScoreSortOrder(user.Id, pinnedScore.ScoreId, pinnedScore.SortOrder); err != nil {
-				return APIErrorServerError("Error updating pinned score sort order.", err)
-			}
-
-			foundScore = true
-		}
-
-		if !foundScore {
-			return APIErrorBadRequest("You have provided a score id that isn't in your pinned scores.")
-		}
+	if err := db.SyncPinnedScoreSortOrder(user.Id, enums.GameMode(mode)); err != nil {
+		return APIErrorServerError("Error syncing pinned scores order", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your pinned scores have been sorted."})
