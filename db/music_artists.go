@@ -24,7 +24,7 @@ func (ma *MusicArtist) Insert() error {
 	return SQL.Create(ma).Error
 }
 
-func (ma *MusicArtist) SortID() int {
+func (ma *MusicArtist) ID() int {
 	return ma.Id
 }
 

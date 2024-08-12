@@ -18,7 +18,7 @@ func (ps *PinnedScore) Insert() error {
 	return SQL.Create(&ps).Error
 }
 
-func (ps *PinnedScore) SortID() int {
+func (ps *PinnedScore) ID() int {
 	return ps.ScoreId
 }
 
