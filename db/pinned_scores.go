@@ -18,6 +18,10 @@ func (ps *PinnedScore) Insert() error {
 	return SQL.Create(&ps).Error
 }
 
+func (ps *PinnedScore) SortID() int {
+	return ps.ScoreId
+}
+
 // GetUserPinnedScores Retrieves a user's pinned scores
 func GetUserPinnedScores(userId int, mode enums.GameMode) ([]*PinnedScore, error) {
 	scores := make([]*PinnedScore, 0)

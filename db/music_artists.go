@@ -24,6 +24,10 @@ func (ma *MusicArtist) Insert() error {
 	return SQL.Create(ma).Error
 }
 
+func (ma *MusicArtist) SortID() int {
+	return ma.Id
+}
+
 func (ma *MusicArtist) AfterFind(*gorm.DB) error {
 	if ma.ExternalLinks != "" {
 		if err := json.Unmarshal([]byte(ma.ExternalLinks), &ma.ExternalLinksJSON); err != nil {
