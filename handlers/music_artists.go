@@ -65,20 +65,10 @@ func GetMusicArtists(c *gin.Context) *APIError {
 // GetSingleMusicArtist Retrieves a single music artist by id
 // Endpoint: GET /artists/:id
 func GetSingleMusicArtist(c *gin.Context) *APIError {
-	id, err := strconv.Atoi(c.Param("id"))
+	artist, apiErr := getMusicArtistFromParams(c)
 
-	if err != nil {
-		return APIErrorBadRequest("Invalid id")
-	}
-
-	artist, err := db.GetMusicArtistById(id)
-
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return APIErrorServerError("Error retrieving music artist from db", err)
-	}
-
-	if artist == nil {
-		return APIErrorNotFound("Artist")
+	if apiErr != nil {
+		return apiErr
 	}
 
 	c.JSON(http.StatusOK, gin.H{"music_artist": artist})
@@ -98,10 +88,10 @@ func UpdateMusicArtist(c *gin.Context) *APIError {
 		return nil
 	}
 
-	id, err := strconv.Atoi(c.Param("id"))
+	artist, apiErr := getMusicArtistFromParams(c)
 
-	if err != nil {
-		return APIErrorBadRequest("Invalid id")
+	if apiErr != nil {
+		return apiErr
 	}
 
 	body := struct {
@@ -112,16 +102,6 @@ func UpdateMusicArtist(c *gin.Context) *APIError {
 
 	if err := c.ShouldBind(&body); err != nil {
 		return APIErrorBadRequest("Invalid request body")
-	}
-
-	artist, err := db.GetMusicArtistById(id)
-
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return APIErrorServerError("Error retrieving artist by id", err)
-	}
-
-	if artist == nil {
-		return APIErrorNotFound("Artist")
 	}
 
 	if body.Name != nil {
@@ -163,20 +143,10 @@ func DeleteMusicArtist(c *gin.Context) *APIError {
 		return nil
 	}
 
-	id, err := strconv.Atoi(c.Param("id"))
+	artist, apiErr := getMusicArtistFromParams(c)
 
-	if err != nil {
-		return APIErrorBadRequest("Invalid id")
-	}
-
-	artist, err := db.GetMusicArtistById(id)
-
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return APIErrorServerError("Error retrieving artist by id", err)
-	}
-
-	if artist == nil {
-		return APIErrorNotFound("Artist")
+	if apiErr != nil {
+		return apiErr
 	}
 
 	if err := artist.UpdateVisibility(false); err != nil {
@@ -185,4 +155,25 @@ func DeleteMusicArtist(c *gin.Context) *APIError {
 
 	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been successfully deleted."})
 	return nil
+}
+
+// Retrieves a music artist object from the incoming request
+func getMusicArtistFromParams(c *gin.Context) (*db.MusicArtist, *APIError) {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return nil, APIErrorBadRequest("Invalid id")
+	}
+
+	artist, err := db.GetMusicArtistById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, APIErrorServerError("Error retrieving artist by id", err)
+	}
+
+	if artist == nil {
+		return nil, APIErrorNotFound("Artist")
+	}
+
+	return artist, nil
 }
