@@ -77,7 +77,7 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		UserId:        user.Id,
 		OrderId:       -1,
 		TransactionId: s.ID,
-		IPAddress:     getIpFromRequest(c),
+		IPAddress:     getOrderIp(body.Ip),
 		ItemId:        db.OrderItemDonator,
 		Quantity:      body.Months,
 		Amount:        price,
