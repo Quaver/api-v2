@@ -42,10 +42,18 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You have provided an invalid amount of months.")
 	}
 
+	var ip string
+
+	if body.Ip != "" {
+		ip = body.Ip
+	} else {
+		ip = "1.1.1.1"
+	}
+
 	order := &db.Order{
 		UserId:      user.Id,
 		OrderId:     generateSteamOrderId(),
-		IPAddress:   getSteamTransactionIp(c),
+		IPAddress:   ip,
 		ItemId:      db.OrderItemDonator,
 		Quantity:    body.Months,
 		Amount:      price,
@@ -358,13 +366,4 @@ func generateSteamOrderId() int {
 	maximum := 99999999
 
 	return rand.Intn(maximum-minimum+1) + minimum
-}
-
-// Returns the transaction ip address for steam
-func getSteamTransactionIp(c *gin.Context) string {
-	if config.Instance.IsProduction {
-		return getIpFromRequest(c)
-	}
-
-	return "1.1.1.1"
 }
