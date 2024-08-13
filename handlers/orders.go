@@ -51,9 +51,10 @@ var (
 
 // Common request body when initiating a donator transaction
 type donationRequestBody struct {
-	Months     int  `form:"months" json:"months" binding:"required"`
-	GiftUserId int  `form:"gift_user_id" json:"gift_user_id"`
-	Recurring  bool `form:"recurring" json:"recurring"`
+	Months     int    `form:"months" json:"months" binding:"required"`
+	GiftUserId int    `form:"gift_user_id" json:"gift_user_id"`
+	Recurring  bool   `form:"recurring" json:"recurring"`
+	Ip         string `form:"ip" json:"ip"`
 }
 
 // GetDonatorPrices Returns the current donator prices
@@ -117,6 +118,7 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 			Quantity   int            `json:"quantity"`
 			GiftUserId int            `json:"gift_user_id"`
 		} `json:"line_items"`
+		Ip string `json:"ip"`
 	}{}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -157,9 +159,17 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 			return APIErrorBadRequest(fmt.Sprintf("You cannot gift item %v", lineItem.Id))
 		}
 
+		var ip string
+
+		if body.Ip != "" {
+			ip = body.Ip
+		} else {
+			ip = "1.1.1.1"
+		}
+
 		order := &db.Order{
 			UserId:      user.Id,
-			IPAddress:   getSteamTransactionIp(c),
+			IPAddress:   ip,
 			ItemId:      lineItem.Id,
 			Quantity:    lineItem.Quantity,
 			Description: orderItem.Name,
