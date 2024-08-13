@@ -64,6 +64,29 @@ func GetRankingQueue(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetRankingQueueMapset Gets a single mapset in the ranking queue
+// Endpoint: GET /v2/ranking/queue/:id
+func GetRankingQueueMapset(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid mapset id")
+	}
+
+	mapset, err := db.GetRankingQueueMapset(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving ranking queue mapset", err)
+	}
+
+	if mapset == nil {
+		return APIErrorNotFound("Mapset")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ranking_queue_mapset": mapset})
+	return nil
+}
+
 // SubmitMapsetToRankingQueue Submits a mapsets to the ranking queue
 // Endpoint: POST /v2/ranking/queue/:id/submit
 func SubmitMapsetToRankingQueue(c *gin.Context) *APIError {

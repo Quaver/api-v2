@@ -29,8 +29,8 @@ type RankingQueueMapset struct {
 	NeedsAttention  bool                         `gorm:"column:needs_attention" json:"-"`
 	VoteCount       int                          `gorm:"-:all" json:"-"`
 	Mapset          *Mapset                      `gorm:"foreignKey:MapsetId; references:Id" json:"mapset"`
-	Votes           []*MapsetRankingQueueComment `gorm:"-:all" json:"votes"`
-	Denies          []*MapsetRankingQueueComment `gorm:"-:all" json:"denies"`
+	Votes           []*MapsetRankingQueueComment `gorm:"-:all" json:"votes,omitempty"`
+	Denies          []*MapsetRankingQueueComment `gorm:"-:all" json:"denies,omitempty"`
 
 	Comments []*MapsetRankingQueueComment `gorm:"foreignKey:MapsetId; references:MapsetId" json:"-"`
 }
