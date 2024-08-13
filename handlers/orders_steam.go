@@ -42,18 +42,10 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You have provided an invalid amount of months.")
 	}
 
-	var ip string
-
-	if body.Ip != "" {
-		ip = body.Ip
-	} else {
-		ip = "1.1.1.1"
-	}
-
 	order := &db.Order{
 		UserId:      user.Id,
 		OrderId:     generateSteamOrderId(),
-		IPAddress:   ip,
+		IPAddress:   getOrderIp(body.Ip),
 		ItemId:      db.OrderItemDonator,
 		Quantity:    body.Months,
 		Amount:      price,

@@ -159,17 +159,9 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 			return APIErrorBadRequest(fmt.Sprintf("You cannot gift item %v", lineItem.Id))
 		}
 
-		var ip string
-
-		if body.Ip != "" {
-			ip = body.Ip
-		} else {
-			ip = "1.1.1.1"
-		}
-
 		order := &db.Order{
 			UserId:      user.Id,
-			IPAddress:   ip,
+			IPAddress:   getOrderIp(body.Ip),
 			ItemId:      lineItem.Id,
 			Quantity:    lineItem.Quantity,
 			Description: orderItem.Name,
@@ -263,4 +255,12 @@ func getDonatorPrice(months int, isSteam bool) (float32, error) {
 	}
 
 	return 0, errors.New("invalid donator months provided")
+}
+
+func getOrderIp(bodyIp string) string {
+	if bodyIp != "" {
+		return bodyIp
+	}
+
+	return "1.1.1.1"
 }
