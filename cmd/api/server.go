@@ -197,7 +197,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/scores/:md5/:user_id/all", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreAll))
 	engine.GET("/v2/scores/:md5/:user_id/mods/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreMods))
 	engine.GET("/v2/scores/:md5/:user_id/rate/:mods", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserPersonalBestScoreRate))
-	engine.GET("/v2/scores/:md5/:user_id/clan", middleware.AllowAuth, handlers.CreateHandler(handlers.GetClanPersonalBestScore)) // CLAN ID
+	engine.GET("/v2/scores/:md5/:user_id/clan", middleware.AllowAuth, handlers.CreateHandler(handlers.GetClanPersonalBestScore)) // user_id is clan_id
 
 	// Pinned Scores
 	engine.POST("/v2/scores/:id/pin", middleware.RequireAuth, handlers.CreateHandler(handlers.CreatePinnedScore))
@@ -266,6 +266,16 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/notifications/:id/read", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkUserNotificationAsRead))
 	engine.POST("/v2/notifications/:id/unread", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkUserNotificationAsUnread))
 	engine.DELETE("/v2/notifications/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteNotification))
+
+	// Artists
+	engine.POST("/v2/artists", middleware.RequireAuth, handlers.CreateHandler(handlers.InsertMusicArtist))
+	engine.POST("/v2/artists/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMusicArtist))
+	engine.DELETE("/v2/artists/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteMusicArtist))
+	engine.GET("/v2/artists", handlers.CreateHandler(handlers.GetMusicArtists))
+	engine.GET("/v2/artists/:id", handlers.CreateHandler(handlers.GetSingleMusicArtist))
+	engine.POST("/v2/artists/:id/avatar", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadMusicArtistAvatar))
+	engine.POST("/v2/artists/:id/banner", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadMusicArtistBanner))
+	engine.POST("/v2/artists/sort", middleware.RequireAuth, handlers.CreateHandler(handlers.SortMusicArtists))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})

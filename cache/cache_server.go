@@ -58,3 +58,11 @@ func RemoveCacheServerClanAvatar(id int) error {
 func RemoveCacheServerClanBanner(id int) error {
 	return RemoveCacheServerFile("clan-banners", id)
 }
+
+func RemoveCacheServerMusicArtistAvatar(id int) error {
+	return RemoveCacheServerFile("music-artist-avatars", id)
+}
+
+func RemoveCacheServerMusicArtistBanner(id int) error {
+	return RemoveCacheServerFile("music-artist-banners", id)
+}
