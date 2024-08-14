@@ -16,6 +16,7 @@ type rankingQueueRequestData struct {
 	User        *db.User
 	QueueMapset *db.RankingQueueMapset
 	Comment     string
+	GameMode    enums.GameMode
 }
 
 // Validates and returns common data used for ranking queue action requests
@@ -33,7 +34,8 @@ func validateRankingQueueRequest(c *gin.Context) (*rankingQueueRequestData, *API
 	}
 
 	body := struct {
-		Comment string `form:"comment" json:"comment" binding:"required"`
+		Comment  string         `form:"comment" json:"comment" binding:"required"`
+		GameMode enums.GameMode `form:"game_mode" json:"game_mode"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -63,6 +65,7 @@ func validateRankingQueueRequest(c *gin.Context) (*rankingQueueRequestData, *API
 		User:        user,
 		QueueMapset: queueMapset,
 		Comment:     body.Comment,
+		GameMode:    body.GameMode,
 	}, nil
 }
 
@@ -112,6 +115,7 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		ActionType: db.RankingQueueActionVote,
 		IsActive:   true,
 		Comment:    data.Comment,
+		GameMode:   &data.GameMode,
 	}
 
 	existingVotes = append(existingVotes, newVoteAction)
@@ -204,6 +208,7 @@ func DenyRankingQueueMapset(c *gin.Context) *APIError {
 		ActionType: db.RankingQueueActionDeny,
 		IsActive:   true,
 		Comment:    data.Comment,
+		GameMode:   &data.GameMode,
 	}
 
 	if err := denyAction.Insert(); err != nil {
@@ -259,6 +264,7 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 		ActionType: db.RankingQueueActionBlacklist,
 		IsActive:   true,
 		Comment:    data.Comment,
+		GameMode:   &data.GameMode,
 	}
 
 	if err := blacklistAction.Insert(); err != nil {
@@ -307,6 +313,7 @@ func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
 		ActionType: db.RankingQueueActionOnHold,
 		IsActive:   true,
 		Comment:    data.Comment,
+		GameMode:   &data.GameMode,
 	}
 
 	if err := onHoldAction.Insert(); err != nil {
