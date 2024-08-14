@@ -307,6 +307,10 @@ func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorForbidden("This mapset is already on hold.")
 	}
 
+	if queueMapset.Status == db.RankingQueueBlacklisted {
+		return APIErrorForbidden("This mapset is blacklisted.")
+	}
+
 	onHoldAction := &db.MapsetRankingQueueComment{
 		UserId:     data.User.Id,
 		MapsetId:   data.MapsetId,
