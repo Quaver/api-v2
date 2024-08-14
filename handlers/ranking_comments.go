@@ -39,7 +39,8 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Comment string `form:"comment" json:"comment" binding:"required"`
+		Comment  string         `form:"comment" json:"comment" binding:"required"`
+		GameMode enums.GameMode `form:"game_mode" json:"game_mode"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -74,6 +75,7 @@ func AddRankingQueueComment(c *gin.Context) *APIError {
 		UserId:   user.Id,
 		MapsetId: queueMapset.MapsetId,
 		Comment:  body.Comment,
+		GameMode: &body.GameMode,
 		IsActive: true,
 	}
 

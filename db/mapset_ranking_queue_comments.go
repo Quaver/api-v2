@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 	"time"
 )
@@ -27,6 +28,7 @@ type MapsetRankingQueueComment struct {
 	Comment             string             `gorm:"comment" json:"comment"`
 	DateLastUpdated     int64              `gorm:"date_last_updated" json:"-"`
 	DateLastUpdatedJSON time.Time          `gorm:"-:all" json:"date_last_updated"`
+	GameMode            *enums.GameMode    `gorm:"column:game_mode" json:"game_mode"`
 	User                *User              `gorm:"foreignKey:UserId; references:Id" json:"user,omitempty"`
 }
 
@@ -42,6 +44,10 @@ func (c *MapsetRankingQueueComment) AfterFind(*gorm.DB) (err error) {
 
 // Insert Inserts a ranking queue comment into the database
 func (c *MapsetRankingQueueComment) Insert() error {
+	if *c.GameMode <= 0 {
+		c.GameMode = nil
+	}
+
 	c.Timestamp = time.Now().UnixMilli()
 	c.DateLastUpdated = time.Now().UnixMilli()
 
