@@ -831,6 +831,16 @@ func resolveMapsetInRankingQueue(user *db.User, mapset *db.Mapset) *APIError {
 		return nil
 	}
 
+	ok, err := downloadAndRunAutomod(mapset)
+
+	if err != nil {
+		return APIErrorServerError("Error running automod", err)
+	}
+
+	if !ok {
+		return nil
+	}
+
 	if err := db.DeactivateRankingQueueActions(mapset.Id); err != nil {
 		return APIErrorServerError("Error deactivating ranking queue actions", err)
 	}
