@@ -44,7 +44,7 @@ func (c *MapsetRankingQueueComment) AfterFind(*gorm.DB) (err error) {
 
 // Insert Inserts a ranking queue comment into the database
 func (c *MapsetRankingQueueComment) Insert() error {
-	if *c.GameMode <= 0 {
+	if c.GameMode != nil && *c.GameMode <= 0 {
 		c.GameMode = nil
 	}
 
