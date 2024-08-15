@@ -22,12 +22,12 @@ func AddNewGameBuild(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Version               string `form:"version" json:"version" binding:"required"`
-		QuaverDll             string `form:"quaver_dll" json:"quaver_dll" binding:"required"`
-		QuaverApiDll          string `form:"quaver_api_dll" json:"quaver_api_dll" binding:"required"`
-		QuaverServerClientDll string `form:"quaver_server_client_dll" json:"quaver_server_client_dll" binding:"required"`
-		QuaverServerCommonDll string `form:"quaver_server_common_dll" json:"quaver_server_common_dll" binding:"required"`
-		QuaverSharedDll       string `form:"quaver_shared_dll" json:"quaver_shared_dll" binding:"required"`
+		Version               string  `form:"version" json:"version" binding:"required"`
+		QuaverDll             string  `form:"quaver_dll" json:"quaver_dll" binding:"required"`
+		QuaverApiDll          string  `form:"quaver_api_dll" json:"quaver_api_dll" binding:"required"`
+		QuaverServerClientDll string  `form:"quaver_server_client_dll" json:"quaver_server_client_dll" binding:"required"`
+		QuaverServerCommonDll *string `form:"quaver_server_common_dll" json:"quaver_server_common_dll"`
+		QuaverSharedDll       string  `form:"quaver_shared_dll" json:"quaver_shared_dll" binding:"required"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
