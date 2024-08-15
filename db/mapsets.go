@@ -53,7 +53,7 @@ func (m *Mapset) Insert() error {
 	m.DateSubmitted = time.Now().UnixMilli()
 	m.DateSubmittedJSON = time.Now()
 
-	m.DateSubmitted = time.Now().UnixMilli()
+	m.DateLastUpdated = time.Now().UnixMilli()
 	m.DateLastUpdatedJSON = time.Now()
 
 	if err := SQL.Create(&m).Error; err != nil {
