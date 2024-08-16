@@ -50,6 +50,7 @@
   "bundled_mapsets": [919, 536, 563, 523, 922, 919, 9, 923, 994, 954, 822, 21846],
   "events_webhook": "",
   "team_announce_webhook": "",
+  "clans_first_place_webhook": "",
   "stripe": {
     "api_key": "",
     "webhook_signing_secret": "",

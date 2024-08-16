@@ -68,8 +68,9 @@ type Config struct {
 
 	BundledMapsets []int `json:"bundled_mapsets"`
 
-	EventsWebhook       string `json:"events_webhook"`
-	TeamAnnounceWebhook string `json:"team_announce_webhook"`
+	EventsWebhook          string `json:"events_webhook"`
+	TeamAnnounceWebhook    string `json:"team_announce_webhook"`
+	ClansFirstPlaceWebhook string `json:"clans_first_place_webhook"`
 
 	Stripe struct {
 		APIKey                  string `json:"api_key"`

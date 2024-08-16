@@ -104,6 +104,12 @@ func insertClanScore(score *db.RedisScore) error {
 		return err
 	}
 
+	scoreboard, err := db.GetClanScoreboardForMap(score.Map.MD5)
+
+	if err != nil {
+		return err
+	}
+
 	newScore, err := db.CalculateClanScore(score.Map.MD5, score.User.ClanId, score.Map.GameMode)
 
 	if err != nil {
@@ -121,6 +127,12 @@ func insertClanScore(score *db.RedisScore) error {
 
 	if err := db.RecalculateClanStats(score.User.ClanId, score.Map.GameMode, score); err != nil {
 		return err
+	}
+
+	if len(scoreboard) == 0 {
+		_ = webhooks.SendClanFirstPlaceWebhook(newScore, nil)
+	} else if scoreboard[0].ClanId != score.User.ClanId && newScore.OverallRating > scoreboard[0].OverallRating {
+		_ = webhooks.SendClanFirstPlaceWebhook(newScore, scoreboard[0])
 	}
 
 	return nil

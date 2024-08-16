@@ -14,10 +14,11 @@ import (
 )
 
 var (
-	rankingQueue  webhook.Client
-	rankedMapsets webhook.Client
-	events        webhook.Client
-	teamAnnounce  webhook.Client
+	rankingQueue    webhook.Client
+	rankedMapsets   webhook.Client
+	events          webhook.Client
+	teamAnnounce    webhook.Client
+	clansFirstPlace webhook.Client
 )
 
 const (
@@ -29,6 +30,7 @@ func InitializeWebhooks() {
 	rankedMapsets, _ = webhook.NewWithURL(config.Instance.RankingQueue.RankedWebhook)
 	events, _ = webhook.NewWithURL(config.Instance.EventsWebhook)
 	teamAnnounce, _ = webhook.NewWithURL(config.Instance.TeamAnnounceWebhook)
+	clansFirstPlace, _ = webhook.NewWithURL(config.Instance.ClansFirstPlaceWebhook)
 }
 
 // SendQueueSubmitWebhook Sends a webhook displaying that the user submitted a mapset to the ranking queue
@@ -307,6 +309,39 @@ func SendSupervisorActivityWebhook(results map[*db.User]int, timeStart int64, ti
 
 	_, err := teamAnnounce.CreateMessage(discord.WebhookMessageCreate{
 		Embeds: []discord.Embed{embed},
+	})
+
+	if err != nil {
+		logrus.Error("Failed to send supervisor webhook: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func SendClanFirstPlaceWebhook(newScore *db.ClanScore, oldScore *db.ClanScore) error {
+	if clansFirstPlace == nil {
+		return nil
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetAuthor(fmt.Sprintf("%v | %v", newScore.Clan.Tag, newScore.Clan.Name),
+			fmt.Sprintf("https://two.quavergame.com/clan/%v", newScore.ClanId), quaverLogo).
+		SetDescription("🏆 Achieved a new first place clan score!").
+		AddField("Overall Rating", fmt.Sprintf("%.2f", newScore.OverallRating), true).
+		AddField("Overall Accuracy", fmt.Sprintf("%.2f%%", newScore.OverallAccuracy), true).
+		SetImagef("https://cdn.quavergame.com/mapsets/%v.jpg", newScore.Map.MapsetId).
+		SetThumbnail(quaverLogo).
+		SetFooter("Quaver", quaverLogo).
+		SetTimestamp(time.Now()).
+		SetColor(0x00FF00)
+
+	if oldScore != nil {
+		embed.AddField("Previous #1 Holder", fmt.Sprintf("https://two.quavergame.com/clan/%v", oldScore.ClanId), true)
+	}
+
+	_, err := clansFirstPlace.CreateMessage(discord.WebhookMessageCreate{
+		Embeds: []discord.Embed{embed.Build()},
 	})
 
 	if err != nil {
