@@ -171,6 +171,7 @@ func GetUserMapsetsInRankingQueue(userId int) ([]*RankingQueueMapset, error) {
 		Joins("LEFT JOIN maps ON maps.mapset_id = Mapset.id").
 		Where("(status = ? OR status = ? OR status = ?) AND Mapset.creator_id = ?",
 			RankingQueuePending, RankingQueueOnHold, RankingQueueResolved, userId).
+		Group("Mapset.id").
 		Find(&mapsets)
 
 	if result.Error != nil {
