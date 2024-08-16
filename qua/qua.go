@@ -3,8 +3,8 @@ package qua
 import (
 	"fmt"
 	"github.com/Quaver/api2/enums"
-	"github.com/goccy/go-yaml"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 	"math"
 	"os"
 	"regexp"
