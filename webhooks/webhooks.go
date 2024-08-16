@@ -276,8 +276,9 @@ func SendSupervisorActivityWebhook(results map[*db.User]int, timeStart int64, ti
 		return nil
 	}
 
-	var description = "Below, you can find last week's supervisor activity report. " +
-		"1 week of donator has been automatically given to users with at least 3 actions.\n\n"
+	description := fmt.Sprintf("Below, you can find last week's supervisor activity report. "+
+		"1 week of donator has been automatically given to users with at least %v actions.\n\n",
+		config.Instance.RankingQueue.WeeklyRequiredSupervisorActions)
 
 	for user, actionCount := range results {
 		var emoji string
