@@ -126,7 +126,7 @@ func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment)
 	votedBy := ""
 
 	for index, voter := range votes {
-		votedBy = fmt.Sprintf("[%v](https://quavergame.com/user/%v)", voter.User.Username, voter.UserId)
+		votedBy += fmt.Sprintf("[%v](https://quavergame.com/user/%v)", voter.User.Username, voter.UserId)
 
 		if index != len(votes)-1 {
 			votedBy += ", "
