@@ -354,8 +354,8 @@ func isEligibleToSubmitToRankingQueue(userId int, uploadedMapsets []*db.Mapset) 
 		return false, err
 	}
 
-	logrus.Infof("Num Ranked: %v | Max Subnissions: %v | Pending Sets: %v",
-		numRanked, maxSubmissions, len(pendingMapsets))
+	logrus.Infof("User: %v | Num Ranked: %v | Max Subnissions: %v | Pending Sets: %v",
+		userId, numRanked, maxSubmissions, len(pendingMapsets))
 
 	return len(pendingMapsets) < maxSubmissions, nil
 }
