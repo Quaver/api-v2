@@ -25,7 +25,7 @@ type SoundEffect struct {
 type TimingPoint struct {
 	StartTime     float32 `yaml:"StartTime"`
 	BPM           float32 `yaml:"Bpm"`
-	TimeSignature int8    `yaml:"TimeSignature"`
+	TimeSignature string  `yaml:"TimeSignature"`
 	Hidden        bool    `yaml:"Hidden"`
 }
 
@@ -43,7 +43,7 @@ type HitObject struct {
 	StartTime   int        `yaml:"StartTime"`
 	Lane        int        `yaml:"Lane"`
 	EndTime     int        `yaml:"EndTime"`
-	HitSound    int        `yaml:"HitSound"`
+	HitSound    string     `yaml:"HitSound"`
 	KeySounds   []KeySound `yaml:"KeySounds"`
 	EditorLayer int        `yaml:"EditorLayer"`
 }
