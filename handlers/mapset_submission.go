@@ -74,8 +74,6 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	fmt.Println("???")
-
 	if apiErr := validateQuaFiles(user, quaFiles); apiErr != nil {
 		return apiErr
 	}
@@ -264,7 +262,6 @@ func readQuaFilesFromZip(archive *zip.Reader) (map[*zip.File]*qua.Qua, *APIError
 			continue
 		}
 
-		fmt.Println(file.Name)
 		reader, err := file.Open()
 
 		if err != nil {
