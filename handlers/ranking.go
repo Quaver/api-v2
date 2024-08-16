@@ -155,7 +155,7 @@ func SubmitMapsetToRankingQueue(c *gin.Context) *APIError {
 	}
 
 	if !automodOk {
-		return APIErrorBadRequest("Your mapset has Auto Mod issues. Please fix them, then try again.")
+		return APIErrorBadRequest("Your mapset has AutoMod issues. Please fix them, re-upload your mapset, then try again.")
 	}
 
 	if existingQueueMapset == nil {
