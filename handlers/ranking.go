@@ -9,6 +9,7 @@ import (
 	"github.com/Quaver/api2/tools"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
 	"os"
@@ -352,6 +353,9 @@ func isEligibleToSubmitToRankingQueue(userId int, uploadedMapsets []*db.Mapset) 
 	if err != nil {
 		return false, err
 	}
+
+	logrus.Infof("Num Ranked: %v | Max Subnissions: %v | Pending Sets: %v",
+		numRanked, maxSubmissions, len(pendingMapsets))
 
 	return len(pendingMapsets) < maxSubmissions, nil
 }
