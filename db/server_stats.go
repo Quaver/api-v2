@@ -45,6 +45,11 @@ func CacheTotalMapsetsInRedis() {
 	logrus.Info("Cached total mapset count in redis")
 }
 
+// IncrementTotalMapsetCount Increments the total mapset count in redis
+func IncrementTotalMapsetCount() error {
+	return Redis.Incr(RedisCtx, totalMapsetsRedisKey).Err()
+}
+
 // CacheTotalScoresInRedis Caches the number of total scores in redis
 func CacheTotalScoresInRedis() {
 	var scores int

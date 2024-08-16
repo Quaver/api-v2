@@ -340,6 +340,10 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 		return nil, APIErrorServerError("Error inserting user activity for uploading mapset", err)
 	}
 
+	if err := db.IncrementTotalMapsetCount(); err != nil {
+		return nil, APIErrorServerError("Error increment total mapset count in redis", err)
+	}
+
 	return mapset, nil
 }
 
