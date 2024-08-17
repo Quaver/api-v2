@@ -339,7 +339,7 @@ func SendClanFirstPlaceWebhook(newScore *db.ClanScore, oldScore *db.ClanScore) e
 		SetColor(0x00FF00)
 
 	if oldScore != nil {
-		embed.AddField("Previous #1 Holder", fmt.Sprintf("https://two.quavergame.com/clan/%v", oldScore.ClanId), true)
+		embed.AddField("Previous #1 Holder", fmt.Sprintf("[%v](%v)", oldScore.Clan.Name, oldScore.ClanId), true)
 	}
 
 	_, err := clansFirstPlace.CreateMessage(discord.WebhookMessageCreate{
