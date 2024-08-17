@@ -139,6 +139,15 @@ func UpdateMapDifficultyRating(id int, difficultyRating float64) error {
 	return result.Error
 }
 
+// Updates the clan ranked status of a map
+func UpdateMapClanRanked(id int, clanRanked bool) error {
+	result := SQL.Model(&MapQua{}).
+		Where("id = ?", id).
+		Update("clan_ranked", clanRanked)
+
+	return result.Error
+}
+
 func GetBundledMapMd5s() ([]string, error) {
 	md5s := make([]string, 0)
 	bundledStringSlice := make([]string, len(config.Instance.BundledMapsets))

@@ -19,6 +19,7 @@ var (
 	events          webhook.Client
 	teamAnnounce    webhook.Client
 	clansFirstPlace webhook.Client
+	clansMapRanked  webhook.Client
 )
 
 const (
@@ -31,6 +32,7 @@ func InitializeWebhooks() {
 	events, _ = webhook.NewWithURL(config.Instance.EventsWebhook)
 	teamAnnounce, _ = webhook.NewWithURL(config.Instance.TeamAnnounceWebhook)
 	clansFirstPlace, _ = webhook.NewWithURL(config.Instance.ClansFirstPlaceWebhook)
+	clansMapRanked, _ = webhook.NewWithURL(config.Instance.ClansMapRankedWebhook)
 }
 
 // SendQueueSubmitWebhook Sends a webhook displaying that the user submitted a mapset to the ranking queue
@@ -346,6 +348,37 @@ func SendClanFirstPlaceWebhook(newScore *db.ClanScore, oldScore *db.ClanScore) e
 
 	if err != nil {
 		logrus.Error("Failed to send supervisor webhook: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func SendClanRankedWebhook(mapQua *db.MapQua) error {
+	if clansMapRanked == nil {
+		return nil
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle("✅ New Map Clan Ranked!").
+		SetDescription("A new map has been clan ranked and is now available to get scores on.").
+		AddField("Song", fmt.Sprintf("[%v](https://quavergame.com/mapset/map/%v)", mapQua.String(), mapQua.Id), true).
+		AddField("Creator", fmt.Sprintf("[%v](https://quavergame.com/user/%v)", mapQua.CreatorUsername, mapQua.CreatorId), true).
+		AddField("Game Mode", enums.GetGameModeString(mapQua.GameMode), true).
+		AddField("Difficulty ", fmt.Sprintf("%.2f", mapQua.DifficultyRating), true).
+		SetImagef("https://cdn.quavergame.com/mapsets/%v.jpg", mapQua.MapsetId).
+		SetThumbnail(quaverLogo).
+		SetFooter("Quaver", quaverLogo).
+		SetTimestamp(time.Now()).
+		SetColor(0x00FF00).
+		Build()
+
+	_, err := clansMapRanked.CreateMessage(discord.WebhookMessageCreate{
+		Embeds: []discord.Embed{embed},
+	})
+
+	if err != nil {
+		logrus.Error("Failed to send clan ranked webhook")
 		return err
 	}
 
