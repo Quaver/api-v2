@@ -111,6 +111,11 @@
       "enabled": true,
       "name": "Gives donator for supervisor activity",
       "schedule": "0 0 * * MON"
+    },
+    "rank_clan_map": {
+      "enabled": true,
+      "name": "Ranks a map for clans",
+      "schedule": "0 16 * * *"
     }
   }
 }
