@@ -364,7 +364,7 @@ func SendClanRankedWebhook(mapQua *db.MapQua) error {
 		SetDescription("A new map has been clan ranked and is now available to get scores on.").
 		AddField("Song", fmt.Sprintf("[%v](https://quavergame.com/mapset/map/%v)", mapQua.String(), mapQua.Id), true).
 		AddField("Creator", fmt.Sprintf("[%v](https://quavergame.com/user/%v)", mapQua.CreatorUsername, mapQua.CreatorId), true).
-		AddField("Game Mode", enums.GetGameModeString(mapQua.GameMode), true).
+		AddField("Game Mode", enums.GetShorthandGameModeString(mapQua.GameMode), true).
 		AddField("Difficulty ", fmt.Sprintf("%.2f", mapQua.DifficultyRating), true).
 		SetImagef("https://cdn.quavergame.com/mapsets/%v.jpg", mapQua.MapsetId).
 		SetThumbnail(quaverLogo).
