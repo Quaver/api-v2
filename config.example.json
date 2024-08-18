@@ -50,6 +50,8 @@
   "bundled_mapsets": [919, 536, 563, 523, 922, 919, 9, 923, 994, 954, 822, 21846],
   "events_webhook": "",
   "team_announce_webhook": "",
+  "clans_first_place_webhook": "",
+  "clans_map_ranked_webhook": "",
   "stripe": {
     "api_key": "",
     "webhook_signing_secret": "",
@@ -109,6 +111,11 @@
       "enabled": true,
       "name": "Gives donator for supervisor activity",
       "schedule": "0 0 * * MON"
+    },
+    "rank_clan_map": {
+      "enabled": true,
+      "name": "Ranks a map for clans",
+      "schedule": "0 16 * * *"
     }
   }
 }

@@ -68,8 +68,10 @@ type Config struct {
 
 	BundledMapsets []int `json:"bundled_mapsets"`
 
-	EventsWebhook       string `json:"events_webhook"`
-	TeamAnnounceWebhook string `json:"team_announce_webhook"`
+	EventsWebhook          string `json:"events_webhook"`
+	TeamAnnounceWebhook    string `json:"team_announce_webhook"`
+	ClansFirstPlaceWebhook string `json:"clans_first_place_webhook"`
+	ClansMapRankedWebhook  string `json:"clans_map_ranked_webhook"`
 
 	Stripe struct {
 		APIKey                  string `json:"api_key"`
@@ -99,6 +101,7 @@ type Config struct {
 		DatabaseBackup       CronJob `json:"database_backup"`
 		DatabaseBackupHourly CronJob `json:"database_backup_hourly"`
 		SupervisorActivity   CronJob `json:"supervisor_activity"`
+		RankClanMap          CronJob `json:"rank_clan_map"`
 	} `json:"cron"`
 }
 
