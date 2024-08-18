@@ -99,6 +99,10 @@ func insertClanScore(score *db.RedisScore) error {
 		return nil
 	}
 
+	if score.Score.Failed {
+		return nil
+	}
+
 	existingScore, err := db.GetClanScore(score.Map.MD5, score.User.ClanId)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
