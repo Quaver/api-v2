@@ -121,18 +121,6 @@ func insertClanScore(score *db.RedisScore) error {
 		return err
 	}
 
-	newScore.Clan, err = db.GetClanById(score.User.ClanId)
-
-	if err != nil {
-		return err
-	}
-
-	newScore.Map, err = db.GetMapById(score.Map.Id)
-
-	if err != nil {
-		return err
-	}
-
 	// Make sure the id is the same on the newly calculated score, so it can be upserted properly.
 	if existingScore != nil {
 		newScore.Id = existingScore.Id
@@ -146,10 +134,23 @@ func insertClanScore(score *db.RedisScore) error {
 		return err
 	}
 
+	// Set values needed for the webhook
+	clan, err := db.GetClanById(score.User.ClanId)
+
+	if err != nil {
+		return err
+	}
+
+	mapQua, err := db.GetMapById(score.Map.Id)
+
+	if err != nil {
+		return err
+	}
+
 	if len(scoreboard) == 0 {
-		_ = webhooks.SendClanFirstPlaceWebhook(newScore, nil)
+		_ = webhooks.SendClanFirstPlaceWebhook(clan, mapQua, newScore, nil)
 	} else if scoreboard[0].ClanId != score.User.ClanId && newScore.OverallRating > scoreboard[0].OverallRating {
-		_ = webhooks.SendClanFirstPlaceWebhook(newScore, scoreboard[0])
+		_ = webhooks.SendClanFirstPlaceWebhook(clan, mapQua, newScore, scoreboard[0])
 	}
 
 	return nil
