@@ -117,6 +117,12 @@ func insertClanScore(score *db.RedisScore) error {
 		return err
 	}
 
+	newScore.Clan, err = db.GetClanById(score.User.ClanId)
+
+	if err != nil {
+		return err
+	}
+
 	// Make sure the id is the same on the newly calculated score, so it can be upserted properly.
 	if existingScore != nil {
 		newScore.Id = existingScore.Id
