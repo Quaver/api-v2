@@ -330,6 +330,7 @@ func SendClanFirstPlaceWebhook(newScore *db.ClanScore, oldScore *db.ClanScore) e
 		SetAuthor(fmt.Sprintf("%v | %v", newScore.Clan.Tag, newScore.Clan.Name),
 			fmt.Sprintf("https://two.quavergame.com/clan/%v", newScore.ClanId), quaverLogo).
 		SetDescription("🏆 Achieved a new first place clan score!").
+		AddField("Song", fmt.Sprintf("[%v](https://quavergame.com/mapset/map/%v)", newScore.Map, newScore.Map.Id), true).
 		AddField("Overall Rating", fmt.Sprintf("%.2f", newScore.OverallRating), true).
 		AddField("Overall Accuracy", fmt.Sprintf("%.2f%%", newScore.OverallAccuracy), true).
 		SetImagef("https://cdn.quavergame.com/mapsets/%v.jpg", newScore.Map.MapsetId).
