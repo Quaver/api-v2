@@ -88,6 +88,7 @@ func consumeScores() {
 			}()
 
 			db.Redis.XAck(db.RedisCtx, subject, consumersGroup, messageID)
+			db.Redis.XDel(db.RedisCtx, subject, messageID)
 		}
 	}
 }
