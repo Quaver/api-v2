@@ -10,6 +10,10 @@
       "127.0.0.1"
     ]
   },
+  "api_v1": {
+    "url": "http://localhost:8082",
+    "secret_key": ""
+  },
   "steam": {
     "app_id": 980610,
     "publisher_key": "",

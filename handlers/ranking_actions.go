@@ -4,8 +4,10 @@ import (
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	v1 "github.com/Quaver/api2/v1"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
@@ -153,6 +155,10 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 
 		if err := db.NewMapsetRankedNotification(data.QueueMapset.Mapset).Insert(); err != nil {
 			return APIErrorServerError("Error inserting ranked mapset notification", err)
+		}
+
+		if err := v1.UpdateElasticSearchMapset(data.QueueMapset.MapsetId); err != nil {
+			logrus.Warn("Error updating v1 elastic search for mapset: ", data.QueueMapset.MapsetId, err)
 		}
 
 		_ = webhooks.SendRankedWebhook(data.QueueMapset.Mapset, existingVotes)

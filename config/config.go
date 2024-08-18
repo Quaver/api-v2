@@ -21,6 +21,11 @@ type Config struct {
 		RateLimitIpWhitelist []string `json:"rate_limit_ip_whitelist"`
 	} `json:"server"`
 
+	ApiV1 struct {
+		Url       string `json:"url"`
+		SecretKey string `json:"secret_key"`
+	} `json:"api_v1"`
+
 	Steam struct {
 		AppId                   int    `json:"app_id"`
 		PublisherKey            string `json:"publisher_key"`
