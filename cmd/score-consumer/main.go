@@ -123,6 +123,12 @@ func insertClanScore(score *db.RedisScore) error {
 		return err
 	}
 
+	newScore.Map, err = db.GetMapById(score.Map.Id)
+
+	if err != nil {
+		return err
+	}
+
 	// Make sure the id is the same on the newly calculated score, so it can be upserted properly.
 	if existingScore != nil {
 		newScore.Id = existingScore.Id
