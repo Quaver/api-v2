@@ -142,12 +142,11 @@ func (order *Order) FinalizeDonator() error {
 
 	// Extend Donator Time
 	var endTime int64
-	timeAdded := int64(order.Quantity * 30 * 24 * 60 * 60 * 1000)
 
 	if order.Receiver.DonatorEndTime == 0 {
-		endTime = time.Now().UnixMilli() + timeAdded
+		endTime = time.Now().AddDate(0, order.Quantity, 0).UnixMilli()
 	} else {
-		endTime = order.Receiver.DonatorEndTime + timeAdded
+		endTime = time.UnixMilli(order.Receiver.DonatorEndTime).AddDate(0, order.Quantity, 0).UnixMilli()
 	}
 
 	if err := order.Receiver.UpdateDonatorEndTime(endTime); err != nil {
