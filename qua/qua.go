@@ -49,7 +49,13 @@ func Parse(file []byte) (*Qua, error) {
 		return nil, err
 	}
 
-	qua.Mode = enums.GetModeFromString(qua.RawMode)
+	var err error
+	qua.Mode, err = enums.GetModeFromString(qua.RawMode)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &qua, nil
 }
 

@@ -1,5 +1,7 @@
 package enums
 
+import "errors"
+
 type GameMode int
 
 const (
@@ -75,30 +77,30 @@ func GetShorthandGameModeString(mode GameMode) string {
 	}
 }
 
-func GetModeFromString(str string) GameMode {
+func GetModeFromString(str string) (GameMode, error) {
 	switch str {
 	case "Keys1", "3":
-		return GameModeKeys1
+		return GameModeKeys1, nil
 	case "Keys2", "4":
-		return GameModeKeys2
+		return GameModeKeys2, nil
 	case "Keys3", "5":
-		return GameModeKeys3
+		return GameModeKeys3, nil
 	case "Keys4", "1":
-		return GameModeKeys4
+		return GameModeKeys4, nil
 	case "Keys5", "6":
-		return GameModeKeys5
+		return GameModeKeys5, nil
 	case "Keys6", "7":
-		return GameModeKeys6
+		return GameModeKeys6, nil
 	// 7K is always #2
 	case "Keys7", "2":
-		return GameModeKeys7
+		return GameModeKeys7, nil
 	case "Keys8", "8":
-		return GameModeKeys8
+		return GameModeKeys8, nil
 	case "Keys9", "9":
-		return GameModeKeys9
+		return GameModeKeys9, nil
 	case "Keys10", "10":
-		return GameModeKeys10
+		return GameModeKeys10, nil
 	default:
-		return 0
+		return 0, errors.New("invalid mode")
 	}
 }
