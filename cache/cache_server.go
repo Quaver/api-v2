@@ -32,7 +32,7 @@ func RemoveCacheServerFile(container string, id int) error {
 }
 
 func RemoveCacheServerMapsetBanner(id int) error {
-	return RemoveCacheServerFile("mapsets", id)
+	return RemoveCacheServerFile("banners", id)
 }
 
 func RemoveCacheServerPlaylistCover(id int) error {
