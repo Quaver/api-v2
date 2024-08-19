@@ -28,11 +28,12 @@ func RemoveCacheServerFile(container string, id int) error {
 		return errors.New(log)
 	}
 
+	logrus.Info(string(resp.Body()))
 	return nil
 }
 
 func RemoveCacheServerMapsetBanner(id int) error {
-	return RemoveCacheServerFile("banners", id)
+	return RemoveCacheServerFile("mapsets", id)
 }
 
 func RemoveCacheServerPlaylistCover(id int) error {
