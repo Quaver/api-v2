@@ -106,6 +106,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Users
 	engine.POST("/v2/user", handlers.CreateHandler(handlers.RegisterNewUser))
 	engine.GET("/v2/user/:id", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUser))
+	engine.GET("/v2/user/:id/aboutme", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserAboutMe))
 	engine.GET("/v2/user/:id/achievements", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserAchievements))
 	engine.GET("/v2/user/:id/activity", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserActivity))
 	engine.GET("/v2/user/:id/badges", middleware.AllowAuth, handlers.CreateHandler(handlers.GetUserBadges))

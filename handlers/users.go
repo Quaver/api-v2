@@ -71,6 +71,30 @@ func GetUser(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetUserAboutMe Retrieves a user's about me / userpage
+// Endpoint: GET /v2/user/:id/aboutme
+func GetUserAboutMe(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must supply a valid username or id.")
+	}
+
+	user, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c))
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) || user.UserPageDisabled {
+		c.JSON(http.StatusOK, gin.H{"about_me": nil})
+		return nil
+	}
+
+	c.JSON(http.StatusOK, gin.H{"about_me": user.UserPage})
+	return nil
+}
+
 // UpdateUserAboutMe Updates a user's about me
 // Endpoint: POST /v2/user/profile/aboutme
 func UpdateUserAboutMe(c *gin.Context) *APIError {
