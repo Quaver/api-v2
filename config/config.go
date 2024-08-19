@@ -107,6 +107,7 @@ type Config struct {
 		DatabaseBackupHourly CronJob `json:"database_backup_hourly"`
 		SupervisorActivity   CronJob `json:"supervisor_activity"`
 		RankClanMap          CronJob `json:"rank_clan_map"`
+		DenyOnHoldOneMonth   CronJob `json:"deny_on_hold_one_month"`
 	} `json:"cron"`
 }
 

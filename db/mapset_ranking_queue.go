@@ -180,3 +180,25 @@ func GetUserMapsetsInRankingQueue(userId int) ([]*RankingQueueMapset, error) {
 
 	return mapsets, nil
 }
+
+// GetOldOnHoldMapsetsInRankingQueue Gets mapsets in the ranking queue that have been on-hold for over a month
+func GetOldOnHoldMapsetsInRankingQueue() ([]*RankingQueueMapset, error) {
+	var mapsets = make([]*RankingQueueMapset, 0)
+
+	monthAgo := time.Now().AddDate(0, -1, 0).UnixMilli()
+
+	result := SQL.
+		Joins("Mapset").
+		Preload("Mapset.Maps").
+		Joins("LEFT JOIN maps ON maps.mapset_id = Mapset.id").
+		Where("mapset_ranking_queue.status = ? AND mapset_ranking_queue.date_last_updated > ?",
+			RankingQueueOnHold, monthAgo).
+		Group("Mapset.id").
+		Find(&mapsets)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return mapsets, nil
+}

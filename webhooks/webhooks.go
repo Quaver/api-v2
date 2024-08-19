@@ -23,7 +23,7 @@ var (
 )
 
 const (
-	quaverLogo string = "https://i.imgur.com/DkJhqvT.jpg"
+	QuaverLogo string = "https://i.imgur.com/DkJhqvT.jpg"
 )
 
 func InitializeWebhooks() {
@@ -49,8 +49,8 @@ func SendQueueSubmitWebhook(user *db.User, mapset *db.Mapset) error {
 		AddField("Mapset",
 			fmt.Sprintf("[%v](https://quavergame.com/mapsets/%v)", mapset.String(), mapset.Id), false).
 		SetDescription("").
-		SetThumbnail(quaverLogo).
-		SetFooter("Quaver", quaverLogo).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
 		SetTimestamp(time.Now()).
 		SetColor(0x00FFFF).
 		Build()
@@ -102,8 +102,8 @@ func SendQueueWebhook(user *db.User, mapset *db.Mapset, action db.RankingQueueAc
 		AddField("Ranking Queue Action", actionStr, true).
 		AddField("Mapset",
 			fmt.Sprintf("[%v](https://quavergame.com/mapsets/%v)", mapset.String(), mapset.Id), false).
-		SetThumbnail(quaverLogo).
-		SetFooter("Quaver", quaverLogo).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
 		SetTimestamp(time.Now()).
 		SetColor(color).
 		Build()
@@ -174,8 +174,8 @@ func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment)
 			fmt.Sprintf("%.2f - %.2f", minDiff, maxDiff), true).
 		AddField("Ranked By", votedBy, true).
 		SetImagef("https://cdn.quavergame.com/mapsets/%v.jpg", mapset.Id).
-		SetThumbnail(quaverLogo).
-		SetFooter("Quaver", quaverLogo).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
 		SetTimestamp(time.Now()).
 		SetColor(0x00FF00).
 		Build()
@@ -209,8 +209,8 @@ func SendOrderWebhook(purchasedOrders []*db.Order) error {
 		SetDescription(description).
 		AddField("Purchaser", fmt.Sprintf("[User Profile](https://quavergame.com/user/%v)", purchasedOrders[0].UserId), true).
 		AddField("Receiver", fmt.Sprintf("[User Profile](https://quavergame.com/user/%v)", purchasedOrders[0].ReceiverUserId), true).
-		SetThumbnail(quaverLogo).
-		SetFooter("Quaver", quaverLogo).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
 		SetTimestamp(time.Now()).
 		SetColor(0x00FF00).
 		Build()
@@ -251,8 +251,8 @@ func SendBackupWebhook(successful bool, failureError ...error) error {
 	embed := discord.NewEmbedBuilder().
 		SetTitle(title).
 		SetDescription(description).
-		SetThumbnail(quaverLogo).
-		SetFooter("Quaver", quaverLogo).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
 		SetTimestamp(time.Now()).
 		SetColor(color).
 		Build()
@@ -303,8 +303,8 @@ func SendSupervisorActivityWebhook(results map[*db.User]int, timeStart int64, ti
 		SetTitle("📝 Ranking Supervisor Activity Report").
 		SetDescription(description).
 		AddField("Detailed Report", link, false).
-		SetThumbnail(quaverLogo).
-		SetFooter("Quaver", quaverLogo).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
 		SetTimestamp(time.Now()).
 		SetColor(0x49E6EF).
 		Build()
@@ -328,14 +328,14 @@ func SendClanFirstPlaceWebhook(clan *db.Clan, mapQua *db.MapQua, newScore *db.Cl
 
 	embed := discord.NewEmbedBuilder().
 		SetAuthor(fmt.Sprintf("%v | %v", clan.Tag, clan.Name),
-			fmt.Sprintf("https://two.quavergame.com/clan/%v", newScore.ClanId), quaverLogo).
+			fmt.Sprintf("https://two.quavergame.com/clan/%v", newScore.ClanId), QuaverLogo).
 		SetDescription("🏆 Achieved a new first place clan score!").
 		AddField("Map", fmt.Sprintf("[%v](https://quavergame.com/mapset/map/%v)", mapQua, mapQua.Id), false).
 		AddField("Overall Rating", fmt.Sprintf("%.2f", newScore.OverallRating), true).
 		AddField("Overall Accuracy", fmt.Sprintf("%.2f%%", newScore.OverallAccuracy), true).
 		SetImagef("https://cdn.quavergame.com/mapsets/%v.jpg", mapQua.MapsetId).
-		SetThumbnail(quaverLogo).
-		SetFooter("Quaver", quaverLogo).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
 		SetTimestamp(time.Now()).
 		SetColor(0x00FF00)
 
@@ -368,8 +368,8 @@ func SendClanRankedWebhook(mapQua *db.MapQua) error {
 		AddField("Game Mode", enums.GetShorthandGameModeString(mapQua.GameMode), true).
 		AddField("Difficulty ", fmt.Sprintf("%.2f", mapQua.DifficultyRating), true).
 		SetImagef("https://cdn.quavergame.com/mapsets/%v.jpg", mapQua.MapsetId).
-		SetThumbnail(quaverLogo).
-		SetFooter("Quaver", quaverLogo).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
 		SetTimestamp(time.Now()).
 		SetColor(0x00FF00).
 		Build()

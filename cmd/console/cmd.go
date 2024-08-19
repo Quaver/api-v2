@@ -47,6 +47,7 @@ func init() {
 	RootCmd.AddCommand(commands.DatabaseBackupHourlyCmd)
 	RootCmd.AddCommand(commands.SupervisorActivityCmd)
 	RootCmd.AddCommand(commands.ClanRankMapCmd)
+	RootCmd.AddCommand(commands.DenyOnHoldCmd)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)

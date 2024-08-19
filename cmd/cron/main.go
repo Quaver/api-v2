@@ -42,6 +42,7 @@ func main() {
 	registerCronJob(c, jobs.DatabaseBackupHourly.Job, func() { commands.DatabaseBackupHourlyCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.SupervisorActivity.Job, func() { commands.SupervisorActivityCmd.Run(nil, nil) })
 	registerCronJob(c, jobs.RankClanMap.Job, func() { commands.ClanRankMapCmd.Run(nil, nil) })
+	registerCronJob(c, jobs.DenyOnHoldOneMonth.Job, func() { commands.DenyOnHoldCmd.Run(nil, nil) })
 
 	c.Start()
 

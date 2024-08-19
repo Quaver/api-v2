@@ -120,6 +120,11 @@
       "enabled": true,
       "name": "Ranks a map for clans",
       "schedule": "0 16 * * *"
+    },
+    "deny_on_hold_one_month": {
+      "enabled": true,
+      "name": "Denies mapsets that are on-hold for month+",
+      "schedule": "0 * * * *"
     }
   }
 }
