@@ -191,7 +191,7 @@ func GetOldOnHoldMapsetsInRankingQueue() ([]*RankingQueueMapset, error) {
 		Joins("Mapset").
 		Preload("Mapset.Maps").
 		Joins("LEFT JOIN maps ON maps.mapset_id = Mapset.id").
-		Where("mapset_ranking_queue.status = ? AND mapset_ranking_queue.date_last_updated > ?",
+		Where("mapset_ranking_queue.status = ? AND mapset_ranking_queue.date_last_updated < ?",
 			RankingQueueOnHold, monthAgo).
 		Group("Mapset.id").
 		Find(&mapsets)
