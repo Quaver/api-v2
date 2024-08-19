@@ -31,7 +31,7 @@ type User struct {
 	Twitter                     *string           `gorm:"column:twitter" json:"twitter"`
 	Title                       *string           `gorm:"column:title" json:"title"`
 	CheckedPreviousAchievements bool              `gorm:"column:checked_previous_achievements" json:"-"`
-	UserPage                    *string           `gorm:"column:userpage" json:"userpage"`
+	UserPage                    *string           `gorm:"column:userpage" json:"-"`
 	TwitchUsername              *string           `gorm:"column:twitch_username" json:"twitch_username"`
 	DonatorEndTime              int64             `gorm:"column:donator_end_time" json:"-"`
 	DonatorEndTimeJSON          time.Time         `gorm:"-:all" json:"donator_end_time"`
