@@ -253,6 +253,9 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/orders/stripe/initiate/donation", middleware.RequireAuth, handlers.CreateHandler(handlers.InitiateStripeDonatorCheckoutSession))
 	engine.POST("/v2/orders/stripe/webhook", handlers.CreateHandler(handlers.HandleStripeWebhook))
 
+	// Order Items
+	engine.GET("/v2/items/:id", handlers.CreateHandler(handlers.GetOrderItemById))
+
 	// Applications
 	engine.GET("/v2/developers/applications", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserApplications))
 	engine.POST("/v2/developers/applications", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateNewApplication))
