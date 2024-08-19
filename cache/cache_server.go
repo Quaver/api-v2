@@ -28,7 +28,7 @@ func RemoveCacheServerFile(container string, id int) error {
 		return errors.New(log)
 	}
 
-	logrus.Info(string(resp.Body()))
+	logrus.Infof("Removed cache server file: %v with status: %v", container, id)
 	return nil
 }
 
