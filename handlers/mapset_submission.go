@@ -13,6 +13,7 @@ import (
 	"github.com/Quaver/api2/qua"
 	"github.com/Quaver/api2/sliceutil"
 	"github.com/Quaver/api2/tools"
+	v1 "github.com/Quaver/api2/v1"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
@@ -117,6 +118,10 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 
 	if err := db.IndexElasticSearchMapset(*mapset); err != nil {
 		return APIErrorServerError("Error updating elastic search", err)
+	}
+
+	if err := v1.UpdateElasticSearchMapset(mapset.Id); err != nil {
+		logrus.Error(err)
 	}
 
 	if apiErr := resolveMapsetInRankingQueue(user, mapset); apiErr != nil {
