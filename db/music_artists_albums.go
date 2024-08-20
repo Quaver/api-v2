@@ -10,3 +10,18 @@ type MusicArtistAlbum struct {
 func (*MusicArtistAlbum) TableName() string {
 	return "music_artists_albums"
 }
+
+// GetMusicArtistAlbums Retrieves a given music artist's albums
+func GetMusicArtistAlbums(artistId int) ([]*MusicArtistAlbum, error) {
+	albums := make([]*MusicArtistAlbum, 0)
+
+	result := SQL.
+		Where("artist_id = ?", artistId).
+		Find(&albums)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return albums, nil
+}
