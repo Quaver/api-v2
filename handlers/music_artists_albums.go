@@ -136,6 +136,10 @@ func DeleteMusicArtistAlbum(c *gin.Context) *APIError {
 		return APIErrorServerError("Error deleting album", err)
 	}
 
+	if err := db.SyncMusicArtistAlbumSortOrders(album.ArtistId); err != nil {
+		return APIErrorServerError("Error syncing album sort orders", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been successfully deleted."})
 	return nil
 }
