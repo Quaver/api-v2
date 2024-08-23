@@ -286,6 +286,7 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/artists/:id/album/sort", middleware.RequireAuth, handlers.CreateHandler(handlers.SortMusicArtistAlbums))
 	engine.POST("/v2/artists/album/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMusicArtistAlbum))
 	engine.DELETE("/v2/artists/album/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteMusicArtistAlbum))
+	engine.POST("/v2/artists/album/:id/cover", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadMusicArtistAlbumCover))
 
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})

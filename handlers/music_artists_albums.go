@@ -1,11 +1,17 @@
 package handlers
 
 import (
+	"fmt"
+	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+)
+
+const (
+	albumCoverContainer string = "music-artist-album-covers"
 )
 
 // CreateMusicArtistAlbum Creates a new album for a music artist
@@ -105,6 +111,7 @@ func UpdateMusicArtistAlbum(c *gin.Context) *APIError {
 }
 
 // DeleteMusicArtistAlbum Deletes a music artist's album
+// Endpoint: DELETE /v2/artists/album/:id
 func DeleteMusicArtistAlbum(c *gin.Context) *APIError {
 	user := getAuthedUser(c)
 
@@ -140,7 +147,11 @@ func DeleteMusicArtistAlbum(c *gin.Context) *APIError {
 		return APIErrorServerError("Error syncing album sort orders", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been successfully deleted."})
+	if err := azure.Client.DeleteBlob(albumCoverContainer, fmt.Sprintf("%v.jpg", album.Id)); err != nil {
+		return APIErrorServerError("Error deleting album cover from azure", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The album has been successfully deleted."})
 	return nil
 }
 
@@ -188,5 +199,50 @@ func SortMusicArtistAlbums(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "The albums have been successfully sorted."})
+	return nil
+}
+
+// UploadMusicArtistAlbumCover Uploads an album cover for an album
+// Endpoint: POST /v2/artists/album/:id/cover
+func UploadMusicArtistAlbumCover(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessAdminRoute(c) {
+		return nil
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	album, err := db.GetMusicArtistAlbumById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving album from db", err)
+	}
+
+	if album == nil {
+		return APIErrorNotFound("Album")
+	}
+
+	file, apiErr := validateUploadedImage(c)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	err = azure.Client.UploadFile(albumCoverContainer, fmt.Sprintf("%v.jpg", id), file)
+
+	if err != nil {
+		return APIErrorServerError("Error uploading album cover to azure", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The album cover has been successfully uploaded."})
 	return nil
 }
