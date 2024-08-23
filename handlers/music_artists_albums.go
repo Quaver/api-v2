@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/Quaver/api2/azure"
+	"github.com/Quaver/api2/cache"
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -237,6 +238,7 @@ func UploadMusicArtistAlbumCover(c *gin.Context) *APIError {
 		return apiErr
 	}
 
+	_ = cache.RemoveCacheServerMusicArtistAlbumCover(id)
 	err = azure.Client.UploadFile(albumCoverContainer, fmt.Sprintf("%v.jpg", id), file)
 
 	if err != nil {
