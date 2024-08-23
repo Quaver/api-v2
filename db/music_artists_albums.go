@@ -25,3 +25,29 @@ func GetMusicArtistAlbums(artistId int) ([]*MusicArtistAlbum, error) {
 
 	return albums, nil
 }
+
+// GetMusicArtistAlbumById Retrieves a music artist album from the db
+func GetMusicArtistAlbumById(id int) (*MusicArtistAlbum, error) {
+	var album MusicArtistAlbum
+
+	result := SQL.
+		Where("id = ?", id).
+		First(&album)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &album, nil
+}
+
+// UpdateName Updates the name of the album
+func (album *MusicArtistAlbum) UpdateName(name string) error {
+	album.Name = name
+	
+	return SQL.
+		Model(&MusicArtistAlbum{}).
+		Where("id = ?", album.Id).
+		Update("name", album.Name).
+		Error
+}

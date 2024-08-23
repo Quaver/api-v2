@@ -3,7 +3,9 @@ package handlers
 import (
 	"github.com/Quaver/api2/db"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
 // CreateMusicArtistAlbum Creates a new album for a music artist
@@ -54,5 +56,50 @@ func CreateMusicArtistAlbum(c *gin.Context) *APIError {
 		"message": "The music artist has been successfully created.",
 	})
 
+	return nil
+}
+
+// UpdateMusicArtistAlbum Updates  a music artist album
+// Endpoint: POST /v2/artists/album/:id
+func UpdateMusicArtistAlbum(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessAdminRoute(c) {
+		return nil
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	body := struct {
+		Name string `form:"name" json:"name" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	album, err := db.GetMusicArtistAlbumById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retriving album from db", err)
+	}
+
+	if album == nil {
+		return APIErrorNotFound("Album")
+	}
+
+	if err := album.UpdateName(body.Name); err != nil {
+		return APIErrorServerError("Error updating album name", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been updated."})
 	return nil
 }
