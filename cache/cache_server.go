@@ -68,5 +68,5 @@ func RemoveCacheServerMusicArtistBanner(id int) error {
 }
 
 func RemoveCacheServerMusicArtistAlbumCover(id int) error {
-	return RemoveCacheServerFile("music-artist-album-cover", id)
+	return RemoveCacheServerFile("music-artist-album-covers", id)
 }
