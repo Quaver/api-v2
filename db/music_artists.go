@@ -7,13 +7,14 @@ import (
 )
 
 type MusicArtist struct {
-	Id                int             `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	Name              string          `gorm:"column:name" json:"name"`
-	Description       string          `gorm:"column:description" json:"description"`
-	ExternalLinks     string          `gorm:"column:external_links" json:"-"`
-	ExternalLinksJSON json.RawMessage `gorm:"-:all" json:"external_links"`
-	SortOrder         int             `gorm:"column:sort_order" json:"sort_order"`
-	Visible           bool            `gorm:"column:visible" json:"-"`
+	Id                int                 `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	Name              string              `gorm:"column:name" json:"name"`
+	Description       string              `gorm:"column:description" json:"description"`
+	ExternalLinks     string              `gorm:"column:external_links" json:"-"`
+	ExternalLinksJSON json.RawMessage     `gorm:"-:all" json:"external_links"`
+	SortOrder         int                 `gorm:"column:sort_order" json:"sort_order"`
+	Visible           bool                `gorm:"column:visible" json:"-"`
+	Albums            []*MusicArtistAlbum `gorm:"-:all" json:"albums,omitempty"`
 }
 
 func (*MusicArtist) TableName() string {
@@ -48,6 +49,13 @@ func GetMusicArtistById(id int) (*MusicArtist, error) {
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	var err error
+	artist.Albums, err = GetMusicArtistAlbums(artist.Id)
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &artist, nil
