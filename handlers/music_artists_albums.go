@@ -89,7 +89,7 @@ func UpdateMusicArtistAlbum(c *gin.Context) *APIError {
 	album, err := db.GetMusicArtistAlbumById(id)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return APIErrorServerError("Error retriving album from db", err)
+		return APIErrorServerError("Error retrieving album from db", err)
 	}
 
 	if album == nil {
@@ -101,5 +101,41 @@ func UpdateMusicArtistAlbum(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been updated."})
+	return nil
+}
+
+// DeleteMusicArtistAlbum Deletes a music artist's album
+func DeleteMusicArtistAlbum(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessAdminRoute(c) {
+		return nil
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	album, err := db.GetMusicArtistAlbumById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving album from db", err)
+	}
+
+	if album == nil {
+		return APIErrorNotFound("Album")
+	}
+
+	if err := album.Delete(); err != nil {
+		return APIErrorServerError("Error deleting album", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been successfully deleted."})
 	return nil
 }

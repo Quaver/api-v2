@@ -44,10 +44,17 @@ func GetMusicArtistAlbumById(id int) (*MusicArtistAlbum, error) {
 // UpdateName Updates the name of the album
 func (album *MusicArtistAlbum) UpdateName(name string) error {
 	album.Name = name
-	
+
 	return SQL.
 		Model(&MusicArtistAlbum{}).
 		Where("id = ?", album.Id).
 		Update("name", album.Name).
+		Error
+}
+
+// Delete Deletes an album
+func (album *MusicArtistAlbum) Delete() error {
+	return SQL.
+		Delete(&MusicArtistAlbum{}, "id = ?", album.Id).
 		Error
 }
