@@ -143,3 +143,50 @@ func DeleteMusicArtistAlbum(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "The music artist has been successfully deleted."})
 	return nil
 }
+
+// SortMusicArtistAlbums Sorts music artist albums
+// Endpoints: POST: /v2/artists/:id/album/sort
+func SortMusicArtistAlbums(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessAdminRoute(c) {
+		return nil
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	body := struct {
+		Ids []int `form:"ids" json:"ids" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	albums, err := db.GetMusicArtistAlbums(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving albums", err)
+	}
+
+	err = db.CustomizeSortOrder(albums, body.Ids, func(album *db.MusicArtistAlbum, sortOrder int) error {
+		return album.UpdateSortOrder(sortOrder)
+	}, func() error {
+		return db.SyncMusicArtistSortOrders()
+	})
+
+	if err != nil {
+		return APIErrorServerError("Error sorting albums", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The albums have been successfully sorted."})
+	return nil
+}

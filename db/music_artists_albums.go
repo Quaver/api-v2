@@ -21,6 +21,7 @@ func GetMusicArtistAlbums(artistId int) ([]*MusicArtistAlbum, error) {
 
 	result := SQL.
 		Where("artist_id = ?", artistId).
+		Order("sort_order ASC").
 		Find(&albums)
 
 	if result.Error != nil {
