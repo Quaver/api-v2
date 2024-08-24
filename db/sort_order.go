@@ -1,7 +1,7 @@
 package db
 
 type Sortable interface {
-	*MusicArtist | *PinnedScore | *MusicArtistAlbum
+	*MusicArtist | *PinnedScore | *MusicArtistAlbum | *MusicArtistSong
 	ID() int
 }
 

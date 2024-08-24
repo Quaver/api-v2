@@ -183,9 +183,62 @@ func DeleteMusicArtistSong(c *gin.Context) *APIError {
 		return APIErrorServerError("Error deleting song from db", err)
 	}
 
-	// Sorting
+	if err := db.SyncMusicArtistSongSortOrders(song.AlbumId); err != nil {
+		return APIErrorServerError("Error syncing song sort orders", err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "The song has been successfully deleted."})
+	return nil
+}
+
+// SortMusicArtistSongs Sort's an album's songs
+// Endpoint: POST /v2/artists/album/:id/song/sort
+func SortMusicArtistSongs(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessAdminRoute(c) {
+		return nil
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	body := struct {
+		Ids []int `form:"ids" json:"ids" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	songs, err := db.GetMusicArtistSongsInAlbum(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving songs in album", err)
+	}
+
+	if len(songs) == 0 {
+		return APIErrorBadRequest("There are no songs to sort.")
+	}
+
+	err = db.CustomizeSortOrder(songs, body.Ids, func(song *db.MusicArtistSong, sortOrder int) error {
+		return song.UpdateSortOrder(sortOrder)
+	}, func() error {
+		return db.SyncMusicArtistSongSortOrders(songs[0].AlbumId)
+	})
+
+	if err != nil {
+		return APIErrorServerError("Error sorting albums", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The albums have been successfully sorted."})
 	return nil
 }
 

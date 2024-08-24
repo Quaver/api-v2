@@ -71,3 +71,24 @@ func (song *MusicArtistSong) UpdateLength(length int) error {
 		Where("id = ?", song.Id).
 		Update("length", song.Length).Error
 }
+
+func (song *MusicArtistSong) UpdateSortOrder(sortOrder int) error {
+	song.SortOrder = sortOrder
+
+	return SQL.Model(&MusicArtistSong{}).
+		Where("id = ?", song.Id).
+		Update("sort_order", song.SortOrder).Error
+}
+
+// SyncMusicArtistSongSortOrders  Syncs the sort order of songs in a music artist's album
+func SyncMusicArtistSongSortOrders(albumId int) error {
+	artists, err := GetMusicArtistSongsInAlbum(albumId)
+
+	if err != nil {
+		return err
+	}
+
+	return SyncSortOrder(artists, func(song *MusicArtistSong, sortOrder int) error {
+		return song.UpdateSortOrder(sortOrder)
+	})
+}

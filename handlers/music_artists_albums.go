@@ -189,10 +189,14 @@ func SortMusicArtistAlbums(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving albums", err)
 	}
 
+	if len(albums) == 0 {
+		return APIErrorBadRequest("There are no albums to sort.")
+	}
+
 	err = db.CustomizeSortOrder(albums, body.Ids, func(album *db.MusicArtistAlbum, sortOrder int) error {
 		return album.UpdateSortOrder(sortOrder)
 	}, func() error {
-		return db.SyncMusicArtistSortOrders()
+		return db.SyncMusicArtistAlbumSortOrders(albums[0].ArtistId)
 	})
 
 	if err != nil {
