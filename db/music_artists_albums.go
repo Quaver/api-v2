@@ -1,10 +1,11 @@
 package db
 
 type MusicArtistAlbum struct {
-	Id        int    `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	ArtistId  int    `gorm:"column:artist_id" json:"artist_id"`
-	Name      string `gorm:"column:name" json:"name"`
-	SortOrder int    `gorm:"column:sort_order" json:"sort_order"`
+	Id        int                `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	ArtistId  int                `gorm:"column:artist_id" json:"artist_id"`
+	Name      string             `gorm:"column:name" json:"name"`
+	SortOrder int                `gorm:"column:sort_order" json:"sort_order"`
+	Songs     []*MusicArtistSong `gorm:"-:all" json:"songs,omitempty"`
 }
 
 func (*MusicArtistAlbum) TableName() string {
@@ -28,6 +29,16 @@ func GetMusicArtistAlbums(artistId int) ([]*MusicArtistAlbum, error) {
 		return nil, result.Error
 	}
 
+	for _, album := range albums {
+		var err error
+
+		album.Songs, err = GetMusicArtistSongsInAlbum(album.Id)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return albums, nil
 }
 
@@ -41,6 +52,14 @@ func GetMusicArtistAlbumById(id int) (*MusicArtistAlbum, error) {
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	var err error
+
+	album.Songs, err = GetMusicArtistSongsInAlbum(album.Id)
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &album, nil

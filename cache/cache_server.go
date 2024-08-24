@@ -70,3 +70,7 @@ func RemoveCacheServerMusicArtistBanner(id int) error {
 func RemoveCacheServerMusicArtistAlbumCover(id int) error {
 	return RemoveCacheServerFile("music-artist-album-covers", id)
 }
+
+func RemoveCacheServerMusicArtistSong(id int) error {
+	return RemoveCacheServerFile("music-artist-songs", id)
+}
