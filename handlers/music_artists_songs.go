@@ -83,6 +83,67 @@ func UploadMusicArtistSong(c *gin.Context) *APIError {
 	return nil
 }
 
+// UpdateMusicArtistSong Updates metadata for a given song
+// Endpoint: POST /v2/artists/song/:id
+func UpdateMusicArtistSong(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessAdminRoute(c) {
+		return nil
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	body := struct {
+		Name   *string `form:"name" json:"name"`
+		BPM    *int    `form:"bpm" json:"bpm"`
+		Length *int    `form:"length" json:"length"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	song, err := db.GetMusicArtistSongById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving song from db", err)
+	}
+
+	if song == nil {
+		return APIErrorNotFound("Song")
+	}
+
+	if body.Name != nil {
+		if err := song.UpdateName(*body.Name); err != nil {
+			return APIErrorServerError("Error updating song name", err)
+		}
+	}
+
+	if body.BPM != nil {
+		if err := song.UpdateBPM(*body.BPM); err != nil {
+			return APIErrorServerError("Error updating song BPM", err)
+		}
+	}
+
+	if body.Length != nil {
+		if err := song.UpdateLength(*body.Length); err != nil {
+			return APIErrorServerError("Error updating song length", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The song has been successfully updated."})
+	return nil
+}
+
 // Validates an uploaded audio file and returns the file bytes
 func validateUploadedAudio(c *gin.Context) ([]byte, *APIError) {
 	fileHeader, _ := c.FormFile("audio")

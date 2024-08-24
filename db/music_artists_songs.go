@@ -32,3 +32,42 @@ func GetMusicArtistSongsInAlbum(albumId int) ([]*MusicArtistSong, error) {
 
 	return songs, nil
 }
+
+// GetMusicArtistSongById Retrieves a song from the db by its id
+func GetMusicArtistSongById(id int) (*MusicArtistSong, error) {
+	var song MusicArtistSong
+
+	result := SQL.
+		Where("id = ?", id).
+		First(&song)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &song, nil
+}
+
+func (song *MusicArtistSong) UpdateName(name string) error {
+	song.Name = name
+
+	return SQL.Model(&MusicArtistSong{}).
+		Where("id = ?", song.Id).
+		Update("name", song.Name).Error
+}
+
+func (song *MusicArtistSong) UpdateBPM(bpm int) error {
+	song.BPM = bpm
+
+	return SQL.Model(&MusicArtistSong{}).
+		Where("id = ?", song.Id).
+		Update("bpm", song.BPM).Error
+}
+
+func (song *MusicArtistSong) UpdateLength(length int) error {
+	song.Length = length
+
+	return SQL.Model(&MusicArtistSong{}).
+		Where("id = ?", song.Id).
+		Update("length", song.Length).Error
+}
