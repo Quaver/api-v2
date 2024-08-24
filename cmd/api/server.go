@@ -281,6 +281,19 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.POST("/v2/artists/:id/banner", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadMusicArtistBanner))
 	engine.POST("/v2/artists/sort", middleware.RequireAuth, handlers.CreateHandler(handlers.SortMusicArtists))
 
+	// Albums
+	engine.POST("/v2/artists/:id/album", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateMusicArtistAlbum))
+	engine.POST("/v2/artists/:id/album/sort", middleware.RequireAuth, handlers.CreateHandler(handlers.SortMusicArtistAlbums))
+	engine.POST("/v2/artists/album/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMusicArtistAlbum))
+	engine.DELETE("/v2/artists/album/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteMusicArtistAlbum))
+	engine.POST("/v2/artists/album/:id/cover", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadMusicArtistAlbumCover))
+
+	// Songs
+	engine.POST("/v2/artists/album/:id/song", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadMusicArtistSong))
+	engine.POST("/v2/artists/song/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateMusicArtistSong))
+	engine.DELETE("/v2/artists/song/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteMusicArtistSong))
+	engine.POST("/v2/artists/album/:id/song/sort", middleware.RequireAuth, handlers.CreateHandler(handlers.SortMusicArtistSongs))
+
 	engine.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
 		return

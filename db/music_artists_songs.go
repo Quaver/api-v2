@@ -12,3 +12,83 @@ type MusicArtistSong struct {
 func (*MusicArtistSong) TableName() string {
 	return "music_artists_songs"
 }
+
+func (song *MusicArtistSong) ID() int {
+	return song.Id
+}
+
+// GetMusicArtistSongsInAlbum Returns the songs in a music artist's album
+func GetMusicArtistSongsInAlbum(albumId int) ([]*MusicArtistSong, error) {
+	songs := make([]*MusicArtistSong, 0)
+
+	result := SQL.
+		Where("album_id = ?", albumId).
+		Order("sort_order ASC").
+		Find(&songs)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return songs, nil
+}
+
+// GetMusicArtistSongById Retrieves a song from the db by its id
+func GetMusicArtistSongById(id int) (*MusicArtistSong, error) {
+	var song MusicArtistSong
+
+	result := SQL.
+		Where("id = ?", id).
+		First(&song)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &song, nil
+}
+
+func (song *MusicArtistSong) UpdateName(name string) error {
+	song.Name = name
+
+	return SQL.Model(&MusicArtistSong{}).
+		Where("id = ?", song.Id).
+		Update("name", song.Name).Error
+}
+
+func (song *MusicArtistSong) UpdateBPM(bpm int) error {
+	song.BPM = bpm
+
+	return SQL.Model(&MusicArtistSong{}).
+		Where("id = ?", song.Id).
+		Update("bpm", song.BPM).Error
+}
+
+func (song *MusicArtistSong) UpdateLength(length int) error {
+	song.Length = length
+
+	return SQL.Model(&MusicArtistSong{}).
+		Where("id = ?", song.Id).
+		Update("length", song.Length).Error
+}
+
+func (song *MusicArtistSong) UpdateSortOrder(sortOrder int) error {
+	song.SortOrder = sortOrder
+
+	return SQL.Model(&MusicArtistSong{}).
+		Where("id = ?", song.Id).
+		Update("sort_order", song.SortOrder).Error
+}
+
+// SyncMusicArtistSongSortOrders  Syncs the sort order of songs in a music artist's album
+func SyncMusicArtistSongSortOrders(albumId int) error {
+	artists, err := GetMusicArtistSongsInAlbum(albumId)
+
+	if err != nil {
+		return err
+	}
+
+	return SyncSortOrder(artists, func(song *MusicArtistSong, sortOrder int) error {
+		return song.UpdateSortOrder(sortOrder)
+	})
+}
