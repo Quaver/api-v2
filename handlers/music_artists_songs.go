@@ -144,6 +144,51 @@ func UpdateMusicArtistSong(c *gin.Context) *APIError {
 	return nil
 }
 
+// DeleteMusicArtistSong Deletes a music artist's song
+// Endpoint: DELETE /v2/artists/song/:id
+func DeleteMusicArtistSong(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !canUserAccessAdminRoute(c) {
+		return nil
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	song, err := db.GetMusicArtistSongById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving song from db", err)
+	}
+
+	if song == nil {
+		return APIErrorNotFound("Song")
+	}
+
+	_ = cache.RemoveCacheServerMusicArtistSong(song.Id)
+
+	if err := azure.Client.DeleteBlob("music-artist-songs", fmt.Sprintf("%v.mp3", song.Id)); err != nil {
+		return APIErrorServerError("Error deleting song from  azure", err)
+	}
+
+	if err := db.SQL.Delete(&db.MusicArtistSong{}, "id = ?", song.Id).Error; err != nil {
+		return APIErrorServerError("Error deleting song from db", err)
+	}
+
+	// Sorting
+
+	c.JSON(http.StatusOK, gin.H{"message": "The song has been successfully deleted."})
+	return nil
+}
+
 // Validates an uploaded audio file and returns the file bytes
 func validateUploadedAudio(c *gin.Context) ([]byte, *APIError) {
 	fileHeader, _ := c.FormFile("audio")
