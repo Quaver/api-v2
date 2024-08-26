@@ -733,7 +733,7 @@ func createAudioPreviewFromZip(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua)
 				return err
 			}
 
-			previewTime := quaFile.SongPreviewTime / 1000
+			previewTime := float32(quaFile.SongPreviewTime) / float32(1000)
 
 			if err := createAudioPreviewFromFile(audioFilePath, outputPath, previewTime); err != nil {
 				return err
@@ -770,7 +770,7 @@ func createAudioPreviewFromZip(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua)
 }
 
 // Uses FFMPEG to create an audio preview from a file path
-func createAudioPreviewFromFile(filePath string, outputPath string, previewTimeSeconds int) error {
+func createAudioPreviewFromFile(filePath string, outputPath string, previewTimeSeconds float32) error {
 	originalOutputPath := outputPath
 
 	if path.Ext(filePath) == ".ogg" {
@@ -781,7 +781,7 @@ func createAudioPreviewFromFile(filePath string, outputPath string, previewTimeS
 		"-i",
 		fmt.Sprintf("%v", filePath),
 		"-ss",
-		fmt.Sprintf("%v", previewTimeSeconds),
+		fmt.Sprintf("%2f", previewTimeSeconds),
 		"-to",
 		fmt.Sprintf("%v", previewTimeSeconds+10),
 		"-c",
