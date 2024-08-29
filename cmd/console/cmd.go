@@ -48,6 +48,7 @@ func init() {
 	RootCmd.AddCommand(commands.SupervisorActivityCmd)
 	RootCmd.AddCommand(commands.ClanRankMapCmd)
 	RootCmd.AddCommand(commands.DenyOnHoldCmd)
+	RootCmd.AddCommand(commands.DatabaseScoresBatchDeleteFailed)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)
