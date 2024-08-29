@@ -83,7 +83,7 @@ func consumeScores() {
 
 			if score.Score.Failed {
 				if err := db.IncrementFailedScoresMetric(); err != nil {
-					logrus.Error("Error incrementing total score metric in db", err)
+					logrus.Error("Error incrementing failed score metric in db", err)
 				}
 			}
 
