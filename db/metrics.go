@@ -11,3 +11,15 @@ func (*Metrics) TableName() string {
 func IncrementFailedScoresMetric() error {
 	return SQL.Exec("UPDATE metrics SET failed_scores = failed_scores + 1").Error
 }
+
+func GetMetrics() (*Metrics, error) {
+	var metrics Metrics
+
+	result := SQL.First(&metrics)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &metrics, nil
+}
