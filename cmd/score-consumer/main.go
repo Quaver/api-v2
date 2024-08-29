@@ -89,11 +89,9 @@ func consumeScores() {
 				logrus.Error("Error incrementing total score count in Redis", err)
 			}
 
-			go func() {
-				if err := insertClanScore(&score); err != nil {
-					logrus.Error("Error inserting clan score: ", err)
-				}
-			}()
+			if err := insertClanScore(&score); err != nil {
+				logrus.Error("Error inserting clan score: ", err)
+			}
 
 			db.Redis.XAck(db.RedisCtx, subject, consumersGroup, messageID)
 			db.Redis.XDel(db.RedisCtx, subject, messageID)
