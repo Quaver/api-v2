@@ -81,6 +81,10 @@ func consumeScores() {
 				score.User.Username, score.User.Id, score.Map.Id, score.Map.DifficultyRating,
 				score.Score.Id, score.Score.PerformanceRating, score.Score.Accuracy)
 
+			if err := db.IncrementFailedScoresMetric(); err != nil {
+				logrus.Error("Error incrementing total score metric in db", err)
+			}
+
 			if err := db.Redis.Incr(db.RedisCtx, "quaver:total_scores").Err(); err != nil {
 				logrus.Error("Error incrementing total score count in Redis", err)
 			}
