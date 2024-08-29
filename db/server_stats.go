@@ -52,11 +52,19 @@ func IncrementTotalMapsetCount() error {
 
 // CacheTotalScoresInRedis Caches the number of total scores in redis
 func CacheTotalScoresInRedis() {
-	var scores int
+	var scores int64
 
-	if err := SQL.Raw("SELECT COUNT(*) FROM scores").Scan(&scores).Error; err != nil {
+	if err := SQL.Raw("SELECT COUNT(*) FROM scores WHERE failed = 0").Scan(&scores).Error; err != nil {
 		panic(err)
 	}
+
+	metrics, err := GetMetrics()
+
+	if err != nil {
+		panic(err)
+	}
+
+	scores += metrics.FailedScores
 
 	if err := Redis.Set(RedisCtx, totalScoresRedisKey, scores, 0).Err(); err != nil {
 		panic(err)
@@ -66,22 +74,22 @@ func CacheTotalScoresInRedis() {
 }
 
 // GetOnlineUserCountFromRedis Retrieves the amount of online users from redis
-func GetOnlineUserCountFromRedis() (int, error) {
+func GetOnlineUserCountFromRedis() (int64, error) {
 	return getValueFromRedis(onlineUsersRedisKey)
 }
 
 // GetTotalUserCountFromRedis Retrieves the total amount of users from redis
-func GetTotalUserCountFromRedis() (int, error) {
+func GetTotalUserCountFromRedis() (int64, error) {
 	return getValueFromRedis(totalUsersRedisKey)
 }
 
 // GetTotalMapsetCountFromRedis Retrieves the total amount of mapsets from redis
-func GetTotalMapsetCountFromRedis() (int, error) {
+func GetTotalMapsetCountFromRedis() (int64, error) {
 	return getValueFromRedis(totalMapsetsRedisKey)
 }
 
 // GetTotalScoreCountFromRedis Retrieves the total amount of scores from redis
-func GetTotalScoreCountFromRedis() (int, error) {
+func GetTotalScoreCountFromRedis() (int64, error) {
 	return getValueFromRedis(totalScoresRedisKey)
 }
 
@@ -191,14 +199,14 @@ func CacheCountryPlayersInRedis() (map[string]string, error) {
 }
 
 // Retrieves a single cached value from redis
-func getValueFromRedis(key string) (int, error) {
+func getValueFromRedis(key string) (int64, error) {
 	result, err := Redis.Get(RedisCtx, key).Result()
 
 	if err != nil && err != redis.Nil {
 		return 0, err
 	}
 
-	value, err := strconv.Atoi(result)
+	value, err := strconv.ParseInt(result, 10, 64)
 
 	if err != nil {
 		return 0, err
