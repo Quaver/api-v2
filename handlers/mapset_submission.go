@@ -48,6 +48,9 @@ var (
 
 const (
 	__MACOSX string = "__MACOSX"
+
+	errBannerFileNoExists       string = "could not create mapset banner (file no exists)"
+	errAudioPreviewFileNoExists string = "could not create audio preview (file no exists)"
 )
 
 // HandleMapsetSubmission Handles the uploading/updating of a mapset archive (.qp) file
@@ -129,11 +132,11 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 	}
 
 	go func() {
-		if err := createMapsetBanner(zipReader, quaFiles); err != nil {
+		if err := createMapsetBanner(zipReader, quaFiles); err != nil && err.Error() != errBannerFileNoExists {
 			logrus.Warning("Error creating mapset banner: ", err)
 		}
 
-		if err := createAudioPreviewFromZip(zipReader, quaFiles); err != nil {
+		if err := createAudioPreviewFromZip(zipReader, quaFiles); err != nil && err.Error() != errAudioPreviewFileNoExists {
 			logrus.Warning("Error creating audio file: ", err)
 		}
 	}()
@@ -683,7 +686,7 @@ func createMapsetBanner(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua) error 
 		}
 	}
 
-	return errors.New("could not create mapset banner (file no exists)")
+	return errors.New(errBannerFileNoExists)
 }
 
 // Creates an auto-cropped mapset banner and uploads it to azure
@@ -766,7 +769,7 @@ func createAudioPreviewFromZip(zip *zip.Reader, quaFiles map[*zip.File]*qua.Qua)
 		}
 	}
 
-	return errors.New("could not create audio preview (file no exists)")
+	return errors.New(errAudioPreviewFileNoExists)
 }
 
 // Uses FFMPEG to create an audio preview from a file path
