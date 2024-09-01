@@ -48,7 +48,7 @@ func GetUser(c *gin.Context) *APIError {
 
 	if err == nil && value <= math.MaxInt32 {
 		user, dbError = db.GetUserById(value)
-	} else if regexp.MustCompile(`\d`).MatchString(query) {
+	} else if regexp.MustCompile(`^\d+$`).MatchString(query) {
 		user, dbError = db.GetUserBySteamId(query)
 	} else {
 		user, dbError = db.GetUserByUsername(query)
