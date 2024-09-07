@@ -77,7 +77,39 @@ func (q *Qua) CommonBPM() float32 {
 		return 0
 	}
 
-	return q.TimingPoints[0].BPM
+	if len(q.TimingPoints) == 1 {
+		return q.TimingPoints[0].BPM
+	}
+
+	var durations = map[float32]float32{}
+	lastTime := float32(q.MapLength())
+
+	for i := len(q.TimingPoints) - 1; i >= 0; i-- {
+		point := q.TimingPoints[i]
+
+		if point.StartTime > lastTime {
+			continue
+		}
+
+		duration := lastTime - point.StartTime
+		durations[point.BPM] += duration
+
+		lastTime = point.StartTime
+	}
+
+	var maxBpm float32
+	var maxDuration float32
+	firstIter := true
+
+	for bpm, duration := range durations {
+		if firstIter || duration > maxDuration {
+			maxBpm = bpm
+			maxDuration = duration
+			firstIter = false
+		}
+	}
+
+	return maxBpm
 }
 
 // CountHitObjectNormal Returns the count of normal hit objects in the map
