@@ -6,6 +6,7 @@ import (
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/files"
+	"github.com/Quaver/api2/s3util"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/sirupsen/logrus"
 	"math/rand"
@@ -34,6 +35,7 @@ func main() {
 	go db.CacheTotalScoresInRedis()
 
 	azure.InitializeClient()
+	s3util.Initialize()
 	webhooks.InitializeWebhooks()
 	files.CreateDirectories()
 

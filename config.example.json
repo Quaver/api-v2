@@ -70,6 +70,11 @@
     "url": "",
     "key": ""
   },
+  "s3": {
+    "access_key": "",
+    "secret": "",
+    "bucket": "quaver"
+  },
   "cron": {
     "donator_check": {
       "enabled": true,

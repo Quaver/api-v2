@@ -96,6 +96,12 @@ type Config struct {
 		Key string `json:"key"`
 	} `json:"cache_server"`
 
+	S3 struct {
+		AccessKey string `json:"access_key"`
+		Secret    string `json:"secret"`
+		Bucket    string `json:"bucket"`
+	} `json:"s3"`
+
 	Cron struct {
 		DonatorCheck         CronJob `json:"donator_check"`
 		ElasticIndexMapsets  CronJob `json:"elastic_index_mapsets"`
