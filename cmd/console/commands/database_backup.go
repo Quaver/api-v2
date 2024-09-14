@@ -4,10 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"github.com/Azure/azure-storage-blob-go/azblob"
-	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/files"
+	"github.com/Quaver/api2/s3util"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -20,23 +19,23 @@ import (
 )
 
 const (
-	databaseBackupContainer string = "databasebackup"
+	s3BackupFolderName string = "backups"
 )
 
 var DatabaseBackupCmd = &cobra.Command{
 	Use:   "backup:database",
-	Short: "Backs up the database and uploads to azure",
+	Short: "Backs up the database and uploads to s3",
 	Run: func(cmd *cobra.Command, args []string) {
 		sqlPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql", files.GetBackupsDirectory()))
 		zipPath, _ := filepath.Abs(fmt.Sprintf("%v/backup.sql.zip", files.GetBackupsDirectory()))
 
-		if err := deletePreviousBackups(databaseBackupContainer, 28); err != nil {
+		if err := deletePreviousBackups(s3BackupFolderName, 28); err != nil {
 			logrus.Error(err)
 			_ = webhooks.SendBackupWebhook(false, err)
 			return
 		}
 
-		blobs, err := azure.Client.ListBlobs(databaseBackupContainer)
+		files, err := s3util.Instance().ListFiles(s3BackupFolderName)
 
 		if err != nil {
 			logrus.Error(err)
@@ -44,11 +43,14 @@ var DatabaseBackupCmd = &cobra.Command{
 			return
 		}
 
-		azureFileName := "001.zip"
+		s3FileName := "001.zip"
 
-		// Get incremented value for azureFileName
-		if len(blobs) > 0 {
-			fileNumber, err := strconv.Atoi(strings.Replace(blobs[len(blobs)-1], ".zip", "", -1))
+		// Get incremented value for s3 file name
+		if len(files) > 0 {
+			name := strings.Replace(files[len(files)-1], ".zip", "", -1)
+			name = strings.Replace(name, fmt.Sprintf("%v/", s3BackupFolderName), "", -1)
+
+			fileNumber, err := strconv.Atoi(name)
 
 			if err != nil {
 				logrus.Error(err)
@@ -56,10 +58,10 @@ var DatabaseBackupCmd = &cobra.Command{
 				return
 			}
 
-			azureFileName = fmt.Sprintf("%03d.zip", fileNumber+1)
+			s3FileName = fmt.Sprintf("%03d.zip", fileNumber+1)
 		}
 
-		if err := performDatabaseBackupBackup(sqlPath, zipPath, databaseBackupContainer, azureFileName); err != nil {
+		if err := performDatabaseBackupBackup(sqlPath, zipPath, s3BackupFolderName, s3FileName); err != nil {
 			_ = webhooks.SendBackupWebhook(false, err)
 			return
 		}
@@ -68,7 +70,7 @@ var DatabaseBackupCmd = &cobra.Command{
 	},
 }
 
-func performDatabaseBackupBackup(sqlFilePath string, zipFilePath string, azureContainer string, azureFileName string) error {
+func performDatabaseBackupBackup(sqlFilePath string, zipFilePath string, s3Folder string, s3FileName string) error {
 	if err := os.Remove(sqlFilePath); err != nil {
 		logrus.Error("[Database Backup] Error deleting existing backup (sql file).")
 	}
@@ -87,7 +89,7 @@ func performDatabaseBackupBackup(sqlFilePath string, zipFilePath string, azureCo
 		return err
 	}
 
-	if err := uploadToAzure(zipFilePath, azureContainer, azureFileName); err != nil {
+	if err := uploadToS3(zipFilePath, s3Folder, s3FileName); err != nil {
 		logrus.Error("[Database Backup] Error uploading database backup", err)
 		return err
 	}
@@ -99,22 +101,22 @@ func performDatabaseBackupBackup(sqlFilePath string, zipFilePath string, azureCo
 	return nil
 }
 
-func deletePreviousBackups(container string, maxBackups int) error {
-	blobs, err := azure.Client.ListBlobs(container)
+func deletePreviousBackups(folderName string, maxBackups int) error {
+	backupFiles, err := s3util.Instance().ListFiles(folderName)
 
 	if err != nil {
 		return err
 	}
 
-	if len(blobs) < maxBackups {
+	if len(backupFiles) < maxBackups {
 		return nil
 	}
 
-	if err := azure.Client.DeleteBlob(container, blobs[0]); err != nil {
+	if err := s3util.Instance().DeleteFile(folderName, filepath.Base(backupFiles[0])); err != nil {
 		return err
 	}
 
-	logrus.Info("[Database Backup] Deleted previous backup: ", blobs[0])
+	logrus.Info("[Database Backup] Deleted previous backup: ", backupFiles[0])
 	return nil
 }
 
@@ -187,15 +189,15 @@ func zipBackup(inputPath string, outputPath string) error {
 	return nil
 }
 
-func uploadToAzure(path string, container string, fileName string) error {
-	logrus.Info("[Database Backup] Uploading to azure...:")
+func uploadToS3(path string, folder string, fileName string) error {
+	logrus.Info("[Database Backup] Uploading to S3...")
 
-	err := azure.Client.UploadFileFromDisk(container, fileName, path, azblob.AccessTierHot)
+	err := s3util.Instance().UploadFile(folder, fileName, path)
 
 	if err != nil {
 		return err
 	}
 
-	logrus.Info("[Database Backup] Finished uploading to azure!")
+	logrus.Info("[Database Backup] Finished uploading to S3!")
 	return nil
 }
