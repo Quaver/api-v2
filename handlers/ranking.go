@@ -231,11 +231,11 @@ func RemoveFromRankingQueue(c *gin.Context) *APIError {
 	}
 
 	denyAction := &db.MapsetRankingQueueComment{
-		UserId:     user.Id,
+		UserId:     db.QuaverBotId,
 		MapsetId:   queueMapset.MapsetId,
 		ActionType: db.RankingQueueActionDeny,
 		IsActive:   true,
-		Comment:    "I have just removed my own mapset from the ranking queue.",
+		Comment:    "The creator has just removed their own mapset from the ranking queue.",
 	}
 
 	if err := denyAction.Insert(); err != nil {
