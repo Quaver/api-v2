@@ -56,6 +56,9 @@ func (client *S3WrapperClient) UploadFile(folder string, fileName string, path s
 	sess := session.Must(session.NewSession(&client.Config))
 	uploader := s3manager.NewUploader(sess)
 
+	uploader.PartSize = 5 * 1024 * 1024
+	uploader.Concurrency = 16
+
 	file, err := os.Open(path)
 
 	if err != nil {
