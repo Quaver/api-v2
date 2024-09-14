@@ -71,6 +71,8 @@
     "key": ""
   },
   "s3": {
+    "endpoint": "https://nyc3.digitaloceanspaces.com",
+    "region": "us-east-1",
     "access_key": "",
     "secret": "",
     "bucket": "quaver"

@@ -97,6 +97,8 @@ type Config struct {
 	} `json:"cache_server"`
 
 	S3 struct {
+		Endpoint  string `json:"endpoint"`
+		Region    string `json:"region"`
 		AccessKey string `json:"access_key"`
 		Secret    string `json:"secret"`
 		Bucket    string `json:"bucket"`

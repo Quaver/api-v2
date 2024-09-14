@@ -36,8 +36,8 @@ func Initialize() {
 
 	cfg := &aws.Config{
 		Credentials:      credentials.NewStaticCredentials(key, secret, ""),
-		Endpoint:         aws.String("https://nyc3.digitaloceanspaces.com"),
-		Region:           aws.String("us-east-1"),
+		Endpoint:         aws.String(config.Instance.S3.Endpoint),
+		Region:           aws.String(config.Instance.S3.Region),
 		S3ForcePathStyle: aws.Bool(false),
 	}
 
