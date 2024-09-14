@@ -7,6 +7,7 @@ import (
 	"github.com/Quaver/api2/cmd/console/migrations"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/s3util"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
@@ -27,6 +28,7 @@ func main() {
 	db.InitializeRedis()
 	db.InitializeElasticSearch()
 	azure.InitializeClient()
+	s3util.Initialize()
 	webhooks.InitializeWebhooks()
 
 	c := cron.New()
