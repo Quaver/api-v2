@@ -858,11 +858,11 @@ func resolveMapsetInRankingQueue(user *db.User, mapset *db.Mapset) *APIError {
 	}
 
 	resolvedAction := &db.MapsetRankingQueueComment{
-		UserId:     mapset.CreatorID,
+		UserId:     db.QuaverBotId,
 		MapsetId:   mapset.Id,
 		ActionType: db.RankingQueueActionResolved,
 		IsActive:   true,
-		Comment:    "I have just updated my mapset, and its status has been changed back to Resolved.",
+		Comment:    "The creator has just updated their mapset, and its status has been changed back to Resolved.",
 	}
 
 	if err := resolvedAction.Insert(); err != nil {
