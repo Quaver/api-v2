@@ -577,6 +577,13 @@ func RemoveUserClanScores(clanId int, userId int) error {
 		Update("clan_id", nil).Error
 }
 
+func (s *Score) SoftDelete() error {
+	return SQL.Model(&Score{}).
+		Where("id = ?", s.Id).
+		Update("personal_best", 0).
+		Update("is_donator_score", 0).Error
+}
+
 // CalculateOverallRating Calculates overall rating from a list of scores
 func CalculateOverallRating(scores []*Score) float64 {
 	if len(scores) == 0 {
