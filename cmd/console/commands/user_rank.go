@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"time"
@@ -40,9 +41,14 @@ var UserRankCmd = &cobra.Command{
 
 					data, err := db.Redis.ZRevRankWithScore(db.RedisCtx, key, userStr).Result()
 
-					if err != nil {
+					if err != nil && err != redis.Nil {
 						logrus.Error(err)
 						return
+					}
+
+					if err == redis.Nil {
+						logrus.Info("Skipping user: ", user.Id, " (no rank found)")
+						continue
 					}
 
 					switch enums.GameMode(i) {
