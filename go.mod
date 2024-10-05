@@ -6,7 +6,8 @@ require (
 	github.com/Azure/azure-pipeline-go v0.2.3
 	github.com/Azure/azure-storage-blob-go v0.15.0
 	github.com/JGLTechnologies/gin-rate-limit v1.5.4
-	github.com/disgoorg/disgo v0.18.7
+	github.com/aws/aws-sdk-go v1.55.5
+	github.com/disgoorg/disgo v0.18.13
 	github.com/elastic/go-elasticsearch/v8 v8.14.0
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/gin-contrib/cors v1.7.2
@@ -26,15 +27,14 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.55.5 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/disgoorg/json v1.1.0 // indirect
-	github.com/disgoorg/snowflake/v2 v2.0.1 // indirect
+	github.com/disgoorg/json v1.2.0 // indirect
+	github.com/disgoorg/snowflake/v2 v2.0.3 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
@@ -68,9 +68,9 @@ require (
 	go.opentelemetry.io/otel/trace v1.27.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/crypto v0.24.0 // indirect
+	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 	google.golang.org/protobuf v1.34.0 // indirect
 )
