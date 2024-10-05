@@ -1,8 +1,6 @@
 module github.com/Quaver/api2
 
-go 1.22.0
-
-toolchain go1.22.4
+go 1.23.2
 
 require (
 	github.com/Azure/azure-pipeline-go v0.2.3
