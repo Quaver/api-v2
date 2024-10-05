@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/webhooks"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -91,9 +92,19 @@ func processUsers(users []*db.User) error {
 
 			switch mode {
 			case enums.GameModeKeys4:
-				performanceRating = user.StatsKeys4.OverallPerformanceRating
+				if user.StatsKeys4 != nil {
+					performanceRating = user.StatsKeys4.OverallPerformanceRating
+				} else {
+					log := fmt.Sprintf("%v (#%v) couldn't fetch 4K stats", user.Username, user.Id)
+					_ = webhooks.SendErrorEventWebhook("Missing 4K Stats", log)
+				}
 			case enums.GameModeKeys7:
-				performanceRating = user.StatsKeys7.OverallPerformanceRating
+				if user.StatsKeys7 != nil {
+					performanceRating = user.StatsKeys7.OverallPerformanceRating
+				} else {
+					log := fmt.Sprintf("%v (#%v) couldn't fetch 7K stats", user.Username, user.Id)
+					_ = webhooks.SendErrorEventWebhook("Missing 7K Stats", log)
+				}
 			}
 
 			err := db.Redis.ZAdd(db.RedisCtx, globalKey, redis.Z{
@@ -125,6 +136,10 @@ func processUsers(users []*db.User) error {
 				return err
 			}
 
+			continue
+		}
+
+		if user.StatsKeys4 == nil || user.StatsKeys7 == nil {
 			continue
 		}
 

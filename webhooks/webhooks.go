@@ -275,6 +275,36 @@ func SendBackupWebhook(successful bool, failureError ...error) error {
 	return nil
 }
 
+// SendErrorEventWebhook Sends a webhook to the events channel with a custom message
+func SendErrorEventWebhook(title string, message string) error {
+	if events == nil {
+		return nil
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetTitle(fmt.Sprintf("❌ %v", title)).
+		SetDescription(message).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
+		SetTimestamp(time.Now()).
+		SetColor(0xFF0000).
+		Build()
+
+	msg := discord.WebhookMessageCreate{
+		Embeds:  []discord.Embed{embed},
+		Content: "@everyone",
+	}
+
+	_, err := events.CreateMessage(msg)
+
+	if err != nil {
+		logrus.Error("Failed to send backup webhook: ", err)
+		return err
+	}
+
+	return nil
+}
+
 func SendSupervisorActivityWebhook(results map[*db.User]int, timeStart int64, timeEnd int64) error {
 	if teamAnnounce == nil {
 		return nil
