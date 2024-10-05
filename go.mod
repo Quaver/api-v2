@@ -6,6 +6,7 @@ require (
 	github.com/Azure/azure-pipeline-go v0.2.3
 	github.com/Azure/azure-storage-blob-go v0.15.0
 	github.com/JGLTechnologies/gin-rate-limit v1.5.4
+	github.com/aws/aws-sdk-go v1.55.5
 	github.com/disgoorg/disgo v0.18.7
 	github.com/elastic/go-elasticsearch/v8 v8.14.0
 	github.com/gabriel-vasile/mimetype v1.4.3
@@ -21,12 +22,11 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/stripe/stripe-go/v79 v79.0.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/mysql v1.5.1
-	gorm.io/gorm v1.25.4
+	gorm.io/driver/mysql v1.5.7
+	gorm.io/gorm v1.25.7
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.55.5 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
