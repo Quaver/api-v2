@@ -298,7 +298,7 @@ func SendErrorEventWebhook(title string, message string) error {
 	_, err := events.CreateMessage(msg)
 
 	if err != nil {
-		logrus.Error("Failed to send backup webhook: ", err)
+		logrus.Error("Failed to send error event webhook: ", err)
 		return err
 	}
 
