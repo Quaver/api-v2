@@ -6,6 +6,7 @@ require (
 	github.com/Azure/azure-pipeline-go v0.2.3
 	github.com/Azure/azure-storage-blob-go v0.15.0
 	github.com/JGLTechnologies/gin-rate-limit v1.5.4
+	github.com/aws/aws-sdk-go v1.55.5
 	github.com/disgoorg/disgo v0.18.7
 	github.com/elastic/go-elasticsearch/v8 v8.14.0
 	github.com/gabriel-vasile/mimetype v1.4.3
@@ -16,7 +17,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.1
 	github.com/oliamb/cutter v0.2.2
 	github.com/redis/go-redis/v9 v9.4.0
-	github.com/robfig/cron/v3 v3.0.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/stripe/stripe-go/v79 v79.0.0
@@ -26,7 +27,6 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.55.5 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
