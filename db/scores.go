@@ -180,6 +180,17 @@ func GetScoreById(id int) (*Score, error) {
 	return score, nil
 }
 
+// GetLastScoreId Retrieves the id of the last score submitted
+func GetLastScoreId() (int, error) {
+	var lastScoreId int
+
+	if err := SQL.Raw("SELECT id FROM scores ORDER BY id DESC LIMIT 1;").Scan(&lastScoreId).Error; err != nil {
+		return -1, err
+	}
+
+	return lastScoreId, nil
+}
+
 // GetGlobalScoresForMap Retrieves the global scores for a map
 func GetGlobalScoresForMap(md5 string, useCache bool) ([]*Score, error) {
 	if useCache {

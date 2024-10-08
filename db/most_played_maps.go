@@ -72,13 +72,13 @@ func GetWeeklyMostPlayedMapsets(ignoreCache bool) ([]*WeeklyMostPlayedMapsets, e
 
 	bundled += ")"
 
-	scoreCount, err := GetTotalScoreCountFromRedis()
+	lastScoreId, err := GetLastScoreId()
 
 	if err != nil {
 		return nil, err
 	}
 
-	if err := CacheJsonInRedis(redisKey, &mapsets, time.Hour*24, ignoreCache, func() error {
+	if err := CacheJsonInRedis(redisKey, &mapsets, time.Hour*24, true, func() error {
 		return SQL.Raw("SELECT "+
 			"maps.mapset_id, maps.creator_id, maps.creator_username, maps.artist, maps.title, COUNT(*) "+
 			"FROM scores s "+
@@ -89,7 +89,7 @@ func GetWeeklyMostPlayedMapsets(ignoreCache bool) ([]*WeeklyMostPlayedMapsets, e
 			"GROUP BY "+
 			"maps.mapset_id "+
 			"ORDER BY COUNT(*) DESC "+
-			"LIMIT 10", scoreCount).
+			"LIMIT 10", lastScoreId).
 			Scan(&mapsets).Error
 	}); err != nil {
 		return nil, err
