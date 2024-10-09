@@ -55,9 +55,13 @@ func (clan *Clan) Insert() error {
 		}
 
 		for i := 1; i <= 2; i++ {
-			if err := tx.Create(&ClanStats{ClanId: clan.Id, Mode: enums.GameMode(i)}).Error; err != nil {
+			stat := &ClanStats{ClanId: clan.Id, Mode: enums.GameMode(i)}
+
+			if err := tx.Create(stat).Error; err != nil {
 				return err
 			}
+
+			clan.Stats = append(clan.Stats, stat)
 		}
 
 		return nil
