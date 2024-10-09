@@ -133,6 +133,15 @@ func GetClanLeaderboard(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving clan leaderboard", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"clans": clans})
+	count, err := db.GetClansCount()
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving total clan count", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"clans":       clans,
+		"total_clans": count,
+	})
 	return nil
 }

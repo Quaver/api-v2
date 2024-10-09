@@ -100,6 +100,20 @@ func GetClanByName(name string) (*Clan, error) {
 	return clan, nil
 }
 
+// GetClansCount Gets the total amount of clans
+func GetClansCount() (int, error) {
+	var count int
+
+	result := SQL.Raw("SELECT COUNT(*) as count FROM clans").
+		Scan(&count)
+
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return count, nil
+}
+
 // DeleteClan Fully deletes a clan with a given id
 func DeleteClan(id int) error {
 	err := SQL.Transaction(func(tx *gorm.DB) error {
