@@ -21,7 +21,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/stripe/stripe-go/v79 v79.12.0
-	github.com/stripe/stripe-go/v80 v80.1.0
+	github.com/stripe/stripe-go/v80 v80.2.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
