@@ -42,7 +42,7 @@ type UserNotification struct {
 	RawData       string                   `gorm:"column:data" json:"-"`
 	Data          json.RawMessage          `gorm:"-:all" json:"data"`
 	ReadAt        int64                    `gorm:"column:read_at" json:"-"`
-	ReadAtJSON    time.Time                `gorm:"-:all" json:"read_at"`
+	ReadAtJSON    *time.Time               `gorm:"-:all" json:"read_at"`
 	Timestamp     int64                    `gorm:"column:timestamp" json:"-"`
 	TimestampJSON time.Time                `gorm:"-:all" json:"timestamp"`
 	User          *User                    `gorm:"foreignKey:SenderId; references:Id" json:"user"`
@@ -53,7 +53,11 @@ func (*UserNotification) TableName() string {
 }
 
 func (n *UserNotification) AfterFind(*gorm.DB) error {
-	n.ReadAtJSON = time.UnixMilli(n.ReadAt)
+	if n.ReadAt > 0 {
+		t := time.UnixMilli(n.ReadAt)
+		n.ReadAtJSON = &t
+	}
+
 	n.TimestampJSON = time.UnixMilli(n.Timestamp)
 
 	if err := json.Unmarshal([]byte(n.RawData), &n.Data); err != nil {
@@ -160,7 +164,8 @@ func (n *UserNotification) UpdateReadStatus(isRead bool) error {
 		n.ReadAt = 0
 	}
 
-	n.ReadAtJSON = time.UnixMilli(n.ReadAt)
+	t := time.UnixMilli(n.ReadAt)
+	n.ReadAtJSON = &t
 
 	result := SQL.Model(&UserNotification{}).
 		Where("id = ?", n.Id).
