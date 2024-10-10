@@ -207,7 +207,7 @@ func FinalizePaidStripeInvoice(event *stripe.Event) *APIError {
 	}
 
 	// Event is sent when subscription is initially created, so ignore it
-	if invoice.BillingReason != stripe.InvoiceBillingReasonSubscriptionCreate {
+	if invoice.BillingReason == stripe.InvoiceBillingReasonSubscriptionCreate {
 		return nil
 	}
 
@@ -229,7 +229,7 @@ func FinalizePaidStripeInvoice(event *stripe.Event) *APIError {
 		ItemId:         1,
 		Quantity:       int(invoice.Lines.Data[0].Quantity),
 		Amount:         float32(invoice.AmountPaid) / 100,
-		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks (Stripe)", int(invoice.Lines.Data[0].Quantity)),
+		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks - Renewal (Stripe)", int(invoice.Lines.Data[0].Quantity)),
 		ReceiverUserId: subscription.UserId,
 		Status:         db.OrderStatusCompleted,
 		SubscriptionId: &subscription.Id,
