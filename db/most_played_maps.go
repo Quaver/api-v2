@@ -78,7 +78,7 @@ func GetWeeklyMostPlayedMapsets(ignoreCache bool) ([]*WeeklyMostPlayedMapsets, e
 		return nil, err
 	}
 
-	if err := CacheJsonInRedis(redisKey, &mapsets, time.Hour*24, false, func() error {
+	if err := CacheJsonInRedis(redisKey, &mapsets, time.Hour*24, ignoreCache, func() error {
 		return SQL.Raw("SELECT "+
 			"maps.mapset_id, maps.creator_id, maps.creator_username, maps.artist, maps.title, COUNT(*) "+
 			"FROM scores s "+
