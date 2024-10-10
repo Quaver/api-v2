@@ -59,11 +59,8 @@ func (n *UserNotification) AfterFind(*gorm.DB) error {
 	}
 
 	n.TimestampJSON = time.UnixMilli(n.Timestamp)
-
-	if err := json.Unmarshal([]byte(n.RawData), &n.Data); err != nil {
-		return err
-	}
-
+	_ = json.Unmarshal([]byte(n.RawData), &n.Data)
+≠
 	return nil
 }
 
