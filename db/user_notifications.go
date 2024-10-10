@@ -60,7 +60,7 @@ func (n *UserNotification) AfterFind(*gorm.DB) error {
 
 	n.TimestampJSON = time.UnixMilli(n.Timestamp)
 	_ = json.Unmarshal([]byte(n.RawData), &n.Data)
-≠
+
 	return nil
 }
 
