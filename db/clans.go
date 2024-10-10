@@ -16,6 +16,7 @@ type Clan struct {
 	CreatedAt              int64        `gorm:"column:created_at" json:"-"`
 	AboutMe                *string      `gorm:"column:about_me" json:"about_me"`
 	FavoriteMode           uint8        `gorm:"column:favorite_mode" json:"favorite_mode"`
+	AccentColor            *string      `gorm:"column:accent_color" json:"accent_color"`
 	LastNameChangeTime     int64        `gorm:"column:last_name_change_time" json:"-"`
 	IsCustomizable         bool         `gorm:"column:customizable" json:"customizable"`
 	CreatedAtJSON          time.Time    `gorm:"-:all" json:"created_at"`
@@ -233,6 +234,15 @@ func (clan *Clan) UpdateCustomizable(enabled bool) error {
 	result := SQL.Model(&Clan{}).
 		Where("id = ?", clan.Id).
 		Update("customizable", enabled)
+
+	return result.Error
+}
+
+// UpdateAccentColor Updates the accent color for a clan
+func (clan *Clan) UpdateAccentColor(hex string) error {
+	result := SQL.Model(&Clan{}).
+		Where("id = ?", clan.Id).
+		Update("accent_color", hex)
 
 	return result.Error
 }
