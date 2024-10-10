@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/stringutil"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -17,6 +18,7 @@ const (
 	errClanTagInvalid          string = "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers."
 	errClanAboutMeInvalid      string = "Your clan `about_me` must be between 0 and 2000 characters."
 	errClanFavoriteModeInvalid string = "Your clan `favorite_mode` must be a valid mode id."
+	errClanAccentColorInvalid  string = "Your clan `accent_color` must be a valid hex code."
 	errClanNameExists          string = "A clan with that name already exists. Please choose a different name."
 )
 
@@ -153,6 +155,7 @@ func UpdateClan(c *gin.Context) *APIError {
 		Tag          *string `form:"tag" json:"tag"`
 		FavoriteMode *uint8  `form:"favorite_mode" json:"favorite_mode"`
 		AboutMe      *string `form:"about_me" json:"about_me"`
+		AccentColor  *string `form:"accent_color" json:"accent_color"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -216,6 +219,18 @@ func UpdateClan(c *gin.Context) *APIError {
 
 		if err := clan.UpdateAboutMe(*body.AboutMe); err != nil {
 			return APIErrorServerError("Error updating clan favorite mode", err)
+		}
+	}
+
+	if body.AccentColor != nil {
+		if !stringutil.IsValidHexCode(*body.AccentColor) {
+			return APIErrorBadRequest(errClanAccentColorInvalid)
+		}
+
+		clan.AccentColor = body.AccentColor
+
+		if err := clan.UpdateAccentColor(*body.AccentColor); err != nil {
+			return APIErrorServerError("Error updating clan accent color", err)
 		}
 	}
 
