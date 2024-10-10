@@ -174,6 +174,13 @@ func (n *UserNotification) UpdateReadStatus(isRead bool) error {
 	return result.Error
 }
 
+// MarkUserNotificationsAsRead Marks all of a user's notifications as read
+func MarkUserNotificationsAsRead(userId int) error {
+	return SQL.Model(&UserNotification{}).
+		Where("receiver_id = ? AND read_at = 0", userId).
+		Update("read_at", time.Now().UnixMilli()).Error
+}
+
 // NewMapsetRankedNotification Returns a new ranked mapset notification
 func NewMapsetRankedNotification(mapset *Mapset) *UserNotification {
 	notif := &UserNotification{

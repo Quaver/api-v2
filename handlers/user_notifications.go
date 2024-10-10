@@ -157,6 +157,23 @@ func DeleteNotification(c *gin.Context) *APIError {
 	return nil
 }
 
+// MarkAllNotificationsAsRead Marks all notifications from a user as read
+// POST: /v2/notifications/all/read
+func MarkAllNotificationsAsRead(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if err := db.MarkUserNotificationsAsRead(user.Id); err != nil {
+		return APIErrorServerError("Error marking user notifications as read in db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "You have successfully marked all notifications as read."})
+	return nil
+}
+
 // Performs authentication/validation & Sets the notification read status
 func updateNotificationReadStatus(c *gin.Context, isRead bool) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
