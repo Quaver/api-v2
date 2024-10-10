@@ -267,6 +267,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Notifications
 	engine.GET("/v2/notifications", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserNotifications))
 	engine.POST("/v2/notifications", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateUserNotification))
+	engine.POST("/v2/notifications/all/read", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkAllNotificationsAsRead))
 	engine.POST("/v2/notifications/:id/read", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkUserNotificationAsRead))
 	engine.POST("/v2/notifications/:id/unread", middleware.RequireAuth, handlers.CreateHandler(handlers.MarkUserNotificationAsUnread))
 	engine.DELETE("/v2/notifications/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteNotification))
