@@ -51,10 +51,11 @@ var (
 
 // Common request body when initiating a donator transaction
 type donationRequestBody struct {
-	Months     int    `form:"months" json:"months" binding:"required"`
-	GiftUserId int    `form:"gift_user_id" json:"gift_user_id"`
-	Recurring  bool   `form:"recurring" json:"recurring"`
-	Ip         string `form:"ip" json:"ip"`
+	Months        int    `form:"months" json:"months" binding:"required"`
+	GiftUserId    int    `form:"gift_user_id" json:"gift_user_id"`
+	Recurring     bool   `form:"recurring" json:"recurring"`
+	Ip            string `form:"ip" json:"ip"`
+	AnonymizeGift bool   `form:"anonymize_gift" json:"anonymize_gift"`
 }
 
 // GetDonatorPrices Returns the current donator prices
@@ -114,9 +115,10 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 	body := struct {
 		PaymentMethod checkoutPaymentMethod `json:"payment_method"`
 		LineItems     []struct {
-			Id         db.OrderItemId `json:"id"`
-			Quantity   int            `json:"quantity"`
-			GiftUserId int            `json:"gift_user_id"`
+			Id            db.OrderItemId `json:"id"`
+			Quantity      int            `json:"quantity"`
+			GiftUserId    int            `json:"gift_user_id"`
+			AnonymizeGift bool           `json:"anonymize_gift"`
 		} `json:"line_items"`
 		Ip string `json:"ip"`
 	}{}
@@ -160,12 +162,13 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 		}
 
 		order := &db.Order{
-			UserId:      user.Id,
-			IPAddress:   getOrderIp(body.Ip),
-			ItemId:      lineItem.Id,
-			Quantity:    lineItem.Quantity,
-			Description: orderItem.Name,
-			Item:        orderItem,
+			UserId:        user.Id,
+			IPAddress:     getOrderIp(body.Ip),
+			ItemId:        lineItem.Id,
+			Quantity:      lineItem.Quantity,
+			Description:   orderItem.Name,
+			Item:          orderItem,
+			AnonymizeGift: lineItem.AnonymizeGift,
 		}
 
 		isSet, err := order.SetReceiver(user, lineItem.GiftUserId)

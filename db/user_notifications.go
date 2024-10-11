@@ -309,6 +309,7 @@ func NewOrderItemGiftNotification(order *Order) *UserNotification {
 	data := map[string]interface{}{
 		"order_item_id":   order.ItemId,
 		"order_item_name": order.Description,
+		"anonymize_gift":  order.AnonymizeGift,
 	}
 
 	marshaled, _ := json.Marshal(data)

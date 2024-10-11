@@ -37,6 +37,7 @@ type Order struct {
 	TimestampJSON  time.Time                `gorm:"-:all" json:"timestamp"`
 	Status         OrderStatus              `gorm:"column:status" json:"status"`
 	SubscriptionId *int                     `gorm:"column:subscription_id" json:"-"`
+	AnonymizeGift  bool                     `gorm:"column:anonymize_gift" json:"anonymize_gift"`
 	Item           *OrderItem               `gorm:"foreignKey:ItemId" json:"item"`
 	Subscription   *OrderSubscriptionStripe `gorm:"foreignKey:SubscriptionId" json:"subscription,omitempty"`
 }

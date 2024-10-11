@@ -82,6 +82,7 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		Quantity:      body.Months,
 		Amount:        price,
 		Description:   fmt.Sprintf("%v month(s) of Quaver Donator Perks (Stripe)", body.Months),
+		AnonymizeGift: body.AnonymizeGift,
 	}
 
 	isSet, err := order.SetReceiver(user, body.GiftUserId)
