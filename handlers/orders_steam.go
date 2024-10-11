@@ -43,13 +43,14 @@ func InitiateSteamDonatorTransaction(c *gin.Context) *APIError {
 	}
 
 	order := &db.Order{
-		UserId:      user.Id,
-		OrderId:     generateSteamOrderId(),
-		IPAddress:   getOrderIp(body.Ip),
-		ItemId:      db.OrderItemDonator,
-		Quantity:    body.Months,
-		Amount:      price,
-		Description: fmt.Sprintf("%v month(s) of Quaver Donator Perks (Steam)", body.Months),
+		UserId:        user.Id,
+		OrderId:       generateSteamOrderId(),
+		IPAddress:     getOrderIp(body.Ip),
+		ItemId:        db.OrderItemDonator,
+		Quantity:      body.Months,
+		Amount:        price,
+		Description:   fmt.Sprintf("%v month(s) of Quaver Donator Perks (Steam)", body.Months),
+		AnonymizeGift: body.AnonymizeGift,
 	}
 
 	isSet, err := order.SetReceiver(user, body.GiftUserId)
