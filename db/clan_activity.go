@@ -73,6 +73,7 @@ func GetClanActivity(clanId int, limit int, page int) ([]*ClanActivity, error) {
 	result := SQL.
 		Joins("User").
 		Where("clan_activity.clan_id = ?", clanId).
+		Order("id DESC").
 		Limit(limit).
 		Offset(page * limit).
 		Find(&activities)
