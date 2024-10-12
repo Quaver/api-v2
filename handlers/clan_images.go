@@ -68,6 +68,10 @@ func uploadClanImage(c *gin.Context, imageType ClanImage) *APIError {
 		return APIErrorServerError("Failed to upload file", err)
 	}
 
+	if err := clan.UpdateLastUpdated(); err != nil {
+		return APIErrorServerError("Error updating last_updated for clan", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": fmt.Sprintf("Your %v has been successfully uploaded.", clanImageString(imageType)),
 	})

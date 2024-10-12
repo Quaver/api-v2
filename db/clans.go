@@ -9,30 +9,30 @@ import (
 )
 
 type Clan struct {
-	Id                     int          `gorm:"column:id; PRIMARY_KEY" json:"id"`
-	OwnerId                int          `gorm:"column:owner_id" json:"owner_id"`
-	Name                   string       `gorm:"column:name" json:"name"`
-	Tag                    string       `gorm:"column:tag" json:"tag"`
-	CreatedAt              int64        `gorm:"column:created_at" json:"-"`
-	AboutMe                *string      `gorm:"column:about_me" json:"about_me"`
-	FavoriteMode           uint8        `gorm:"column:favorite_mode" json:"favorite_mode"`
-	AccentColor            *string      `gorm:"column:accent_color" json:"accent_color"`
-	LastNameChangeTime     int64        `gorm:"column:last_name_change_time" json:"-"`
-	IsCustomizable         bool         `gorm:"column:customizable" json:"customizable"`
-	CreatedAtJSON          time.Time    `gorm:"-:all" json:"created_at"`
-	LastNameChangeTimeJSON time.Time    `gorm:"-:all" json:"last_name_change_time"`
-	Stats                  []*ClanStats `gorm:"foreignKey:ClanId" json:"stats"`
+	Id              int          `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	OwnerId         int          `gorm:"column:owner_id" json:"owner_id"`
+	Name            string       `gorm:"column:name" json:"name"`
+	Tag             string       `gorm:"column:tag" json:"tag"`
+	CreatedAt       int64        `gorm:"column:created_at" json:"-"`
+	AboutMe         *string      `gorm:"column:about_me" json:"about_me"`
+	FavoriteMode    uint8        `gorm:"column:favorite_mode" json:"favorite_mode"`
+	AccentColor     *string      `gorm:"column:accent_color" json:"accent_color"`
+	LastUpdated     int64        `gorm:"column:last_updated" json:"-"`
+	IsCustomizable  bool         `gorm:"column:customizable" json:"customizable"`
+	CreatedAtJSON   time.Time    `gorm:"-:all" json:"created_at"`
+	LastUpdatedJSON time.Time    `gorm:"-:all" json:"last_updated"`
+	Stats           []*ClanStats `gorm:"foreignKey:ClanId" json:"stats"`
 }
 
 func (clan *Clan) BeforeCreate(*gorm.DB) (err error) {
 	clan.CreatedAtJSON = time.Now()
-	clan.LastNameChangeTimeJSON = time.Now()
+	clan.LastUpdatedJSON = time.Now()
 	return nil
 }
 
 func (clan *Clan) AfterFind(*gorm.DB) (err error) {
 	clan.CreatedAtJSON = time.UnixMilli(clan.CreatedAt)
-	clan.LastNameChangeTimeJSON = time.UnixMilli(clan.LastNameChangeTime)
+	clan.LastUpdatedJSON = time.UnixMilli(clan.LastUpdated)
 	return nil
 }
 
@@ -48,7 +48,7 @@ func (clan *Clan) Insert() error {
 
 	clan.FavoriteMode = 1
 	clan.CreatedAt = time.Now().UnixMilli()
-	clan.LastNameChangeTime = time.Now().UnixMilli()
+	clan.LastUpdated = time.Now().UnixMilli()
 
 	err := SQL.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&clan).Error; err != nil {
@@ -196,8 +196,7 @@ func (clan *Clan) UpdateOwner(ownerId int) error {
 func (clan *Clan) UpdateName(name string) error {
 	result := SQL.Model(&Clan{}).
 		Where("id = ?", clan.Id).
-		Update("name", name).
-		Update("last_name_change_time", time.Now().UnixMilli())
+		Update("name", name)
 
 	return result.Error
 }
@@ -243,6 +242,17 @@ func (clan *Clan) UpdateAccentColor(hex string) error {
 	result := SQL.Model(&Clan{}).
 		Where("id = ?", clan.Id).
 		Update("accent_color", hex)
+
+	return result.Error
+}
+
+func (clan *Clan) UpdateLastUpdated() error {
+	clan.LastUpdated = time.Now().UnixMilli()
+	clan.LastUpdatedJSON = time.Now()
+
+	result := SQL.Model(&Clan{}).
+		Where("id = ?", clan.Id).
+		Update("last_updated", clan.LastUpdated)
 
 	return result.Error
 }
