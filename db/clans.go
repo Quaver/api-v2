@@ -119,6 +119,20 @@ func GetClansCount() (int, error) {
 	return count, nil
 }
 
+// GetClanMemberCount Returns the amount of users that are in a given clan
+func GetClanMemberCount(clanId int) (int, error) {
+	var count int
+
+	result := SQL.Raw("SELECT COUNT(*) as count FROM users WHERE clan_id = ?", clanId).
+		Scan(&count)
+
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return count, nil
+}
+
 // DeleteClan Fully deletes a clan with a given id
 func DeleteClan(id int) error {
 	err := SQL.Transaction(func(tx *gorm.DB) error {

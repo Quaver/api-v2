@@ -126,6 +126,16 @@ func AcceptClanInvite(c *gin.Context) *APIError {
 		return apiErr
 	}
 
+	memberCount, err := db.GetClanMemberCount(invite.ClanId)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving clan member count", err)
+	}
+
+	if memberCount >= 100 {
+		return APIErrorBadRequest("The clan you are trying to join is already full.")
+	}
+
 	if err := db.UpdateUserClan(user.Id, invite.ClanId); err != nil {
 		return APIErrorServerError("Error updating user clan", err)
 	}
