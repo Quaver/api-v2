@@ -43,6 +43,7 @@ type ElasticMapsetSearchOptions struct {
 	MinLastUpdated      int64   `form:"min_last_updated" json:"min_last_updated"`
 	MaxLastUpdated      int64   `form:"max_last_updated" json:"max_last_updated"`
 	Explicit            bool    `form:"show_explicit" json:"show_explicit"`
+	IsClanRanked        bool    `form:"is_clan_ranked" json:"is_clan_ranked"`
 }
 
 func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
@@ -346,6 +347,14 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 			Value: options.Explicit,
 		}
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, explicitTerm)
+	}
+
+	if options.IsClanRanked {
+		clanRankedTerm := TermCustom{}
+		clanRankedTerm.Term.IsClanRanked = &Term{
+			Value: options.IsClanRanked,
+		}
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, clanRankedTerm)
 	}
 
 	query := Query{
