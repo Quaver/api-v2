@@ -26,6 +26,21 @@ var ClanRankMapCmd = &cobra.Command{
 
 			if err := db.UpdateMapClanRanked(mapQua.Id, true); err != nil {
 				logrus.Error("Error updating clan ranked status: ", err)
+				return
+			}
+
+			clanUsers, err := db.GetAllUsersInAClan()
+
+			if err != nil {
+				logrus.Error("Error retrieving users a part of a clan", err)
+				return
+			}
+
+			for _, user := range clanUsers {
+				if err := db.NewClanMapRankedNotification(mapQua, user.Id).Insert(); err != nil {
+					logrus.Error("Error inserting clan map ranked notification", err)
+					return
+				}
 			}
 
 			logrus.Info("Ranked Clan Map: ", mapQua.Id, mapQua)
