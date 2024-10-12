@@ -234,6 +234,10 @@ func UpdateClan(c *gin.Context) *APIError {
 		}
 	}
 
+	if err := clan.UpdateLastUpdated(); err != nil {
+		return APIErrorServerError("Error updating last_updated for clan", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Your clan has been successfully updated."})
 	return nil
 }
