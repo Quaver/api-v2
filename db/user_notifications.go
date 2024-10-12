@@ -18,6 +18,7 @@ const (
 	NotificationReceivedOrderItemGift
 	NotificationDonatorExpired
 	NotificationClanKicked
+	NotificationClanMapRanked
 )
 
 type UserNotificationCategory int
@@ -342,6 +343,28 @@ func NewClanKickedNotification(clan *Clan, userId int) *UserNotification {
 	data := map[string]interface{}{
 		"clan_id":   clan.Id,
 		"clan_name": clan.Name,
+	}
+
+	marshaled, _ := json.Marshal(data)
+	notif.RawData = string(marshaled)
+	return notif
+}
+
+// NewClanMapRankedNotification Returns a new clan map ranked notification
+func NewClanMapRankedNotification(mapQua *MapQua, userId int) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   QuaverBotId,
+		ReceiverId: userId,
+		Type:       NotificationClanMapRanked,
+		Category:   NotificationCategoryClan,
+	}
+
+	data := map[string]interface{}{
+		"map_id":           mapQua.Id,
+		"mapset_id":        mapQua.MapsetId,
+		"map_name":         mapQua.String(),
+		"creator_username": mapQua.CreatorUsername,
+		"creator_id":       mapQua.CreatorId,
 	}
 
 	marshaled, _ := json.Marshal(data)

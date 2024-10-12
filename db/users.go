@@ -291,6 +291,21 @@ func GetUsersInClan(clanId int) ([]*User, error) {
 	return users, nil
 }
 
+// GetAllUsersInAClan Returns all users that are in a clan
+func GetAllUsersInAClan() ([]*User, error) {
+	var users = make([]*User, 0)
+
+	result := SQL.
+		Where("users.clan_id IS NOT NULL").
+		Find(&users)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return users, nil
+}
+
 // SearchUsersByName Searches for users that have a similar name to the query
 func SearchUsersByName(searchQuery string) ([]*User, error) {
 	var users = make([]*User, 0)
