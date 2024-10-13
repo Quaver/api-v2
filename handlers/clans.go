@@ -20,6 +20,7 @@ const (
 	errClanFavoriteModeInvalid string = "Your clan `favorite_mode` must be a valid mode id."
 	errClanAccentColorInvalid  string = "Your clan `accent_color` must be a valid hex code."
 	errClanNameExists          string = "A clan with that name already exists. Please choose a different name."
+	errClanTagExists           string = "A clan with that tag already exists. Please choose a different tag."
 )
 
 // CreateClan Creates a new clan if the user is eligible to.
@@ -52,14 +53,24 @@ func CreateClan(c *gin.Context) *APIError {
 		return APIErrorBadRequest(errClanTagInvalid)
 	}
 
-	exists, err := db.DoesClanExistByName(body.Name)
+	nameExists, err := db.DoesClanExistByName(body.Name)
 
 	if err != nil {
 		return APIErrorServerError("Error checking if clan exists by name", err)
 	}
 
-	if exists {
+	if nameExists {
 		return APIErrorBadRequest(errClanNameExists)
+	}
+
+	tagExists, _, err := db.DoesClanExistByTag(body.Tag)
+
+	if err != nil {
+		return APIErrorServerError("Error checking if clan exists by tag", err)
+	}
+
+	if tagExists {
+		return APIErrorBadRequest(errClanTagExists)
 	}
 
 	clan := db.Clan{
@@ -191,7 +202,15 @@ func UpdateClan(c *gin.Context) *APIError {
 			return APIErrorBadRequest(errClanTagInvalid)
 		}
 
-		clan.Tag = *body.Tag
+		tagExists, existingClan, err := db.DoesClanExistByTag(*body.Tag)
+
+		if err != nil {
+			return APIErrorServerError("Error checking if clan exists by tag", err)
+		}
+
+		if tagExists && existingClan.Id != clan.Id {
+			return APIErrorBadRequest(errClanTagExists)
+		}
 
 		if err := clan.UpdateTag(*body.Tag); err != nil {
 			return APIErrorServerError("Error updating clan tag", err)

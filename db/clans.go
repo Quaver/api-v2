@@ -105,6 +105,21 @@ func GetClanByName(name string) (*Clan, error) {
 	return clan, nil
 }
 
+// GetClanByTag Gets a clan from the db by its tag (case-sensitive)
+func GetClanByTag(tag string) (*Clan, error) {
+	var clan *Clan
+
+	result := SQL.
+		Preload("Stats").
+		Where("BINARY clans.tag = ?", tag).First(&clan)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return clan, nil
+}
+
 // GetClansCount Gets the total amount of clans
 func GetClansCount() (int, error) {
 	var count int
@@ -183,6 +198,16 @@ func DoesClanExistByName(name string) (bool, error) {
 	}
 
 	return clan != nil, nil
+}
+
+func DoesClanExistByTag(tag string) (bool, *Clan, error) {
+	clan, err := GetClanByTag(tag)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return false, nil, err
+	}
+
+	return clan != nil, clan, nil
 }
 
 // IsValidClanName Checks a string to see if it is a valid clan name
