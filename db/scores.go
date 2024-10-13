@@ -690,12 +690,12 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*
 		return nil, err
 	}
 
-	// User changed their name, country, or got banned
+	// Cache invalidation by checking for updated values
 	for _, score := range scores {
 		var user *User
 
 		result := SQL.
-			Select("allowed", "username", "country").
+			Select("allowed", "username", "country", "clan_id").
 			Where("id = ?", score.UserId).
 			First(&user)
 
@@ -703,9 +703,19 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*
 			return nil, result.Error
 		}
 
-		if !user.Allowed || user.Username != score.User.Username || user.Country != score.User.Country {
+		if err := user.SetClanTagAndColor(); err != nil {
+			return nil, result.Error
+		}
+
+		if !user.Allowed ||
+			user.Username != score.User.Username ||
+			user.Country != score.User.Country ||
+			!comparePointers(user.ClanId, score.User.ClanId) ||
+			!comparePointers(user.ClanTag, score.User.ClanTag) ||
+			!comparePointers(user.ClanAccentColor, score.User.ClanAccentColor) {
 			return nil, nil
 		}
+
 	}
 
 	return scores, nil
@@ -746,4 +756,16 @@ func getSelectUserScoreboardQuery(limit int) string {
 
 	query += fmt.Sprintf(" %v;", limit)
 	return query
+}
+
+func comparePointers[T comparable](a, b *T) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if a == nil || b == nil {
+		return false
+	}
+
+	return *a == *b
 }
