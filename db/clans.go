@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/stringutil"
 	"gorm.io/gorm"
 	"regexp"
 	"time"
@@ -218,6 +219,10 @@ func IsValidClanName(name string) bool {
 
 // IsValidClanTag Checks a string to see if it is a valid clan tag
 func IsValidClanTag(tag string) bool {
+	if stringutil.IsClanTagCensored(tag) {
+		return false
+	}
+
 	result, _ := regexp.MatchString("^[a-zA-Z0-9]{1,4}$", tag)
 	return result
 }

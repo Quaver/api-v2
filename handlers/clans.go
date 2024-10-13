@@ -15,7 +15,7 @@ import (
 const (
 	errClanUserCantJoin        string = "You must not already be in a clan to perform this action."
 	errClanNameInvalid         string = "Your clan `name` must be between 3 and 30 characters and must contain only letters or numbers."
-	errClanTagInvalid          string = "Your clan `tag` must be between 1 and 4 characters and must contain only letters or numbers."
+	errClanTagInvalid          string = "Your clan `tag` must be between 1 and 4 characters, must only contain letters or numbers, and must not be inappropriate."
 	errClanAboutMeInvalid      string = "Your clan `about_me` must be between 0 and 2000 characters."
 	errClanFavoriteModeInvalid string = "Your clan `favorite_mode` must be a valid mode id."
 	errClanAccentColorInvalid  string = "Your clan `accent_color` must be a valid hex code."
