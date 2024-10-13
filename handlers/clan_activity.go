@@ -22,7 +22,7 @@ func GetClanActivity(c *gin.Context) *APIError {
 		page = 0
 	}
 
-	activities, err := db.GetClanActivity(clanId, 50, page)
+	activities, err := db.GetClanActivity(clanId, 10, page)
 
 	if err != nil {
 		return APIErrorServerError("Error getting clan activities", err)
