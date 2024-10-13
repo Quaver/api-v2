@@ -149,6 +149,21 @@ func GetClanMemberCount(clanId int) (int, error) {
 	return count, nil
 }
 
+// GetClanTagAndAccentColor Retrieves the name and tag for a clan
+func GetClanTagAndAccentColor(clanId int) (string, *string, error) {
+	var data Clan
+
+	result := SQL.
+		Raw("SELECT tag, accent_color FROM clans WHERE id = ?", clanId).
+		Scan(&data)
+
+	if result.Error != nil {
+		return "", nil, result.Error
+	}
+
+	return data.Tag, data.AccentColor, nil
+}
+
 // DeleteClan Fully deletes a clan with a given id
 func DeleteClan(id int) error {
 	err := SQL.Transaction(func(tx *gorm.DB) error {

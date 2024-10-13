@@ -41,6 +41,8 @@ type User struct {
 	MiscInformation             *UserInformation  `gorm:"-:all" json:"misc_information"`
 	UserPageDisabled            bool              `gorm:"column:userpage_disabled" json:"-"`
 	ClanId                      *int              `gorm:"column:clan_id" json:"clan_id"`
+	ClanTag                     *string           `gorm:"-:all" json:"clan_tag"`
+	ClanAccentColor             *string           `gorm:"-:all" json:"clan_accent_color"`
 	ClanLeaveTime               int64             `gorm:"column:clan_leave_time" json:"-"`
 	ClanLeaveTimeJSON           time.Time         `gorm:"-:all" json:"clan_leave_time"`
 	ShadowBanned                bool              `gorm:"column:shadow_banned" json:"-"`
@@ -100,6 +102,25 @@ func (u *User) AfterFind(*gorm.DB) (err error) {
 			logrus.Errorf("Error unmarshalling misc user info for user: %v", u.Id)
 			return nil
 		}
+	}
+
+	if err := u.SetClanTagAndColor(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *User) SetClanTagAndColor() error {
+	if u.ClanId != nil {
+		tag, accentColor, err := GetClanTagAndAccentColor(*u.ClanId)
+
+		if err != nil {
+			return err
+		}
+
+		u.ClanTag = &tag
+		u.ClanAccentColor = accentColor
 	}
 
 	return nil
