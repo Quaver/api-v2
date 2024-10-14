@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"encoding/json"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -43,8 +45,42 @@ var ClanRankMapCmd = &cobra.Command{
 				}
 			}
 
+			if err := sendClanMapToRedis(mapQua); err != nil {
+				logrus.Error("Error sending clan map to redis: ", err)
+			}
+
 			logrus.Info("Ranked Clan Map: ", mapQua.Id, mapQua)
 			_ = webhooks.SendClanRankedWebhook(mapQua)
 		}
 	},
+}
+
+// Publishes a ranked clan map to redis
+func sendClanMapToRedis(mapQua *db.MapQua) error {
+	type payload struct {
+		Map struct {
+			Id             int    `json:"id"`
+			Artist         string `json:"artist"`
+			Title          string `json:"title"`
+			DifficultyName string `json:"difficulty_name"`
+			CreatorName    string `json:"creator_name"`
+			Mode           string `json:"mode"`
+		} `json:"map"`
+	}
+
+	data := payload{}
+	data.Map.Id = mapQua.Id
+	data.Map.Artist = mapQua.Artist
+	data.Map.Title = mapQua.Title
+	data.Map.DifficultyName = mapQua.DifficultyName
+	data.Map.CreatorName = mapQua.CreatorUsername
+	data.Map.Mode = enums.GetShorthandGameModeString(mapQua.GameMode)
+
+	dataStr, _ := json.Marshal(data)
+
+	if err := db.Redis.Publish(db.RedisCtx, "quaver:ranked_clan_map", dataStr).Err(); err != nil {
+		return err
+	}
+
+	return nil
 }
