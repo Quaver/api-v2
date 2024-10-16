@@ -27,6 +27,8 @@ const (
 	ClanActivityUserLeft
 	ClanActivityUserKicked
 	ClanActivityOwnershipTransferred
+	ClanActivityAchievedFirstPlace
+	ClanActivityLostFirstPlace
 )
 
 func (*ClanActivity) TableName() string {

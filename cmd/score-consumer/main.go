@@ -155,10 +155,48 @@ func insertClanScore(score *db.RedisScore) error {
 		return err
 	}
 
+	if err := handleClanFirstPlaces(score, clan, mapQua, newScore, scoreboard); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func handleClanFirstPlaces(score *db.RedisScore, clan *db.Clan, mapQua *db.MapQua, newScore *db.ClanScore, scoreboard []*db.ClanScore) error {
+	var achievedFirstPlace bool
+
 	if len(scoreboard) == 0 {
+		achievedFirstPlace = true
 		_ = webhooks.SendClanFirstPlaceWebhook(clan, mapQua, newScore, nil)
 	} else if scoreboard[0].ClanId != score.User.ClanId && newScore.OverallRating > scoreboard[0].OverallRating {
+		achievedFirstPlace = true
 		_ = webhooks.SendClanFirstPlaceWebhook(clan, mapQua, newScore, scoreboard[0])
+	}
+
+	if !achievedFirstPlace {
+		return nil
+	}
+
+	// Add activity for clan who won first place
+	firstPlaceActivity := db.NewClanActivity(clan.Id, db.ClanActivityAchievedFirstPlace, score.User.Id)
+	firstPlaceActivity.MapId = mapQua.Id
+	firstPlaceActivity.Message = mapQua.String()
+
+	if err := firstPlaceActivity.Insert(); err != nil {
+		return err
+	}
+
+	if len(scoreboard) == 0 {
+		return nil
+	}
+
+	// Add activity for clan who lost first place
+	lostActivity := db.NewClanActivity(clan.Id, db.ClanActivityLostFirstPlace, score.User.Id)
+	lostActivity.MapId = mapQua.Id
+	lostActivity.Message = mapQua.String()
+
+	if err := lostActivity.Insert(); err != nil {
+		return err
 	}
 
 	return nil
