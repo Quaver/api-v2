@@ -191,7 +191,7 @@ func handleClanFirstPlaces(score *db.RedisScore, clan *db.Clan, mapQua *db.MapQu
 	}
 
 	// Add activity for clan who lost first place
-	lostActivity := db.NewClanActivity(clan.Id, db.ClanActivityLostFirstPlace, score.User.Id)
+	lostActivity := db.NewClanActivity(scoreboard[0].ClanId, db.ClanActivityLostFirstPlace, score.User.Id)
 	lostActivity.MapId = mapQua.Id
 	lostActivity.Message = mapQua.String()
 
