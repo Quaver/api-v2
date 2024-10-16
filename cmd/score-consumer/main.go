@@ -199,5 +199,18 @@ func handleClanFirstPlaces(score *db.RedisScore, clan *db.Clan, mapQua *db.MapQu
 		return err
 	}
 
+	// Add lost notification for clan members
+	clanMembers, err := db.GetUsersInClan(scoreboard[0].ClanId)
+
+	if err != nil {
+		return err
+	}
+
+	for _, member := range clanMembers {
+		if err := db.NewClanLostFirstPlaceNotification(mapQua, member.Id).Insert(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
