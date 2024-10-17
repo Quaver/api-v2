@@ -19,6 +19,7 @@ const (
 	NotificationDonatorExpired
 	NotificationClanKicked
 	NotificationClanMapRanked
+	NotificationClanLostFirstPlace
 )
 
 type UserNotificationCategory int
@@ -356,6 +357,28 @@ func NewClanMapRankedNotification(mapQua *MapQua, userId int) *UserNotification 
 		SenderId:   QuaverBotId,
 		ReceiverId: userId,
 		Type:       NotificationClanMapRanked,
+		Category:   NotificationCategoryClan,
+	}
+
+	data := map[string]interface{}{
+		"map_id":           mapQua.Id,
+		"mapset_id":        mapQua.MapsetId,
+		"map_name":         mapQua.String(),
+		"creator_username": mapQua.CreatorUsername,
+		"creator_id":       mapQua.CreatorId,
+	}
+
+	marshaled, _ := json.Marshal(data)
+	notif.RawData = string(marshaled)
+	return notif
+}
+
+// NewClanLostFirstPlaceNotification Returns a new clan lost first place notification
+func NewClanLostFirstPlaceNotification(mapQua *MapQua, userId int) *UserNotification {
+	notif := &UserNotification{
+		SenderId:   QuaverBotId,
+		ReceiverId: userId,
+		Type:       NotificationClanLostFirstPlace,
 		Category:   NotificationCategoryClan,
 	}
 
