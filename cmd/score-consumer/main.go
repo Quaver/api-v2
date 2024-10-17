@@ -6,6 +6,7 @@ import (
 	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
@@ -186,6 +187,10 @@ func handleClanFirstPlaces(score *db.RedisScore, clan *db.Clan, mapQua *db.MapQu
 		return err
 	}
 
+	if err := SendClanFirstPLaceToRedis(clan.Id, true, mapQua); err != nil {
+		return err
+	}
+
 	if len(scoreboard) == 0 {
 		return nil
 	}
@@ -196,6 +201,10 @@ func handleClanFirstPlaces(score *db.RedisScore, clan *db.Clan, mapQua *db.MapQu
 	lostActivity.Message = mapQua.String()
 
 	if err := lostActivity.Insert(); err != nil {
+		return err
+	}
+
+	if err := SendClanFirstPLaceToRedis(scoreboard[0].ClanId, false, mapQua); err != nil {
 		return err
 	}
 
@@ -210,6 +219,39 @@ func handleClanFirstPlaces(score *db.RedisScore, clan *db.Clan, mapQua *db.MapQu
 		if err := db.NewClanLostFirstPlaceNotification(mapQua, member.Id).Insert(); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func SendClanFirstPLaceToRedis(clanId int, won bool, mapQua *db.MapQua) error {
+	type payload struct {
+		ClanId int  `json:"clan_id"`
+		Won    bool `json:"won"`
+		Map    struct {
+			Id             int    `json:"id"`
+			Artist         string `json:"artist"`
+			Title          string `json:"title"`
+			DifficultyName string `json:"difficulty_name"`
+			CreatorName    string `json:"creator_name"`
+			Mode           string `json:"mode"`
+		} `json:"map"`
+	}
+
+	data := payload{}
+	data.ClanId = clanId
+	data.Won = won
+	data.Map.Id = mapQua.Id
+	data.Map.Artist = mapQua.Artist
+	data.Map.Title = mapQua.Title
+	data.Map.DifficultyName = mapQua.DifficultyName
+	data.Map.CreatorName = mapQua.CreatorUsername
+	data.Map.Mode = enums.GetShorthandGameModeString(mapQua.GameMode)
+
+	dataStr, _ := json.Marshal(data)
+
+	if err := db.Redis.Publish(db.RedisCtx, "quaver:clan_first_place", dataStr).Err(); err != nil {
+		return err
 	}
 
 	return nil
