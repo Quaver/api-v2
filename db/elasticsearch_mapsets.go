@@ -349,12 +349,16 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, explicitTerm)
 	}
 
+	sort := "date_last_updated"
+
 	if options.IsClanRanked {
 		clanRankedTerm := TermCustom{}
 		clanRankedTerm.Term.IsClanRanked = &Term{
 			Value: options.IsClanRanked,
 		}
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, clanRankedTerm)
+
+		sort = "date_clan_ranked"
 	}
 
 	query := Query{
@@ -373,7 +377,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		Query: boolQuery,
 		Sort: []map[string]SortOrder{
 			{"_score": {Order: "desc"}},
-			{"date_last_updated": {Order: "desc"}},
+			{sort: {Order: "desc"}},
 		},
 		Aggs: map[string]interface{}{
 			"distinct_mapset_ids": map[string]interface{}{
