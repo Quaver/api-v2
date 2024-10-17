@@ -6,6 +6,7 @@ import (
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
 	"strings"
+	"time"
 )
 
 type MapQua struct {
@@ -39,6 +40,8 @@ type MapQua struct {
 	ModsIgnored          int                `gorm:"column:mods_ignored" json:"mods_ignored"`
 	OnlineOffset         int                `gorm:"column:online_offset" json:"online_offset"`
 	IsClanRanked         bool               `gorm:"column:clan_ranked" json:"is_clan_ranked"`
+	DateClanRanked       *int64             `gorm:"column:date_clan_ranked" json:"-"`
+	DateClanRankedJSON   *time.Time         `gorm:"column:date_clan_ranked" json:"date_clan_ranked"`
 }
 
 func (m *MapQua) TableName() string {
@@ -52,6 +55,11 @@ func (m *MapQua) AfterFind(*gorm.DB) error {
 	if m.CountHitObjectLong != 0 {
 		m.LongNotePercentage = float32(m.CountHitObjectLong) /
 			float32(m.CountHitObjectNormal+m.CountHitObjectLong) * 100
+	}
+
+	if m.DateClanRanked != nil {
+		t := time.UnixMilli(*m.DateClanRanked)
+		m.DateClanRankedJSON = &t
 	}
 
 	return nil
@@ -139,11 +147,12 @@ func UpdateMapDifficultyRating(id int, difficultyRating float64) error {
 	return result.Error
 }
 
-// Updates the clan ranked status of a map
+// UpdateMapClanRanked Updates the clan ranked status of a map
 func UpdateMapClanRanked(id int, clanRanked bool) error {
 	result := SQL.Model(&MapQua{}).
 		Where("id = ?", id).
-		Update("clan_ranked", clanRanked)
+		Update("clan_ranked", clanRanked).
+		Update("date_clan_ranked", time.Now().UnixMilli())
 
 	return result.Error
 }
