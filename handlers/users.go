@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/stringutil"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"math"
@@ -119,6 +120,8 @@ func UpdateUserAboutMe(c *gin.Context) *APIError {
 	if len(body.AboutMe) > 2000 {
 		return APIErrorBadRequest("Your about me must not be longer than 2,000 characters.")
 	}
+
+	body.AboutMe = stringutil.SanitizeHTML(body.AboutMe)
 
 	err := db.UpdateUserAboutMe(user.Id, body.AboutMe)
 

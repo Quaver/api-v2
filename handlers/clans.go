@@ -234,9 +234,10 @@ func UpdateClan(c *gin.Context) *APIError {
 			return APIErrorBadRequest(errClanAboutMeInvalid)
 		}
 
-		clan.AboutMe = body.AboutMe
+		sanitized := stringutil.SanitizeHTML(*body.AboutMe)
+		clan.AboutMe = &sanitized
 
-		if err := clan.UpdateAboutMe(*body.AboutMe); err != nil {
+		if err := clan.UpdateAboutMe(*clan.AboutMe); err != nil {
 			return APIErrorServerError("Error updating clan favorite mode", err)
 		}
 	}
