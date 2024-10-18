@@ -230,7 +230,7 @@ func UpdateClan(c *gin.Context) *APIError {
 	}
 
 	if body.AboutMe != nil {
-		if len(*body.AboutMe) > 2000 {
+		if len(*body.AboutMe) > 3000 {
 			return APIErrorBadRequest(errClanAboutMeInvalid)
 		}
 
