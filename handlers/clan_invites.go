@@ -44,6 +44,10 @@ func InviteUserToClan(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You cannot invite yourself to the clan.")
 	}
 
+	if apiErr := checkMaxClanMembers(clan.Id); apiErr != nil {
+		return apiErr
+	}
+
 	invitingUser, err := db.GetUserById(body.UserId)
 
 	switch err {
@@ -126,14 +130,8 @@ func AcceptClanInvite(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	memberCount, err := db.GetClanMemberCount(invite.ClanId)
-
-	if err != nil {
-		return APIErrorServerError("Error retrieving clan member count", err)
-	}
-
-	if memberCount >= 100 {
-		return APIErrorBadRequest("The clan you are trying to join is already full.")
+	if apiErr := checkMaxClanMembers(invite.ClanId); apiErr != nil {
+		return apiErr
 	}
 
 	if err := db.UpdateUserClan(user.Id, invite.ClanId); err != nil {
@@ -274,4 +272,18 @@ func parseAndGetClanInvite(c *gin.Context, user *db.User) (*db.ClanInvite, *APIE
 	}
 
 	return invite, nil
+}
+
+func checkMaxClanMembers(clanId int) *APIError {
+	memberCount, err := db.GetClanMemberCount(clanId)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving clan member count", err)
+	}
+
+	if memberCount >= 100 {
+		return APIErrorBadRequest("The clan you are trying to join is already full.")
+	}
+
+	return nil
 }
