@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/disgoorg/disgo v0.18.13
 	github.com/elastic/go-elasticsearch/v8 v8.15.0
-	github.com/gabriel-vasile/mimetype v1.4.5
+	github.com/gabriel-vasile/mimetype v1.4.6
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-resty/resty/v2 v2.15.3
