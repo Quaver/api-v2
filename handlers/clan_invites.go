@@ -142,6 +142,10 @@ func AcceptClanInvite(c *gin.Context) *APIError {
 		return APIErrorServerError("Error deleting user clan invites", err)
 	}
 
+	if err := db.DeleteUserClanInviteNotifications(user.Id); err != nil {
+		return APIErrorServerError("Error deleting user clan invite notifications", err)
+	}
+
 	if err := db.NewClanActivity(invite.ClanId, db.ClanActivityUserJoined, user.Id).Insert(); err != nil {
 		return APIErrorServerError("Error inserting clan activity", err)
 	}
