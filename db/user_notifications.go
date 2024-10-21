@@ -71,6 +71,13 @@ func (n *UserNotification) Insert() error {
 	return SQL.Create(&n).Error
 }
 
+// DeleteUserClanInviteNotifications Deletes a user's clan invite notifications
+func DeleteUserClanInviteNotifications(userId int) error {
+	return SQL.
+		Delete(&UserNotification{}, "receiver_id = ? AND type = ?", userId, NotificationClanInvite).
+		Error
+}
+
 // GetNotifications Retrieves a user's notifications
 func GetNotifications(userId int, unreadOnly bool, page int, limit int, category UserNotificationCategory) ([]*UserNotification, error) {
 	notifications := make([]*UserNotification, 0)
