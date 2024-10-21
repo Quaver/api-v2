@@ -241,7 +241,7 @@ func FinalizePaidStripeInvoice(event *stripe.Event) *APIError {
 		return APIErrorServerError("Error retrieving subscription order receiver", err)
 	}
 
-	if order.Item, err = db.GetOrderItemById(int(db.OrderItemDonator)); err != nil {
+	if order.Item, err = db.GetOrderItemById(db.OrderItemDonator); err != nil {
 		return APIErrorServerError("Error retrieving subscription order item (donator)", err)
 	}
 

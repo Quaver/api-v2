@@ -128,18 +128,18 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 	}
 
 	var orders []*db.Order
-	var itemIds []int
+	var itemIds []db.OrderItemId
 
 	for _, lineItem := range body.LineItems {
 		if lineItem.Id == db.OrderItemDonator {
 			return APIErrorBadRequest("You cannot purchase donator through this endpoint.")
 		}
 
-		if slices.Contains(itemIds, int(lineItem.Id)) {
+		if slices.Contains(itemIds, lineItem.Id) {
 			return APIErrorBadRequest("You must submit 1 line_item per item id.")
 		}
 
-		orderItem, err := db.GetOrderItemById(int(lineItem.Id))
+		orderItem, err := db.GetOrderItemById(lineItem.Id)
 
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return APIErrorServerError("Error retrieving order item from db", err)
@@ -188,7 +188,7 @@ func CreateOrderCheckoutSession(c *gin.Context) *APIError {
 		}
 
 		orders = append(orders, order)
-		itemIds = append(itemIds, int(lineItem.Id))
+		itemIds = append(itemIds, lineItem.Id)
 	}
 
 	switch body.PaymentMethod {

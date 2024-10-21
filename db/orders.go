@@ -9,16 +9,10 @@ import (
 )
 
 type OrderStatus string
-type OrderItemId int
 
 const (
 	OrderStatusWaiting   OrderStatus = "Waiting"
 	OrderStatusCompleted OrderStatus = "Completed"
-)
-
-const (
-	OrderItemDonator OrderItemId = iota + 1
-	OrderItemClanCustomizable
 )
 
 type Order struct {
@@ -101,7 +95,7 @@ func (order *Order) Finalize() error {
 
 	// Finalize Specific items
 	switch order.Item.Id {
-	case int(OrderItemClanCustomizable):
+	case OrderItemClanCustomizable:
 		err = order.FinalizeClanCustomizable()
 	}
 

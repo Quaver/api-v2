@@ -17,7 +17,7 @@ func GetOrderItemById(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
-	item, err := db.GetOrderItemById(id)
+	item, err := db.GetOrderItemById(db.OrderItemId(id))
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return APIErrorServerError("Error retrieving order item from db", err)
