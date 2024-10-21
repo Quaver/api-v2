@@ -6,6 +6,7 @@ const (
 	OrderItemCategoryDonator OrderItemCategory = iota
 	OrderItemCategoryBadge
 	OrderItemCategoryClan
+	OrderItemCategoryUserProfile
 )
 
 type OrderItemId int
@@ -13,6 +14,7 @@ type OrderItemId int
 const (
 	OrderItemDonator OrderItemId = iota + 1
 	OrderItemClanCustomizable
+	OrderItemUserAccentColor
 )
 
 type OrderItem struct {

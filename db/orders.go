@@ -97,6 +97,8 @@ func (order *Order) Finalize() error {
 	switch order.Item.Id {
 	case OrderItemClanCustomizable:
 		err = order.FinalizeClanCustomizable()
+	case OrderItemUserAccentColor:
+		err = order.FinalizeUserAccentColor()
 	}
 
 	if err != nil {
@@ -222,6 +224,21 @@ func (order *Order) FinalizeClanCustomizable() error {
 	}
 
 	return clan.UpdateCustomizable(true)
+}
+
+// FinalizeUserAccentColor Finalizes a user accent color order
+func (order *Order) FinalizeUserAccentColor() error {
+	if order.Item.Category != OrderItemCategoryUserProfile || order.ItemId != OrderItemUserAccentColor {
+		return errors.New("cannot call FinalizeUserAccentColor() on a mismatching order")
+	}
+
+	user, err := GetUserById(order.ReceiverUserId)
+
+	if err != nil {
+		return err
+	}
+
+	return UpdateUserAccentColorCustomizable(user.Id, true)
 }
 
 // GetUserOrders Gets a user's orders
