@@ -50,3 +50,14 @@ func GetOrderItemById(id OrderItemId) (*OrderItem, error) {
 
 	return item, nil
 }
+
+// UpdateStripePriceId Updates the price id of an order item
+func (item *OrderItem) UpdateStripePriceId(priceId string) error {
+	result := SQL.Model(&OrderItem{}).Where("id = ?", item.Id).Update("stripe_price_id", priceId)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
