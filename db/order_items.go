@@ -6,10 +6,19 @@ const (
 	OrderItemCategoryDonator OrderItemCategory = iota
 	OrderItemCategoryBadge
 	OrderItemCategoryClan
+	OrderItemCategoryUserProfile
+)
+
+type OrderItemId int
+
+const (
+	OrderItemDonator OrderItemId = iota + 1
+	OrderItemClanCustomizable
+	OrderItemUserAccentColor
 )
 
 type OrderItem struct {
-	Id                 int               `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	Id                 OrderItemId       `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	StripePriceId      string            `gorm:"column:stripe_price_id" json:"-"`
 	Category           OrderItemCategory `gorm:"column:category" json:"category"`
 	Name               string            `gorm:"column:name" json:"name"`
@@ -28,7 +37,7 @@ func (*OrderItem) TableName() string {
 }
 
 // GetOrderItemById Retrieves an order item from the database by id
-func GetOrderItemById(id int) (*OrderItem, error) {
+func GetOrderItemById(id OrderItemId) (*OrderItem, error) {
 	var item *OrderItem
 
 	result := SQL.
@@ -40,4 +49,15 @@ func GetOrderItemById(id int) (*OrderItem, error) {
 	}
 
 	return item, nil
+}
+
+// UpdateStripePriceId Updates the price id of an order item
+func (item *OrderItem) UpdateStripePriceId(priceId string) error {
+	result := SQL.Model(&OrderItem{}).Where("id = ?", item.Id).Update("stripe_price_id", priceId)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
 }

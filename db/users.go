@@ -47,6 +47,8 @@ type User struct {
 	ClanLeaveTimeJSON           time.Time         `gorm:"-:all" json:"clan_leave_time"`
 	ShadowBanned                bool              `gorm:"column:shadow_banned" json:"-"`
 	RememberToken               *string           `gorm:"column:remember_token" json:"-"`
+	AccentColorCustomizable     bool              `gorm:"column:accent_color_customizable" json:"accent_color_customizable"`
+	AccentColor                 *string           `gorm:"column:accent_color" json:"accent_color"`
 	ClientStatus                *UserClientStatus `gorm:"-:all" json:"client_status"`
 	StatsKeys4                  *UserStatsKeys4   `gorm:"foreignKey:UserId" json:"stats_keys4,omitempty"`
 	StatsKeys7                  *UserStatsKeys7   `gorm:"foreignKey:UserId" json:"stats_keys7,omitempty"`
@@ -400,6 +402,28 @@ func UpdateUserAllowed(userId int, isAllowed bool) error {
 // UpdateUserDiscordId Updates a user's discord id
 func UpdateUserDiscordId(userId int, discordId *string) error {
 	result := SQL.Model(&User{}).Where("id = ?", userId).Update("discord_id", discordId)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
+// UpdateUserAccentColorCustomizable Updates whether the user can update their accent_color
+func UpdateUserAccentColorCustomizable(userId int, enabled bool) error {
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("accent_color_customizable", enabled)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
+// UpdateUserAccentColor Updates a user's accent color
+func UpdateUserAccentColor(userId int, accentColor *string) error {
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("accent_color", accentColor)
 
 	if result.Error != nil {
 		return result.Error

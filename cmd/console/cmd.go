@@ -53,6 +53,7 @@ func init() {
 	RootCmd.AddCommand(commands.DatabaseScoresBatchDeleteFailed)
 	RootCmd.AddCommand(commands.DeleteScoreCmd)
 	RootCmd.AddCommand(commands.FixStatsCmd)
+	RootCmd.AddCommand(commands.UpdateStripePriceId)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)

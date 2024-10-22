@@ -309,3 +309,35 @@ func UpdateUserDiscordId(c *gin.Context) *APIError {
 	c.JSON(http.StatusOK, gin.H{"message": "The user's Discord id has been updated."})
 	return nil
 }
+
+// UpdateUserAccentColor Updates a user's accent color
+// Endpoint: POST /v2/user/:id/accent
+func UpdateUserAccentColor(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	body := struct {
+		AccentColor string `form:"accent_color" json:"accent_color" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if !stringutil.IsValidHexCode(body.AccentColor) {
+		return APIErrorBadRequest("You must provide a valid accent color.")
+	}
+
+	if !user.AccentColorCustomizable {
+		return APIErrorForbidden("You must purchase accent color customizables to access this endpoint.")
+	}
+	if err := db.UpdateUserAccentColor(user.Id, &body.AccentColor); err != nil {
+		return APIErrorServerError("Error updating user discord id", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your accent color has been updated."})
+	return nil
+}
