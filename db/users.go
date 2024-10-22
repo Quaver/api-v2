@@ -412,7 +412,7 @@ func UpdateUserDiscordId(userId int, discordId *string) error {
 
 // UpdateUserAccentColorCustomizable Updates whether the user can update their accent_color
 func UpdateUserAccentColorCustomizable(userId int, enabled bool) error {
-	result := SQL.Model(&User{}).Where("id = ?", userId).Update("accent_color", enabled)
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("accent_color_customizable", enabled)
 
 	if result.Error != nil {
 		return result.Error
