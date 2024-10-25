@@ -32,6 +32,7 @@ type Order struct {
 	Status         OrderStatus              `gorm:"column:status" json:"status"`
 	SubscriptionId *int                     `gorm:"column:subscription_id" json:"-"`
 	AnonymizeGift  bool                     `gorm:"column:anonymize_gift" json:"anonymize_gift"`
+	FreeTrial      *bool                    `gorm:"column:free_trial" json:"free_trial"`
 	Item           *OrderItem               `gorm:"foreignKey:ItemId" json:"item"`
 	Subscription   *OrderSubscriptionStripe `gorm:"foreignKey:SubscriptionId" json:"subscription,omitempty"`
 }
@@ -139,11 +140,21 @@ func (order *Order) FinalizeDonator() error {
 
 	// Extend Donator Time
 	var endTime int64
+	const trialDays int = 14
 
 	if order.Receiver.DonatorEndTime == 0 {
-		endTime = time.Now().AddDate(0, order.Quantity, 0).UnixMilli()
+		if order.FreeTrial != nil && *order.FreeTrial {
+			endTime = time.Now().AddDate(0, 0, trialDays).UnixMilli()
+		} else {
+			endTime = time.Now().AddDate(0, order.Quantity, 0).UnixMilli()
+		}
+
 	} else {
-		endTime = time.UnixMilli(order.Receiver.DonatorEndTime).AddDate(0, order.Quantity, 0).UnixMilli()
+		if order.FreeTrial != nil && *order.FreeTrial {
+			endTime = time.UnixMilli(order.Receiver.DonatorEndTime).AddDate(0, 0, trialDays).UnixMilli()
+		} else {
+			endTime = time.UnixMilli(order.Receiver.DonatorEndTime).AddDate(0, order.Quantity, 0).UnixMilli()
+		}
 	}
 
 	if err := order.Receiver.UpdateDonatorEndTime(endTime); err != nil {
@@ -294,4 +305,22 @@ func GetStripeOrderById(transactionId string) ([]*Order, error) {
 	}
 
 	return orders, nil
+}
+
+// GetUserFreeTrialOrder Gets a user's free trial donator order
+func GetUserFreeTrialOrder(userId int) (*Order, error) {
+	var order *Order
+
+	result := SQL.
+		Preload("Receiver").
+		Preload("Item").
+		Preload("Subscription").
+		Where("user_id = ? AND status = 'Completed' AND free_trial = 1", userId).
+		First(&order)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return order, nil
 }
