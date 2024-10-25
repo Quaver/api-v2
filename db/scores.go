@@ -471,6 +471,10 @@ func GetUserPersonalBestScoreGlobal(userId int, md5 string) (*Score, error) {
 		return nil, result.Error
 	}
 
+	if err := score.User.AfterFind(nil); err != nil {
+		return nil, err
+	}
+
 	return score, nil
 }
 
@@ -489,6 +493,10 @@ func GetUserPersonalBestScoreAll(userId int, md5 string) (*Score, error) {
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	if err := score.User.AfterFind(nil); err != nil {
+		return nil, err
 	}
 
 	return score, nil
@@ -518,6 +526,10 @@ func GetUserPersonalBestScoreMods(userId int, md5 string, mods int64) (*Score, e
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	if err := score.User.AfterFind(nil); err != nil {
+		return nil, err
 	}
 
 	return score, nil
@@ -550,6 +562,10 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 		return nil, result.Error
 	}
 
+	if err := score.User.AfterFind(nil); err != nil {
+		return nil, err
+	}
+	
 	return score, nil
 }
 
