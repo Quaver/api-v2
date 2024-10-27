@@ -75,6 +75,20 @@ func DownloadMapset(c *gin.Context) *APIError {
 		return APIErrorNotFound("Mapset")
 	}
 
+	// Get file information
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return APIErrorServerError("Error getting file information", err)
+	}
+
+	// Set Content-Length header
+	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+
+	if c.Request.Method == "HEAD" {
+		// For HEAD requests, we're done here
+		return nil
+	}
+
 	if err := db.InsertMapsetDownload(&db.MapsetDownload{
 		UserId:    user.Id,
 		MapsetId:  mapset.Id,
