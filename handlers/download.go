@@ -168,6 +168,20 @@ func DownloadMultiplayerMapset(c *gin.Context) *APIError {
 		return APIErrorNotFound("Multiplayer Mapset")
 	}
 
+	// Get file information
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return APIErrorServerError("Error getting file information", err)
+	}
+
+	// Set Content-Length header
+	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+
+	if c.Request.Method == "HEAD" {
+		// For HEAD requests, we're done here
+		return nil
+	}
+
 	c.FileAttachment(path, fmt.Sprintf("multiplayer_%v.qp", id))
 	return nil
 }
