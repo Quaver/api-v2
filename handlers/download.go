@@ -75,6 +75,10 @@ func DownloadMapset(c *gin.Context) *APIError {
 		return APIErrorNotFound("Mapset")
 	}
 
+	if isHeadRequest(c) {
+		return setFileContentLength(c, path)
+	}
+
 	if err := db.InsertMapsetDownload(&db.MapsetDownload{
 		UserId:    user.Id,
 		MapsetId:  mapset.Id,
@@ -154,6 +158,29 @@ func DownloadMultiplayerMapset(c *gin.Context) *APIError {
 		return APIErrorNotFound("Multiplayer Mapset")
 	}
 
+	if isHeadRequest(c) {
+		return setFileContentLength(c, path)
+	}
+
 	c.FileAttachment(path, fmt.Sprintf("multiplayer_%v.qp", id))
 	return nil
 }
+
+// Check if request is HEAD
+func isHeadRequest(c *gin.Context) bool {
+	return c.Request.Method == "HEAD"
+}
+
+func setFileContentLength(c *gin.Context, path string) *APIError {
+	fileInfo, err := os.Stat(path)
+
+	if err != nil {
+		return APIErrorServerError("Error getting file information", err)
+	}
+
+	// Set Content-Length header
+	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+	return nil
+}
+
+
