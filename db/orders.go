@@ -140,7 +140,7 @@ func (order *Order) FinalizeDonator() error {
 
 	// Extend Donator Time
 	var endTime int64
-	const trialDays int = 14
+	const trialDays int = 7
 
 	if order.Receiver.DonatorEndTime == 0 {
 		if order.FreeTrial != nil && *order.FreeTrial {

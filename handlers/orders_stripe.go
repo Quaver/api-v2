@@ -79,7 +79,7 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		}
 
 		if trialOrder == nil {
-			var trialDays int64 = 14
+			var trialDays int64 = 7
 
 			params.SubscriptionData = &stripe.CheckoutSessionSubscriptionDataParams{
 				TrialPeriodDays: &trialDays,
@@ -87,7 +87,7 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 
 			freeTrial = true
 			amount = 0
-			description = "14-day free trial of Quaver Donator Perks (Stripe)"
+			description = "7-day free trial of Quaver Donator Perks (Stripe)"
 		}
 	}
 
