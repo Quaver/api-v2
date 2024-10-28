@@ -75,18 +75,8 @@ func DownloadMapset(c *gin.Context) *APIError {
 		return APIErrorNotFound("Mapset")
 	}
 
-	// Get file information
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return APIErrorServerError("Error getting file information", err)
-	}
-
-	// Set Content-Length header
-	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
-
-	if c.Request.Method == "HEAD" {
-		// For HEAD requests, we're done here
-		return nil
+	if isHeadRequest(c) {
+		return setFileContentLength(c, path)
 	}
 
 	if err := db.InsertMapsetDownload(&db.MapsetDownload{
@@ -168,20 +158,29 @@ func DownloadMultiplayerMapset(c *gin.Context) *APIError {
 		return APIErrorNotFound("Multiplayer Mapset")
 	}
 
-	// Get file information
+	if isHeadRequest(c) {
+		return setFileContentLength(c, path)
+	}
+
+	c.FileAttachment(path, fmt.Sprintf("multiplayer_%v.qp", id))
+	return nil
+}
+
+// Check if request is HEAD
+func isHeadRequest(c *gin.Context) bool {
+	return c.Request.Method == "HEAD"
+}
+
+func setFileContentLength(c *gin.Context, path string) *APIError {
 	fileInfo, err := os.Stat(path)
+
 	if err != nil {
 		return APIErrorServerError("Error getting file information", err)
 	}
 
 	// Set Content-Length header
 	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
-
-	if c.Request.Method == "HEAD" {
-		// For HEAD requests, we're done here
-		return nil
-	}
-
-	c.FileAttachment(path, fmt.Sprintf("multiplayer_%v.qp", id))
 	return nil
 }
+
+
