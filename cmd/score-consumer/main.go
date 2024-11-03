@@ -112,6 +112,17 @@ func insertClanScore(score *db.RedisScore) error {
 		return nil
 	}
 
+	user, err := db.GetUserById(score.User.Id)
+
+	if err != nil {
+		return err
+	}
+
+	// Restrict clan score submission to donators only.
+	if !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator) {
+		return nil
+	}
+
 	existingScore, err := db.GetClanScore(score.Map.MD5, score.User.ClanId)
 
 	if err != nil && err != gorm.ErrRecordNotFound {

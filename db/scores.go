@@ -565,7 +565,7 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 	if err := score.User.AfterFind(nil); err != nil {
 		return nil, err
 	}
-	
+
 	return score, nil
 }
 
@@ -580,7 +580,7 @@ func GetClanPlayerScoresOnMap(md5 string, clanId int, callAfterFind bool) ([]*Sc
 			WHERE map_md5 = ? AND clan_id = ? AND failed = 0
 			GROUP BY user_id
 		)
-		%v`, getSelectUserScoreboardQuery(10)), md5, clanId).
+		%v`, getSelectUserScoreboardQuery(10, true)), md5, clanId).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -738,7 +738,7 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*
 }
 
 // Returns a query to select user scores from non personal best scoreboards.
-func getSelectUserScoreboardQuery(limit int) string {
+func getSelectUserScoreboardQuery(limit int, donatorOnly ...bool) string {
 	query := `
 		SELECT s.user_id,
 			   s.*,
@@ -766,7 +766,13 @@ func getSelectUserScoreboardQuery(limit int) string {
 		JOIN scores s ON s.user_id = mr.user_id
 					  AND s.performance_rating = mr.max_performance_rating
 		JOIN users u ON s.user_id = u.id
-		WHERE u.allowed = 1
+		WHERE u.allowed = 1 `
+
+	if len(donatorOnly) > 0 && donatorOnly[0] == true {
+		query += " AND u.donator_end_time > 0"
+	}
+
+	query += `
 		ORDER BY s.performance_rating DESC
 		LIMIT`
 
