@@ -358,7 +358,7 @@ func SendClanFirstPlaceWebhook(clan *db.Clan, mapQua *db.MapQua, newScore *db.Cl
 
 	embed := discord.NewEmbedBuilder().
 		SetAuthor(fmt.Sprintf("[%v] %v", clan.Tag, clan.Name),
-			fmt.Sprintf("https://two.quavergame.com/clan/%v", newScore.ClanId), clan.AvatarURL()).
+			fmt.Sprintf("https://two.quavergame.com/clans/%v", newScore.ClanId), clan.AvatarURL()).
 		SetDescription("🏆 Achieved a new first place clan score!\n\n"+
 			"**Note: Clans is in private beta which is only available to [donators](https://two.quavergame.com/donate).**").
 		AddField("Map", fmt.Sprintf("[%v](https://two.quavergame.com/mapset/%v/map/%v?type=clan)", mapQua, mapQua.MapsetId, mapQua.Id), false).
@@ -371,7 +371,7 @@ func SendClanFirstPlaceWebhook(clan *db.Clan, mapQua *db.MapQua, newScore *db.Cl
 		SetColor(0x00FF00)
 
 	if oldScore != nil {
-		embed.AddField("Previous #1 Holder", fmt.Sprintf("[[%v] %v](https://two.quavergame.com/clan/%v)", oldScore.Clan.Tag, oldScore.Clan.Name, oldScore.ClanId), false)
+		embed.AddField("Previous #1 Holder", fmt.Sprintf("[[%v] %v](https://two.quavergame.com/clans/%v)", oldScore.Clan.Tag, oldScore.Clan.Name, oldScore.ClanId), false)
 	}
 
 	_, err := clansFirstPlace.CreateMessage(discord.WebhookMessageCreate{
