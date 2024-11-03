@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"fmt"
 	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/stringutil"
 	"gorm.io/gorm"
@@ -35,6 +36,10 @@ func (clan *Clan) AfterFind(*gorm.DB) (err error) {
 	clan.CreatedAtJSON = time.UnixMilli(clan.CreatedAt)
 	clan.LastUpdatedJSON = time.UnixMilli(clan.LastUpdated)
 	return nil
+}
+
+func (clan *Clan) AvatarURL() string {
+	return fmt.Sprintf("https://cdn.quavergame.com/clan-avatars/%v.jpg", clan.Id)
 }
 
 // Insert Inserts the clan into the database
