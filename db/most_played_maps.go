@@ -6,13 +6,15 @@ import (
 )
 
 type UserMostPlayedMap struct {
-	Id              int    `gorm:"column:id" json:"id"`
-	CreatorId       int    `gorm:"column:creator_id" json:"creator_id"`
-	CreatorUsername string `gorm:"column:creator_username" json:"creator_username"`
-	Artist          string `gorm:"column:artist" json:"artist"`
-	Title           string `gorm:"column:title" json:"title"`
-	DifficultyName  string `gorm:"column:difficulty_name" json:"difficulty_name"`
-	Count           int    `gorm:"column:COUNT(*)" json:"count"`
+	Id               int     `gorm:"column:id" json:"id"`
+	MapsetId         int     `gorm:"column:mapset_id" json:"mapset_id"`
+	CreatorId        int     `gorm:"column:creator_id" json:"creator_id"`
+	CreatorUsername  string  `gorm:"column:creator_username" json:"creator_username"`
+	Artist           string  `gorm:"column:artist" json:"artist"`
+	Title            string  `gorm:"column:title" json:"title"`
+	DifficultyName   string  `gorm:"column:difficulty_name" json:"difficulty_name"`
+	DifficultyRating float64 `gorm:"column:difficulty_rating" json:"difficulty_rating"`
+	Count            int     `gorm:"column:COUNT(*)" json:"count"`
 }
 
 // GetUserMostPlayedMaps Returns a user's most played maps
@@ -22,7 +24,8 @@ func GetUserMostPlayedMaps(id int, limit int, page int) ([]*UserMostPlayedMap, e
 
 	if err := CacheJsonInRedis(redisKey, &maps, time.Hour*24, false, func() error {
 		return SQL.Raw("SELECT "+
-			"maps.id, maps.creator_id, maps.creator_username, maps.artist, maps.title, maps.difficulty_name, COUNT(*) "+
+			"maps.id, maps.mapset_id, maps.creator_id, maps.creator_username, maps.artist, maps.title, maps.difficulty_name, "+
+			"maps.difficulty_rating, COUNT(*) "+
 			"FROM scores s "+
 			"INNER JOIN "+
 			"maps ON maps.md5 = s.map_md5 "+
