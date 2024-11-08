@@ -42,11 +42,23 @@ func GetUserMapsets(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
+	page, err := strconv.Atoi(c.Query("page"))
+
+	if err != nil {
+		page = 0
+	}
+
+	status, err := strconv.Atoi(c.Query("status"))
+
+	if err != nil {
+		status = enums.RankedStatusRanked
+	}
+
 	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 
-	mapsets, err := db.GetUserMapsets(id)
+	mapsets, err := db.GetUserMapsetsFiltered(id, enums.RankedStatus(status), page, 50)
 
 	if err != nil {
 		return APIErrorServerError("Failed to get mapsets from database", err)

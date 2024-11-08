@@ -114,6 +114,19 @@ func GetMapByMD5AndAlternative(md5 string, alternativeMd5 string) (*MapQua, erro
 	return qua, nil
 }
 
+// GetMapsInMapset Retrieves all maps in a given set
+func GetMapsInMapset(id int) ([]*MapQua, error) {
+	maps := make([]*MapQua, 0)
+
+	result := SQL.Where("mapset_id = ?", id).Find(&maps)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return maps, nil
+}
+
 // InsertMap Inserts a map into the database
 func InsertMap(m *MapQua) error {
 	if err := SQL.Create(&m).Error; err != nil {
