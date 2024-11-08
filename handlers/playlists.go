@@ -178,11 +178,17 @@ func GetUserPlaylists(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
+	page, err := strconv.Atoi(c.Query("page"))
+
+	if err != nil {
+		page = 0
+	}
+
 	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 
-	playlists, err := db.GetUserPlaylists(id)
+	playlists, err := db.GetUserPlaylists(id, page, 50)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving user playlists", err)

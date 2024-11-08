@@ -152,11 +152,13 @@ func GetPlaylistFull(id int) (*Playlist, error) {
 }
 
 // GetUserPlaylists Gets a user's created playlists
-func GetUserPlaylists(userId int) ([]*Playlist, error) {
+func GetUserPlaylists(userId int, page int, limit int) ([]*Playlist, error) {
 	var playlists = make([]*Playlist, 0)
 
 	result := SQL.
 		Where("user_id = ? AND visible = 1", userId).
+		Limit(limit).
+		Offset(page * limit).
 		Find(&playlists)
 
 	if result.Error != nil {
