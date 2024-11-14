@@ -37,6 +37,8 @@ type Order struct {
 	Subscription   *OrderSubscriptionStripe `gorm:"foreignKey:SubscriptionId" json:"subscription,omitempty"`
 }
 
+const DonatorFreeTrialDays int = 7
+
 func (*Order) TableName() string {
 	return "orders"
 }
@@ -140,18 +142,17 @@ func (order *Order) FinalizeDonator() error {
 
 	// Extend Donator Time
 	var endTime int64
-	const trialDays int = 7
 
 	if order.Receiver.DonatorEndTime == 0 {
 		if order.FreeTrial != nil && *order.FreeTrial {
-			endTime = time.Now().AddDate(0, 0, trialDays).UnixMilli()
+			endTime = time.Now().AddDate(0, 0, DonatorFreeTrialDays).UnixMilli()
 		} else {
 			endTime = time.Now().AddDate(0, order.Quantity, 0).UnixMilli()
 		}
 
 	} else {
 		if order.FreeTrial != nil && *order.FreeTrial {
-			endTime = time.UnixMilli(order.Receiver.DonatorEndTime).AddDate(0, 0, trialDays).UnixMilli()
+			endTime = time.UnixMilli(order.Receiver.DonatorEndTime).AddDate(0, 0, DonatorFreeTrialDays).UnixMilli()
 		} else {
 			endTime = time.UnixMilli(order.Receiver.DonatorEndTime).AddDate(0, order.Quantity, 0).UnixMilli()
 		}
