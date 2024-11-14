@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE orders
+    ADD free_trial TINYINT NULL;
+
+COMMIT;

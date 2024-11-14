@@ -66,6 +66,31 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{Enabled: stripe.Bool(true)},
 	}
 
+	var freeTrial bool
+	description := fmt.Sprintf("%v month(s) of Quaver Donator Perks (Stripe)", body.Months)
+	amount := price
+
+	// Set free trial if user hasn't had one already
+	if body.Recurring {
+		trialOrder, err := db.GetUserFreeTrialOrder(user.Id)
+
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return APIErrorServerError("Error retrieving free trial order", err)
+		}
+
+		if trialOrder == nil {
+			var trialDays int64 = int64(db.DonatorFreeTrialDays)
+
+			params.SubscriptionData = &stripe.CheckoutSessionSubscriptionDataParams{
+				TrialPeriodDays: &trialDays,
+			}
+
+			freeTrial = true
+			amount = 0
+			description = fmt.Sprintf("%v-day free trial of Quaver Donator Perks (Stripe)", trialDays)
+		}
+	}
+
 	stripe.Key = config.Instance.Stripe.APIKey
 	s, err := session.New(params)
 
@@ -80,9 +105,10 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 		IPAddress:     getOrderIp(body.Ip),
 		ItemId:        db.OrderItemDonator,
 		Quantity:      body.Months,
-		Amount:        price,
-		Description:   fmt.Sprintf("%v month(s) of Quaver Donator Perks (Stripe)", body.Months),
+		Amount:        amount,
+		Description:   description,
 		AnonymizeGift: body.AnonymizeGift,
+		FreeTrial:     &freeTrial,
 	}
 
 	isSet, err := order.SetReceiver(user, body.GiftUserId)
@@ -222,15 +248,17 @@ func FinalizePaidStripeInvoice(event *stripe.Event) *APIError {
 		return nil
 	}
 
+	qty := int(invoice.Lines.Data[0].Plan.IntervalCount)
+
 	order := &db.Order{
 		UserId:         subscription.UserId,
 		OrderId:        -1,
 		TransactionId:  invoice.ID,
 		IPAddress:      "1.1.1.1",
 		ItemId:         1,
-		Quantity:       int(invoice.Lines.Data[0].Quantity),
+		Quantity:       qty,
 		Amount:         float32(invoice.AmountPaid) / 100,
-		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks - Renewal (Stripe)", int(invoice.Lines.Data[0].Quantity)),
+		Description:    fmt.Sprintf("%v month(s) of Quaver Donator Perks - Renewal (Stripe)", qty),
 		ReceiverUserId: subscription.UserId,
 		Status:         db.OrderStatusCompleted,
 		SubscriptionId: &subscription.Id,

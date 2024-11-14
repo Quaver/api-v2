@@ -84,6 +84,24 @@ func GetUserOrders(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetUserFreeTrialDonatorOrder Retrieves a user's free trial donator order if they've had one before
+func GetUserFreeTrialDonatorOrder(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	order, err := db.GetUserFreeTrialOrder(user.Id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving orders from db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"order": order})
+	return nil
+}
+
 // GetActiveSubscriptions Returns a user's active subscriptions
 // GET /v2/orders/stripe/subscriptions
 func GetActiveSubscriptions(c *gin.Context) *APIError {
