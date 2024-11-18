@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // GetMap Gets an individual map's data
@@ -35,6 +36,27 @@ func GetMap(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving map from database", dbError)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"map": qua})
+	mapset, err := db.GetMapsetById(qua.MapsetId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving mapset from db", err)
+	}
+
+	type response struct {
+		*db.MapQua
+		DateSubmitted   time.Time `json:"date_submitted"`
+		DateLastUpdated time.Time `json:"date_last_updated"`
+	}
+
+	resp := &response{
+		MapQua: qua,
+	}
+
+	if mapset != nil {
+		resp.DateSubmitted = mapset.DateSubmittedJSON
+		resp.DateLastUpdated = mapset.DateLastUpdatedJSON
+	}
+
+	c.JSON(http.StatusOK, gin.H{"map": resp})
 	return nil
 }
