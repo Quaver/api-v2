@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"gorm.io/gorm"
+	"slices"
 	"time"
 )
 
@@ -49,6 +50,10 @@ func GetPublicChatMessageHistory(channel string) ([]*ChatMessage, error) {
 		return nil, result.Error
 	}
 
+	slices.SortFunc(messages, func(a, b *ChatMessage) int {
+		return a.Id - b.Id
+	})
+
 	return messages, nil
 }
 
@@ -70,6 +75,10 @@ func GetPrivateChatMessageHistory(userId int, otherUser int) ([]*ChatMessage, er
 	if result.Error != nil {
 		return nil, result.Error
 	}
+
+	slices.SortFunc(messages, func(a, b *ChatMessage) int {
+		return a.Id - b.Id
+	})
 
 	return messages, nil
 }
