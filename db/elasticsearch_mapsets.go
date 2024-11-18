@@ -354,12 +354,14 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 	}
 
 	validSortFields := map[string]bool{
-		"length":            true,
-		"difficulty_rating": true,
-		"max_combo":         true,
-		"play_count":        true,
-		"date_submitted":    true,
-		"date_last_updated": true,
+		"length":               true,
+		"difficulty_rating":    true,
+		"max_combo":            true,
+		"play_count":           true,
+		"bpm":                  true,
+		"long_note_percentage": true,
+		"date_submitted":       true,
+		"date_last_updated":    true,
 	}
 
 	sort := "date_last_updated"
