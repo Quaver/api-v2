@@ -25,6 +25,8 @@ type ElasticMapsetSearchOptions struct {
 	ModeArray         []enums.GameMode     `form:"mode[]" json:"mode[]"`
 	Page              int                  `form:"page" json:"page"`
 	Limit             int                  `form:"limit" json:"limit"`
+	SortBy            string               `form:"sort_by" json:"sort_by"`
+	SortOrder         string               `form:"sort_order" json:"sort_order"`
 
 	MinDifficultyRating float64 `form:"min_difficulty_rating" json:"min_difficulty_rating"`
 	MaxDifficultyRating float64 `form:"max_difficulty_rating" json:"max_difficulty_rating"`
@@ -67,6 +69,8 @@ func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
 		MinLastUpdated:      0,
 		MaxLastUpdated:      math.MaxInt64,
 		Explicit:            false,
+		SortBy:              "date_last_updated",
+		SortOrder:           "desc",
 	}
 }
 
@@ -349,7 +353,27 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, explicitTerm)
 	}
 
+	validSortFields := map[string]bool{
+		"length":               true,
+		"difficulty_rating":    true,
+		"max_combo":            true,
+		"play_count":           true,
+		"bpm":                  true,
+		"long_note_percentage": true,
+		"date_submitted":       true,
+		"date_last_updated":    true,
+	}
+
 	sort := "date_last_updated"
+	sortOrder := "desc"
+
+	if options.SortBy != "" && validSortFields[options.SortBy] {
+		sort = options.SortBy
+	}
+
+	if options.SortOrder == "asc" || options.SortOrder == "desc" {
+		sortOrder = options.SortOrder
+	}
 
 	if options.IsClanRanked {
 		clanRankedTerm := TermCustom{}
@@ -377,7 +401,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		Query: boolQuery,
 		Sort: []map[string]SortOrder{
 			{"_score": {Order: "desc"}},
-			{sort: {Order: "desc"}},
+			{sort: {Order: sortOrder}},
 		},
 		Aggs: map[string]interface{}{
 			"distinct_mapset_ids": map[string]interface{}{
