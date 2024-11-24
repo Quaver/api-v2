@@ -54,6 +54,7 @@ func init() {
 	RootCmd.AddCommand(commands.DeleteScoreCmd)
 	RootCmd.AddCommand(commands.FixStatsCmd)
 	RootCmd.AddCommand(commands.UpdateStripePriceId)
+	RootCmd.AddCommand(commands.ClanRecalculateCommand)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)

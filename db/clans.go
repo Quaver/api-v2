@@ -81,6 +81,21 @@ func (clan *Clan) Insert() error {
 	return nil
 }
 
+// GetClans Retrieves all clans from the db
+func GetClans() ([]*Clan, error) {
+	clans := make([]*Clan, 0)
+
+	result := SQL.
+		Preload("Stats").
+		Find(&clans)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return clans, nil
+}
+
 // GetClanById Gets a clan from the database by its id
 func GetClanById(id int) (*Clan, error) {
 	var clan *Clan
