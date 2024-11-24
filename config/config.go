@@ -116,6 +116,7 @@ type Config struct {
 		SupervisorActivity   CronJob `json:"supervisor_activity"`
 		RankClanMap          CronJob `json:"rank_clan_map"`
 		DenyOnHoldOneMonth   CronJob `json:"deny_on_hold_one_month"`
+		ClanRecalculate      CronJob `json:"clan_recalculate"`
 	} `json:"cron"`
 }
 

@@ -132,6 +132,11 @@
       "enabled": true,
       "name": "Denies mapsets that are on-hold for month+",
       "schedule": "0 * * * *"
+    },
+    "clan_recalculate": {
+      "enabled": true,
+      "name": "Performs a full recalculation on clans",
+      "schedule": "0 * * * *"
     }
   }
 }
