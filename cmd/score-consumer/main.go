@@ -161,6 +161,10 @@ func insertClanScore(score *db.RedisScore) error {
 		return err
 	}
 
+	if err := db.UpdateAllClanLeaderboards(clan); err != nil {
+		return err
+	}
+
 	mapQua, err := db.GetMapById(score.Map.Id)
 
 	if err != nil {
