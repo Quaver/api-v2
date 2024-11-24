@@ -740,7 +740,7 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*
 // Returns a query to select user scores from non personal best scoreboards.
 func getSelectUserScoreboardQuery(limit int, donatorOnly ...bool) string {
 	query := `
-		SELECT s.user_id,
+		SELECT DISTINCT s.user_id,
 			   s.*,
 			   u.id AS User__id,
 			   u.steam_id AS User__steam_id,
