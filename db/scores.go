@@ -291,13 +291,16 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 	var scores = make([]*Score, 0)
 
 	result := SQL.Raw(fmt.Sprintf(`
-		WITH MaxRatings AS (
-			SELECT user_id, MAX(performance_rating) AS max_performance_rating
-			FROM scores
-			WHERE map_md5 = ?
-			  AND failed = 0
-			  AND (mods & ?) != 0
-			GROUP BY user_id
+		WITH RankedScores AS (
+			SELECT 
+				s.user_id,
+				s.id AS score_id,
+				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp DESC) AS rnk
+			FROM scores s
+			WHERE 
+				s.map_md5 = ?
+			    AND (mods & ?) != 0
+				AND s.failed = 0
 		)
 		%v`, getSelectUserScoreboardQuery(100)), md5, mods).
 		Scan(&scores)
@@ -340,20 +343,23 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 	modsQuery := ""
 
 	if mods == 0 {
-		modsQuery = "AND (scores.mods = 0 OR scores.mods = ?) "
+		modsQuery = "AND (s.mods = 0 OR s.mods = ?) "
 		mods = 2147483648 // TODO: USE ENUM
 	} else {
-		modsQuery = "AND (scores.mods & ?) != 0 "
+		modsQuery = "AND (s.mods & ?) != 0 "
 	}
 
 	result := SQL.Raw(fmt.Sprintf(`
-		WITH MaxRatings AS (
-			SELECT user_id, MAX(performance_rating) AS max_performance_rating
-			FROM scores
-			WHERE map_md5 = ?
-			  AND failed = 0
-			  %v
-			GROUP BY user_id
+		WITH RankedScores AS (
+			SELECT 
+				s.user_id,
+				s.id AS score_id,
+				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp DESC) AS rnk
+			FROM scores s
+			WHERE 
+				s.map_md5 = ?
+				AND s.failed = 0
+				%v
 		)
 		%v`, modsQuery, getSelectUserScoreboardQuery(100)), md5, mods).
 		Scan(&scores)
@@ -574,11 +580,16 @@ func GetClanPlayerScoresOnMap(md5 string, clanId int, callAfterFind bool) ([]*Sc
 	scores := make([]*Score, 0)
 
 	result := SQL.Raw(fmt.Sprintf(`
-		WITH MaxRatings AS (
-			SELECT user_id, MAX(performance_rating) AS max_performance_rating
-			FROM scores
-			WHERE map_md5 = ? AND clan_id = ? AND failed = 0
-			GROUP BY user_id
+		WITH RankedScores AS (
+			SELECT 
+				s.user_id,
+				s.id AS score_id,
+				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp DESC) AS rnk
+			FROM scores s
+			WHERE 
+				s.map_md5 = ?
+				AND s.clan_id = ?
+				AND s.failed = 0
 		)
 		%v`, getSelectUserScoreboardQuery(10, true)), md5, clanId).
 		Scan(&scores)
@@ -740,7 +751,7 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*
 // Returns a query to select user scores from non personal best scoreboards.
 func getSelectUserScoreboardQuery(limit int, donatorOnly ...bool) string {
 	query := `
-		SELECT DISTINCT s.user_id,
+		SELECT s.user_id,
 			   s.*,
 			   u.id AS User__id,
 			   u.steam_id AS User__steam_id,
@@ -762,12 +773,12 @@ func getSelectUserScoreboardQuery(limit int, donatorOnly ...bool) string {
 			   u.information AS User__information,
 			   u.clan_id AS User__clan_id,
 			   u.clan_leave_time AS User__clan_leave_time
-		FROM MaxRatings mr
-		JOIN scores s ON s.user_id = mr.user_id
-					  AND s.performance_rating = mr.max_performance_rating
-		JOIN users u ON s.user_id = u.id
-		WHERE u.allowed = 1 `
-
+				FROM RankedScores rs
+				JOIN scores s ON s.id = rs.score_id
+				JOIN users u ON s.user_id = u.id
+				JOIN maps m ON s.map_md5 = m.md5
+				WHERE rs.rnk = 1 AND u.allowed = 1
+		`
 	if len(donatorOnly) > 0 && donatorOnly[0] == true {
 		query += " AND u.donator_end_time > 0"
 	}
