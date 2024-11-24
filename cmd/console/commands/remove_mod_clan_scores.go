@@ -14,7 +14,7 @@ var RemoveUnrankedClanScores = &cobra.Command{
 		scores := make([]*db.Score, 0)
 
 		result := db.SQL.
-			Where("clan_id IS NOT NULL and mods > 0").
+			Where("clan_id IS NOT NULL AND mods > 0").
 			Find(&scores)
 
 		if result.Error != nil {
@@ -28,8 +28,8 @@ var RemoveUnrankedClanScores = &cobra.Command{
 			}
 
 			err := db.SQL.Model(&db.Score{}).
-				Update("clan_id", nil).
-				Where("id = ?", score.Id).Error
+				Where("id = ?", score.Id).
+				Update("clan_id", nil).Error
 
 			if err != nil {
 				logrus.Error(err)
