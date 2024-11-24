@@ -22,8 +22,6 @@ var ClanRecalculateCommand = &cobra.Command{
 				logrus.Error(err)
 				return
 			}
-
-			logrus.Info("Recalculated clan: ", clan.Id)
 		}
 	},
 }
