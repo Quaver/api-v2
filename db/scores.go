@@ -3,11 +3,12 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"time"
+
 	"github.com/Quaver/api2/enums"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
-	"math"
-	"time"
 )
 
 type Score struct {
@@ -400,12 +401,15 @@ func GetAllScoresForMap(md5 string) ([]*Score, error) {
 	var scores = make([]*Score, 0)
 
 	result := SQL.Raw(fmt.Sprintf(`
-		WITH MaxRatings AS (
-			SELECT user_id, MAX(performance_rating) AS max_performance_rating
-			FROM scores
-			WHERE map_md5 = ?
-			  AND failed = 0
-			GROUP BY user_id
+		WITH RankedScores AS (
+			SELECT 
+				s.user_id,
+				s.id AS score_id,
+				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp DESC) AS rnk
+			FROM scores s
+			WHERE 
+				s.map_md5 = ?
+				AND s.failed = 0
 		)
 		%v`, getSelectUserScoreboardQuery(100)), md5).
 		Scan(&scores)
