@@ -3,8 +3,9 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"os"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -77,6 +78,7 @@ type Config struct {
 	TeamAnnounceWebhook    string `json:"team_announce_webhook"`
 	ClansFirstPlaceWebhook string `json:"clans_first_place_webhook"`
 	ClansMapRankedWebhook  string `json:"clans_map_ranked_webhook"`
+	CrashLogWebhook        string `json:"crash_log_webhook"`
 
 	Stripe struct {
 		APIKey                  string `json:"api_key"`

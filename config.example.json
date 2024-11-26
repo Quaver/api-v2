@@ -56,6 +56,7 @@
   "team_announce_webhook": "",
   "clans_first_place_webhook": "",
   "clans_map_ranked_webhook": "",
+  "crash_log_webhook": "",
   "stripe": {
     "api_key": "",
     "webhook_signing_secret": "",

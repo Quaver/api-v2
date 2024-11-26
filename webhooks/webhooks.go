@@ -2,15 +2,16 @@ package webhooks
 
 import (
 	"fmt"
+	"slices"
+	"strings"
+	"time"
+
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/webhook"
 	"github.com/sirupsen/logrus"
-	"slices"
-	"strings"
-	"time"
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 	teamAnnounce    webhook.Client
 	clansFirstPlace webhook.Client
 	clansMapRanked  webhook.Client
+	crashLog        webhook.Client
 )
 
 const (
@@ -33,6 +35,7 @@ func InitializeWebhooks() {
 	teamAnnounce, _ = webhook.NewWithURL(config.Instance.TeamAnnounceWebhook)
 	clansFirstPlace, _ = webhook.NewWithURL(config.Instance.ClansFirstPlaceWebhook)
 	clansMapRanked, _ = webhook.NewWithURL(config.Instance.ClansMapRankedWebhook)
+	crashLog, _ = webhook.NewWithURL(config.Instance.CrashLogWebhook)
 }
 
 // SendQueueSubmitWebhook Sends a webhook displaying that the user submitted a mapset to the ranking queue
@@ -412,6 +415,36 @@ func SendClanRankedWebhook(mapQua *db.MapQua) error {
 
 	if err != nil {
 		logrus.Error("Failed to send clan ranked webhook")
+		return err
+	}
+
+	return nil
+}
+
+func SendCrashLogWebhook(user *db.User, log *db.CrashLog) error {
+	if crashLog == nil {
+		return nil
+	}
+
+	embed := discord.NewEmbedBuilder().
+		SetAuthor(user.Username, fmt.Sprintf("https://quavergame.com/user/%v", user.Id), *user.AvatarUrl).
+		SetTitle("❌ Crash Log Submitted").
+		SetDescription("A new crash log has been submitted.").
+		AddField("Actions", fmt.Sprintf("[View Log](https://a.quavergame.com/logs/crash/%v)", log.Id), false).
+		SetThumbnail(QuaverLogo).
+		SetFooter("Quaver", QuaverLogo).
+		SetTimestamp(time.Now()).
+		SetColor(0xFF0000).
+		Build()
+
+	msg := discord.WebhookMessageCreate{
+		Embeds: []discord.Embed{embed},
+	}
+
+	_, err := crashLog.CreateMessage(msg)
+
+	if err != nil {
+		logrus.Error("Failed to send crash log event webhook: ", err)
 		return err
 	}
 
