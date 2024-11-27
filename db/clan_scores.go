@@ -74,6 +74,7 @@ func GetClanScoresForMode(clanId int, mode enums.GameMode) ([]*ClanScore, error)
 
 	result := SQL.
 		Where("clan_id = ? AND mode = ?", clanId, mode).
+		Order("overall_rating DESC").
 		Find(&clanScores)
 
 	if result.Error != nil {
