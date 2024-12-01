@@ -272,6 +272,10 @@ func MarkMapsetAsExplicit(c *gin.Context) *APIError {
 		return APIErrorServerError("Error setting mapset as explicit", err)
 	}
 
+	if err := db.UpdateElasticSearchMapset(*mapset); err != nil {
+		return APIErrorServerError("Error updating elastic search mapset (mark as explicit)", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully marked that mapset as explicit."})
 	return nil
 }
@@ -307,6 +311,10 @@ func MarkMapsetAsNotExplicit(c *gin.Context) *APIError {
 
 	if err := mapset.UpdateExplicit(false); err != nil {
 		return APIErrorServerError("Error setting mapset as explicit", err)
+	}
+
+	if err := db.UpdateElasticSearchMapset(*mapset); err != nil {
+		return APIErrorServerError("Error updating elastic search mapset (mark as not explicit)", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully marked that mapset as clean."})
