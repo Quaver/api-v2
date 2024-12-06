@@ -595,7 +595,7 @@ func GetClanPlayerScoresOnMap(md5 string, clanId int, callAfterFind bool) ([]*Sc
 				AND s.clan_id = ?
 				AND s.failed = 0
 		)
-		%v`, getSelectUserScoreboardQuery(10, false)), md5, clanId).
+		%v`, getSelectUserScoreboardQuery(5, false)), md5, clanId).
 		Scan(&scores)
 
 	if result.Error != nil {
