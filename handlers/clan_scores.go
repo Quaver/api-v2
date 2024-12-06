@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
 
 // GetClanScoresForMode Retrieves clan scores for a given mode
@@ -78,10 +79,6 @@ func GetClanScoresForMap(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	if !hasDonatorScoreboardAccess(dbMap, getAuthedUser(c)) {
-		return APIErrorForbidden("You must be a donator to access this score.")
-	}
-
 	clanScores, err := db.GetClanScoreboardForMap(dbMap.MD5)
 
 	if err != nil {
@@ -105,10 +102,6 @@ func GetClanPersonalBestScore(c *gin.Context) *APIError {
 
 	if apiErr != nil {
 		return apiErr
-	}
-
-	if !hasDonatorScoreboardAccess(dbMap, getAuthedUser(c)) {
-		return APIErrorForbidden("You must be a donator to access this score.")
 	}
 
 	clanScore, err := db.GetClanScore(dbMap.MD5, clanId)
