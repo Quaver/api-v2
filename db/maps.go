@@ -162,10 +162,16 @@ func UpdateMapDifficultyRating(id int, difficultyRating float64) error {
 
 // UpdateMapClanRanked Updates the clan ranked status of a map
 func UpdateMapClanRanked(id int, clanRanked bool) error {
+	var timeRanked int64
+
+	if clanRanked {
+		timeRanked = time.Now().UnixMilli() 
+	}
+
 	result := SQL.Model(&MapQua{}).
 		Where("id = ?", id).
 		Update("clan_ranked", clanRanked).
-		Update("date_clan_ranked", time.Now().UnixMilli())
+		Update("date_clan_ranked", timeRanked)
 
 	return result.Error
 }
