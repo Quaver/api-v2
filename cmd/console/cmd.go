@@ -56,6 +56,7 @@ func init() {
 	RootCmd.AddCommand(commands.UpdateStripePriceId)
 	RootCmd.AddCommand(commands.ClanRecalculateCommand)
 	RootCmd.AddCommand(commands.RemoveUnrankedClanScores)
+	RootCmd.AddCommand(commands.BadgePlayerGiveCmd)
 
 	// Migrations
 	RootCmd.AddCommand(migrations.MigrationPlaylistMapsetCmd)
