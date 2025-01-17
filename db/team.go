@@ -16,19 +16,26 @@ type Team struct {
 // GetTeamMembers Returns users in the Quaver team
 func GetTeamMembers() (*Team, error) {
 	var users = make([]*User, 0)
-
-	result := SQL.
-		Joins("StatsKeys4").
-		Joins("StatsKeys7").
-		Where("users.usergroups > 1 AND users.allowed = 1").
-		Order("users.id ASC").
-		Find(&users)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
 	var team = &Team{}
+
+	err := CacheJsonInRedis("quaver:team", &users, time.Hour*24, false, func() error {
+		result := SQL.
+			Joins("StatsKeys4").
+			Joins("StatsKeys7").
+			Where("users.usergroups > 1 AND users.allowed = 1").
+			Order("users.id ASC").
+			Find(&users)
+
+		if result.Error != nil {
+			return result.Error
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	for _, user := range users {
 		if enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) {
