@@ -186,7 +186,7 @@ func (u *User) Insert() error {
 		}
 
 		// Increment total user count
-		if err := Redis.Incr(RedisCtx, "quaver:total_user").Err(); err != nil {
+		if err := Redis.Incr(RedisCtx, "quaver:total_users").Err(); err != nil {
 			return err
 		}
 
