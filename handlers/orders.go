@@ -9,6 +9,7 @@ import (
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/billingportal/session"
 	"gorm.io/gorm"
+	"net"
 	"net/http"
 	"slices"
 )
@@ -279,9 +280,22 @@ func getDonatorPrice(months int, isSteam bool) (float32, error) {
 }
 
 func getOrderIp(bodyIp string) string {
-	if bodyIp != "" {
+	const defaultIp string = "1.1.1.1"
+
+	if bodyIp == "" {
+		return defaultIp
+	}
+
+	ip := net.ParseIP(bodyIp)
+
+	if ip == nil {
+		return defaultIp
+	}
+
+	if ip.To4() != nil {
 		return bodyIp
 	}
 
-	return "1.1.1.1"
+	// Steam doesn't take ipv6, so return the default
+	return defaultIp
 }
