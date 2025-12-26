@@ -113,6 +113,7 @@ var tagSearchTerms = []string{
 	"mixed rice",
 	"speed",
 	"dump",
+	"stream",
 	"streams",
 	"jumpstream",
 	"js",
