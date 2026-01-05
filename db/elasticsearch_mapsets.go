@@ -6,15 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Quaver/api2/enums"
-	"github.com/Quaver/api2/sliceutil"
-	"github.com/elastic/go-elasticsearch/v8/esutil"
-	"github.com/sirupsen/logrus"
 	"io"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/sliceutil"
+	"github.com/elastic/go-elasticsearch/v8/esutil"
+	"github.com/sirupsen/logrus"
 )
 
 type ElasticMapsetSearchOptions struct {
@@ -95,6 +96,37 @@ type ElasticMap struct {
 	PackageMD5      string `json:"package_md5"`
 	DateSubmitted   int64  `json:"date_submitted"`
 	DateLastUpdated int64  `json:"date_last_updated"`
+}
+
+var tagSearchTerms = []string{
+	"scroll velocity",
+	"sv",
+	"long notes",
+	"ln",
+	"mixed ln",
+	"inverse",
+	"hybrid",
+	"hb",
+	"full flavor",
+	"rice",
+	"rc",
+	"mixed rice",
+	"speed",
+	"dump",
+	"stream",
+	"streams",
+	"jumpstream",
+	"js",
+	"handstream",
+	"hs",
+	"chordjack",
+	"cj",
+	"speedjack",
+	"brackets",
+	"delay",
+	"chordstream",
+	"tb",
+	"tiebreaker",
 }
 
 type ElasticHits struct {
@@ -286,22 +318,44 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 	boolQuery := BoolQuery{}
 
 	if options.Search != "" {
-		boolQuerySearch := BoolQuery{}
+		searchTerm := strings.ToLower(strings.TrimSpace(options.Search))
 
-		qs := NewQueryString(options.Search, []string{"title", "artist"}, "OR", 1.0)
-		qs2 := NewQueryString(options.Search, []string{"source", "creator_username", "difficulty_name"}, "OR", 0.8)
+		if searchTerm == "" {
+			options.Search = ""
+		} else {
+			options.Search = searchTerm
 
-		m := map[string]interface{}{
-			"match": map[string]interface{}{
-				"tags": map[string]interface{}{
-					"query": options.Search,
-					"boost": 0.2,
+			boost := 0.2
+			useTagSearchOnly := false
+
+			for _, term := range tagSearchTerms {
+				if strings.Contains(searchTerm, term) {
+					useTagSearchOnly = true
+					boost = 1
+					break
+				}
+			}
+
+			boolQuerySearch := BoolQuery{}
+
+			m := map[string]interface{}{
+				"match": map[string]interface{}{
+					"tags": map[string]interface{}{
+						"query": options.Search,
+						"boost": boost,
+					},
 				},
-			},
-		}
+			}
 
-		boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, qs, qs2, m)
-		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQuerySearch)
+			if useTagSearchOnly {
+				boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, m)
+			} else {
+				qs := NewQueryString(options.Search, []string{"title", "artist"}, "OR", 1.0)
+				qs2 := NewQueryString(options.Search, []string{"source", "creator_username", "difficulty_name"}, "OR", 0.8)
+				boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, qs, qs2, m)
+			}
+			boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQuerySearch)
+		}
 	}
 
 	if options.Mode != nil {
@@ -385,6 +439,14 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		sort = "date_clan_ranked"
 	}
 
+	sortFields := []map[string]SortOrder{
+		{sort: {Order: sortOrder}},
+	}
+
+	if options.Search != "" {
+		sortFields = append(sortFields, map[string]SortOrder{"_score": {Order: "desc"}})
+	}
+
 	query := Query{
 		Size: options.Limit,
 		From: options.Page * options.Limit,
@@ -399,10 +461,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 			},
 		},
 		Query: boolQuery,
-		Sort: []map[string]SortOrder{
-			{"_score": {Order: "desc"}},
-			{sort: {Order: sortOrder}},
-		},
+		Sort:  sortFields,
 		Aggs: map[string]interface{}{
 			"distinct_mapset_ids": map[string]interface{}{
 				"cardinality": map[string]interface{}{
