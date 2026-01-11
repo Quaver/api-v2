@@ -316,7 +316,7 @@ func IndexAllElasticSearchMapsets(deletePrevious bool) error {
 // SearchElasticMapsets Searches ElasticSearch for mapsets
 func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, error) {
 	boolQuery := BoolQuery{}
-	useTagSearchOnlySearch := false
+	useTagSearchOnly := false
 
 	if options.Search != "" {
 		searchTerm := strings.ToLower(strings.TrimSpace(options.Search))
@@ -327,12 +327,11 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 			options.Search = searchTerm
 
 			boost := 0.2
-			useTagSearchOnly := false
+			useTagSearchOnly = false
 
 			for _, term := range tagSearchTerms {
 				if strings.Contains(searchTerm, term) {
 					useTagSearchOnly = true
-					useTagSearchOnlySearch = true
 					boost = 1
 					break
 				}
@@ -495,7 +494,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 
 	var sortFields []map[string]SortOrder
 
-	if options.Search != "" && !useTagSearchOnlySearch {
+	if options.Search != "" && !useTagSearchOnly {
 		// Prioritize relevance first, then fall back to the requested sort.
 		sortFields = []map[string]SortOrder{
 			{"_score": {Order: "desc"}},
