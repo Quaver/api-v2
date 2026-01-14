@@ -316,6 +316,7 @@ func IndexAllElasticSearchMapsets(deletePrevious bool) error {
 // SearchElasticMapsets Searches ElasticSearch for mapsets
 func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, error) {
 	boolQuery := BoolQuery{}
+	useTagSearchOnly := false
 
 	if options.Search != "" {
 		searchTerm := strings.ToLower(strings.TrimSpace(options.Search))
@@ -326,7 +327,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 			options.Search = searchTerm
 
 			boost := 0.2
-			useTagSearchOnly := false
+			useTagSearchOnly = false
 
 			for _, term := range tagSearchTerms {
 				if strings.Contains(searchTerm, term) {
@@ -350,9 +351,61 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 			if useTagSearchOnly {
 				boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, m)
 			} else {
+				titleExact := map[string]interface{}{
+					"term": map[string]interface{}{
+						"title.keyword": map[string]interface{}{
+							"value":            options.Search,
+							"case_insensitive": false,
+							"boost":            10,
+						},
+					},
+				}
+				titlePhrase := map[string]interface{}{
+					"match_phrase": map[string]interface{}{
+						"title": map[string]interface{}{
+							"query": options.Search,
+							"boost": 5,
+						},
+					},
+				}
+				titleMatchAnd := map[string]interface{}{
+					"match": map[string]interface{}{
+						"title": map[string]interface{}{
+							"query":    options.Search,
+							"operator": "and",
+							"boost":    2,
+						},
+					},
+				}
+				artistExact := map[string]interface{}{
+					"term": map[string]interface{}{
+						"artist.keyword": map[string]interface{}{
+							"value":            options.Search,
+							"case_insensitive": false,
+							"boost":            6,
+						},
+					},
+				}
+				artistPhrase := map[string]interface{}{
+					"match_phrase": map[string]interface{}{
+						"artist": map[string]interface{}{
+							"query": options.Search,
+							"boost": 3,
+						},
+					},
+				}
+				artistMatchAnd := map[string]interface{}{
+					"match": map[string]interface{}{
+						"artist": map[string]interface{}{
+							"query":    options.Search,
+							"operator": "and",
+							"boost":    1.5,
+						},
+					},
+				}
 				qs := NewQueryString(options.Search, []string{"title", "artist"}, "OR", 1.0)
 				qs2 := NewQueryString(options.Search, []string{"source", "creator_username", "difficulty_name"}, "OR", 0.8)
-				boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, qs, qs2, m)
+				boolQuerySearch.BoolQuery.Should = append(boolQuerySearch.BoolQuery.Should, titleExact, titlePhrase, titleMatchAnd, artistExact, artistPhrase, artistMatchAnd, qs, qs2, m)
 			}
 			boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQuerySearch)
 		}
@@ -439,12 +492,18 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		sort = "date_clan_ranked"
 	}
 
-	sortFields := []map[string]SortOrder{
-		{sort: {Order: sortOrder}},
-	}
+	var sortFields []map[string]SortOrder
 
-	if options.Search != "" {
-		sortFields = append(sortFields, map[string]SortOrder{"_score": {Order: "desc"}})
+	if options.Search != "" && !useTagSearchOnly {
+		// Prioritize relevance first, then fall back to the requested sort.
+		sortFields = []map[string]SortOrder{
+			{"_score": {Order: "desc"}},
+			{sort: {Order: sortOrder}},
+		}
+	} else {
+		sortFields = []map[string]SortOrder{
+			{sort: {Order: sortOrder}},
+		}
 	}
 
 	query := Query{
