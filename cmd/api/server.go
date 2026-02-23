@@ -185,6 +185,8 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/leaderboard/clans", handlers.CreateHandler(handlers.GetClanLeaderboard))
 
 	// Scores
+	engine.GET("/v2/score/:id", middleware.AllowAuth, handlers.CreateHandler(handlers.GetScoreById))
+
 	engine.GET("/v2/scores/:md5/stats", middleware.RequireAuth, handlers.CreateHandler(handlers.GetVirtualReplayPlayerOutput))
 
 	engine.GET("/v2/scores/:md5/global", middleware.AllowAuth, handlers.CreateHandler(handlers.GetGlobalScoresForMap))

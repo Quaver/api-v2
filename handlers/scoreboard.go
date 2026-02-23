@@ -13,6 +13,27 @@ const (
 	MaxNormalScoreboardLimit int = 50
 )
 
+func GetScoreById(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	score, err := db.GetScoreById(id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error getting score by id", err)
+	}
+
+	if score == nil {
+		return APIErrorNotFound("Score")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"score": score})
+	return nil
+}
+
 // GetGlobalScoresForMap Retrieves the global scoreboard for a given map.
 // Endpoint: GET: /v2/scores/:md5/global
 func GetGlobalScoresForMap(c *gin.Context) *APIError {
