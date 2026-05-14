@@ -16,6 +16,7 @@ type MultiplayerMatchScore struct {
 	CountGood         int     `gorm:"column:count_good" json:"count_good"`
 	CountOkay         int     `gorm:"column:count_okay" json:"count_okay"`
 	CountMiss         int     `gorm:"column:count_miss" json:"count_miss"`
+	CountMineHit      int     `gorm:"column:count_minehit" json:"count_minehit"`
 	FullCombo         bool    `gorm:"column:full_combo" json:"-"`
 	LivesLeft         int     `gorm:"column:lives_left" json:"-"`
 	HasFailed         bool    `gorm:"column:has_failed" json:"-"`

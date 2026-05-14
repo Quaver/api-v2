@@ -25,6 +25,7 @@ type RedisScore struct {
 		CountGood         int     `json:"count_good"`
 		CountOkay         int     `json:"count_okay"`
 		CountMiss         int     `json:"count_miss"`
+		CountMineHit      int     `json:"count_minehit"`
 	} `json:"score"`
 	User struct {
 		Id           int    `json:"id"`
