@@ -94,6 +94,17 @@ func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 	return user, nil
 }
 
+// AuthenticateInGameRequest authenticates a request using the in-game auth header.
+func AuthenticateInGameRequest(c *gin.Context) (*db.User, error) {
+	token := c.GetHeader("auth")
+
+	if token == "" {
+		return nil, nil
+	}
+
+	return authenticateInGame(c, token)
+}
+
 // Authenticates a user by their JWT token.
 // Header - {Authorization: 'Bearer Token`}
 func authenticateJWT(header string) (*db.User, error) {
