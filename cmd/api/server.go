@@ -48,26 +48,43 @@ func initializeServer(port int) {
 
 // Initializes the rate limiter for the server
 func initializeRateLimiter(engine *gin.Engine) {
+	rateLimitBypassRoutes := map[string]struct{}{
+		"/v2/mapset/search": {},
+	}
+
 	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
 		Rate:  time.Minute,
 		Limit: 100,
 	})
 
-	engine.Use(ratelimit.RateLimiter(store, &ratelimit.Options{
-		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
-			isWhitelisted := slices.Contains(config.Instance.Server.RateLimitIpWhitelist, c.ClientIP())
+	engine.Use(func(c *gin.Context) {
+		if !config.Instance.IsProduction || slices.Contains(config.Instance.Server.RateLimitIpWhitelist, c.ClientIP()) {
+			c.Next()
+			return
+		}
 
-			if !config.Instance.IsProduction || isWhitelisted {
+		if _, canBypassRoute := rateLimitBypassRoutes[c.Request.URL.Path]; canBypassRoute {
+			user, err := middleware.AuthenticateInGameRequest(c)
+
+			if err == nil && user != nil {
 				c.Next()
 				return
 			}
+		}
 
+		info := store.Limit(c.ClientIP(), c)
+		c.Header("X-Rate-Limit-Limit", fmt.Sprintf("%d", info.Limit))
+		c.Header("X-Rate-Limit-Remaining", fmt.Sprintf("%v", info.RemainingHits))
+		c.Header("X-Rate-Limit-Reset", fmt.Sprintf("%d", info.ResetTime.Unix()))
+
+		if info.RateLimited {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests"})
-		},
-		KeyFunc: func(c *gin.Context) string {
-			return c.ClientIP()
-		},
-	}))
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	})
 }
 
 // Initializes all the routes for the server.
