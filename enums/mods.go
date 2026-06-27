@@ -52,6 +52,7 @@ const (
 	ModSpeed195X
 	ModHealthAdjust
 	ModNoMiss
+	ModNoMines
 	ModEnumMaxValue // This is only in place for looping purposes (i < ModEnumMaxValue - 1; i++)
 )
 
@@ -136,6 +137,7 @@ var ModStrings = map[Mods]string{
 	ModSpeed195X:          "1.95x",
 	ModHealthAdjust:       "Health Adjustments",
 	ModNoMiss:             "NM",
+	ModNoMines:            "NMN",
 	ModEnumMaxValue:       "INVALID!",
 }
 
@@ -261,7 +263,7 @@ func isUnrankedModAllowed(mod Mods) bool {
 	}
 
 	switch mod {
-	case ModNoLongNotes, ModFullLN, ModInverse, ModNoSliderVelocities:
+	case ModNoLongNotes, ModFullLN, ModInverse, ModNoSliderVelocities, ModNoMines:
 		return true
 	}
 
