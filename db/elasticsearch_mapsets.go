@@ -469,6 +469,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		"long_note_percentage": true,
 		"date_submitted":       true,
 		"date_last_updated":    true,
+		"date_clan_ranked":     true,
 	}
 
 	sort := "date_last_updated"
@@ -480,16 +481,6 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 
 	if options.SortOrder == "asc" || options.SortOrder == "desc" {
 		sortOrder = options.SortOrder
-	}
-
-	if options.IsClanRanked {
-		clanRankedTerm := TermCustom{}
-		clanRankedTerm.Term.IsClanRanked = &Term{
-			Value: options.IsClanRanked,
-		}
-		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, clanRankedTerm)
-
-		sort = "date_clan_ranked"
 	}
 
 	var sortFields []map[string]SortOrder
