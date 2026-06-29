@@ -483,6 +483,14 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		sortOrder = options.SortOrder
 	}
 
+	if options.IsClanRanked {
+		clanRankedTerm := TermCustom{}
+		clanRankedTerm.Term.IsClanRanked = &Term{
+			Value: options.IsClanRanked,
+		}
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, clanRankedTerm)
+	}
+
 	var sortFields []map[string]SortOrder
 
 	if options.Search != "" && !useTagSearchOnly {
