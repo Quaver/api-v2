@@ -32,6 +32,7 @@ type Score struct {
 	CountGood                   int              `gorm:"column:count_good" json:"count_good"`
 	CountOkay                   int              `gorm:"column:count_okay" json:"count_okay"`
 	CountMiss                   int              `gorm:"column:count_miss" json:"count_miss"`
+	CountMineHit                int              `gorm:"column:count_minehit" json:"count_minehit"`
 	Grade                       string           `gorm:"column:grade" json:"grade"`
 	ScrollSpeed                 int              `gorm:"column:scroll_speed" json:"scroll_speed"`
 	TimePlayStart               int64            `gorm:"column:time_play_start" json:"-"`
