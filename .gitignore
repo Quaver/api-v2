@@ -25,3 +25,4 @@ data/
 config.json
 temp/
 .DS_STORE
+.gocache
