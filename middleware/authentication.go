@@ -22,7 +22,8 @@ type JWTClaims struct {
 }
 
 const (
-	messageNoHeader = "You must provide a valid `Authorization` or `auth` header."
+	messageNoHeader       = "You must provide a valid `Authorization` or `auth` header."
+	messageNoAuthOrSecret = "You must provide a valid `Authorization`, `auth`, or `client_secret`."
 )
 
 // RequireAuth Middleware authentication function
@@ -40,6 +41,38 @@ func RequireAuth(c *gin.Context) {
 
 	c.Set("user", user)
 	c.Next()
+}
+
+// RequireAuthOrClientSecret requires either user authentication or a valid application client secret.
+func RequireAuthOrClientSecret(c *gin.Context) {
+	user, authErr := authenticateUser(c)
+
+	if authErr == nil {
+		c.Set("user", user)
+		c.Next()
+		return
+	}
+
+	_, secretErr := authenticateApplicationClientSecret(c)
+
+	if secretErr == nil {
+		c.Next()
+		return
+	}
+
+	apiErr := authErr
+
+	if authErr.Message == messageNoHeader && secretErr.Error == gorm.ErrRecordNotFound {
+		apiErr = &handlers.APIError{Status: http.StatusUnauthorized, Message: messageNoAuthOrSecret}
+	} else if secretErr.Error != gorm.ErrRecordNotFound {
+		apiErr = secretErr
+	}
+
+	handlers.CreateHandler(func(ctx *gin.Context) *handlers.APIError {
+		return apiErr
+	})(c)
+
+	c.Abort()
 }
 
 // AllowAuth Allows user authentication but does not require it. This middleware fails
@@ -92,6 +125,27 @@ func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 	}
 
 	return user, nil
+}
+
+// authenticateApplicationClientSecret authenticates an active application client secret.
+func authenticateApplicationClientSecret(c *gin.Context) (*db.Application, *handlers.APIError) {
+	secret := c.GetHeader("client_secret")
+
+	if secret == "" {
+		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: messageNoAuthOrSecret, Error: gorm.ErrRecordNotFound}
+	}
+
+	application, err := db.GetActiveApplicationByClientSecret(secret)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, handlers.APIErrorServerError("Error occurred while authenticating application", err)
+	}
+
+	if application == nil {
+		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: "You are unauthorized to access this resource.", Error: gorm.ErrRecordNotFound}
+	}
+
+	return application, nil
 }
 
 // AuthenticateInGameRequest authenticates a request using the in-game auth header.
