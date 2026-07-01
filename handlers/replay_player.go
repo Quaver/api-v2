@@ -68,6 +68,7 @@ func GetVirtualReplayPlayerOutput(c *gin.Context) *APIError {
 				"count_good":      replayStats.CountGood,
 				"count_okay":      replayStats.CountOkay,
 				"count_miss":      replayStats.CountMiss,
+				"count_minehit":   replayStats.CountMineHit,
 			},
 			"deviance": replayStats.Hits,
 		}

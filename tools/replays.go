@@ -30,6 +30,7 @@ func BuildReplay(user *db.User, score *db.Score, headerlessPath string, outputPa
 		strconv.Itoa(score.CountGood),
 		strconv.Itoa(score.CountOkay),
 		strconv.Itoa(score.CountMiss),
+		strconv.Itoa(score.CountMineHit),
 		strconv.Itoa(score.PauseCount),
 		user.Username)
 
@@ -48,16 +49,17 @@ func BuildReplay(user *db.User, score *db.Score, headerlessPath string, outputPa
 }
 
 type VirtualReplayPlayer struct {
-	Score      int      `json:"Score"`
-	Accuracy   float64  `json:"Accuracy"`
-	MaxCombo   int      `json:"MaxCombo"`
-	CountMarv  int      `json:"CountMarv"`
-	CountPerf  int      `json:"CountPerf"`
-	CountGreat int      `json:"CountGreat"`
-	CountGood  int      `json:"CountGood"`
-	CountOkay  int      `json:"CountOkay"`
-	CountMiss  int      `json:"CountMiss"`
-	Hits       []string `json:"Hits"`
+	Score        int      `json:"Score"`
+	Accuracy     float64  `json:"Accuracy"`
+	MaxCombo     int      `json:"MaxCombo"`
+	CountMarv    int      `json:"CountMarv"`
+	CountPerf    int      `json:"CountPerf"`
+	CountGreat   int      `json:"CountGreat"`
+	CountGood    int      `json:"CountGood"`
+	CountOkay    int      `json:"CountOkay"`
+	CountMiss    int      `json:"CountMiss"`
+	CountMineHit int      `json:"CountMineHit"`
+	Hits         []string `json:"Hits"`
 }
 
 // PlayReplayVirtually Plays a replay virtually and returns the result
