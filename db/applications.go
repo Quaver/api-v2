@@ -62,6 +62,21 @@ func GetApplicationById(id int) (*Application, error) {
 	return application, nil
 }
 
+// GetActiveApplicationByClientSecret Retrieves an active application by client secret
+func GetActiveApplicationByClientSecret(secret string) (*Application, error) {
+	var application *Application
+
+	result := SQL.
+		Where("client_secret = ? AND active = 1", secret).
+		First(&application)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return application, nil
+}
+
 // SetActiveStatus Sets an applications active status
 func (app *Application) SetActiveStatus(active bool) error {
 	app.Active = active

@@ -186,8 +186,8 @@ func initializeRoutes(engine *gin.Engine) {
 	engine.GET("/v2/server/stats/mostplayed", handlers.CreateHandler(handlers.GetWeeklyMostPlayedMapsets))
 
 	// Download
-	engine.GET("/v2/download/map/:id", handlers.CreateHandler(handlers.DownloadQua))
-	engine.GET("/v2/download/replay/:id", handlers.CreateHandler(handlers.DownloadReplay))
+	engine.GET("/v2/download/map/:id", middleware.RequireAuthOrClientSecret, handlers.CreateHandler(handlers.DownloadQua))
+	engine.GET("/v2/download/replay/:id", middleware.RequireAuthOrClientSecret, handlers.CreateHandler(handlers.DownloadReplay))
 	engine.Match([]string{"GET", "HEAD"}, "/v2/download/mapset/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DownloadMapset))
 	engine.POST("/v2/download/multiplayer/:id/upload", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadMultiplayerMapset))
 	engine.Match([]string{"GET", "HEAD"}, "/v2/download/multiplayer/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DownloadMultiplayerMapset))
