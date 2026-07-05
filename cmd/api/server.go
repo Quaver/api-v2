@@ -50,6 +50,7 @@ func initializeServer(port int) {
 func initializeRateLimiter(engine *gin.Engine) {
 	rateLimitBypassRoutes := map[string]struct{}{
 		"/v2/mapset/search": {},
+		"/v2/map/:id":       {},
 	}
 
 	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
@@ -63,7 +64,7 @@ func initializeRateLimiter(engine *gin.Engine) {
 			return
 		}
 
-		if _, canBypassRoute := rateLimitBypassRoutes[c.Request.URL.Path]; canBypassRoute {
+		if _, canBypassRoute := rateLimitBypassRoutes[c.FullPath()]; canBypassRoute {
 			user, err := middleware.AuthenticateInGameRequest(c)
 
 			if err == nil && user != nil {
