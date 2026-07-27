@@ -91,6 +91,44 @@ var RankedMods = []Mods{
 	ModNoMiss,
 }
 
+type SpeedModRate struct {
+	Mod  Mods
+	Rate int
+}
+
+var SpeedModRates = []SpeedModRate{
+	{Mod: ModSpeed05X, Rate: 50},
+	{Mod: ModSpeed055X, Rate: 55},
+	{Mod: ModSpeed06X, Rate: 60},
+	{Mod: ModSpeed065X, Rate: 65},
+	{Mod: ModSpeed07X, Rate: 70},
+	{Mod: ModSpeed075X, Rate: 75},
+	{Mod: ModSpeed08X, Rate: 80},
+	{Mod: ModSpeed085X, Rate: 85},
+	{Mod: ModSpeed09X, Rate: 90},
+	{Mod: ModSpeed095X, Rate: 95},
+	{Mod: ModSpeed105X, Rate: 105},
+	{Mod: ModSpeed11X, Rate: 110},
+	{Mod: ModSpeed115X, Rate: 115},
+	{Mod: ModSpeed12X, Rate: 120},
+	{Mod: ModSpeed125X, Rate: 125},
+	{Mod: ModSpeed13X, Rate: 130},
+	{Mod: ModSpeed135X, Rate: 135},
+	{Mod: ModSpeed14X, Rate: 140},
+	{Mod: ModSpeed145X, Rate: 145},
+	{Mod: ModSpeed15X, Rate: 150},
+	{Mod: ModSpeed155X, Rate: 155},
+	{Mod: ModSpeed16X, Rate: 160},
+	{Mod: ModSpeed165X, Rate: 165},
+	{Mod: ModSpeed17X, Rate: 170},
+	{Mod: ModSpeed175X, Rate: 175},
+	{Mod: ModSpeed18X, Rate: 180},
+	{Mod: ModSpeed185X, Rate: 185},
+	{Mod: ModSpeed19X, Rate: 190},
+	{Mod: ModSpeed195X, Rate: 195},
+	{Mod: ModSpeed20X, Rate: 200},
+}
+
 var ModStrings = map[Mods]string{
 	ModNoSliderVelocities: "NSV",
 	ModSpeed05X:           "0.5x",
@@ -139,6 +177,45 @@ var ModStrings = map[Mods]string{
 	ModNoMiss:             "NM",
 	ModNoMines:            "NMN",
 	ModEnumMaxValue:       "INVALID!",
+}
+
+// GetSpeedRate returns the speed rate in integer hundredths.
+func GetSpeedRate(modCombo Mods) int {
+	speedMod, ok := GetSpeedMod(modCombo)
+
+	if !ok {
+		return 100
+	}
+
+	for _, speedModRate := range SpeedModRates {
+		if speedModRate.Mod == speedMod {
+			return speedModRate.Rate
+		}
+	}
+
+	return 100
+}
+
+// GetSpeedMod returns the first speed modifier in a modifier combination.
+func GetSpeedMod(modCombo Mods) (Mods, bool) {
+	for _, speedMod := range SpeedModRates {
+		if IsModActivated(modCombo, speedMod.Mod) {
+			return speedMod.Mod, true
+		}
+	}
+
+	return 0, false
+}
+
+// SpeedModMask returns a mask containing every speed modifier.
+func SpeedModMask() Mods {
+	var mask Mods
+
+	for _, speedMod := range SpeedModRates {
+		mask |= speedMod.Mod
+	}
+
+	return mask
 }
 
 // IsModActivated Returns if a given mod is activated in a mod combo
