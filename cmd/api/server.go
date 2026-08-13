@@ -228,13 +228,14 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Ranking Queue
 	engine.GET("/v2/ranking/config", handlers.CreateHandler(handlers.GetRankingQueueConfig))
-	engine.GET("/v2/ranking/queue/mode/:mode", handlers.CreateHandler(handlers.GetRankingQueue))
+	engine.GET("/v2/ranking/queue/mode/:mode", middleware.AllowAuth, handlers.CreateHandler(handlers.GetRankingQueue))
 	engine.GET("/v2/ranking/queue/supervisors/actions", middleware.RequireAuth, handlers.CreateHandler(handlers.GetRankingSupervisorActions))
 	engine.GET("/v2/ranking/queue/:id", handlers.CreateHandler(handlers.GetRankingQueueMapset))
 	engine.POST("/v2/ranking/queue/:id/submit", middleware.RequireAuth, handlers.CreateHandler(handlers.SubmitMapsetToRankingQueue))
 	engine.POST("/v2/ranking/queue/:id/remove", middleware.RequireAuth, handlers.CreateHandler(handlers.RemoveFromRankingQueue))
-	engine.GET("/v2/ranking/queue/:id/comments", handlers.CreateHandler(handlers.GetRankingQueueComments))
+	engine.GET("/v2/ranking/queue/:id/comments", middleware.AllowAuth, handlers.CreateHandler(handlers.GetRankingQueueComments))
 	engine.POST("/v2/ranking/queue/:id/comment", middleware.RequireAuth, handlers.CreateHandler(handlers.AddRankingQueueComment))
+	engine.POST("/v2/ranking/queue/:id/private-comment", middleware.RequireAuth, handlers.CreateHandler(handlers.AddPrivateRankingQueueComment))
 	engine.POST("/v2/ranking/queue/comment/:id/edit", middleware.RequireAuth, handlers.CreateHandler(handlers.EditRankingQueueComment))
 	engine.POST("/v2/ranking/queue/:id/vote", middleware.RequireAuth, handlers.CreateHandler(handlers.VoteForRankingQueueMapset))
 	engine.POST("/v2/ranking/queue/:id/deny", middleware.RequireAuth, handlers.CreateHandler(handlers.DenyRankingQueueMapset))

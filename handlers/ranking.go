@@ -57,6 +57,12 @@ func GetRankingQueue(c *gin.Context) *APIError {
 		return APIErrorServerError("Error retrieving ranking queue count", err)
 	}
 
+	canViewAnonymousAuthor := canUserAccessSupervisorRoute(c)
+	for _, mapset := range rankingQueue {
+		mapset.Votes = prepareRankingQueueCommentsForResponse(mapset.Votes, canViewAnonymousAuthor)
+		mapset.Denies = prepareRankingQueueCommentsForResponse(mapset.Denies, canViewAnonymousAuthor)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"count":         count,
 		"ranking_queue": rankingQueue,
