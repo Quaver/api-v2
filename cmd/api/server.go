@@ -228,7 +228,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Ranking Queue
 	engine.GET("/v2/ranking/config", handlers.CreateHandler(handlers.GetRankingQueueConfig))
-	engine.GET("/v2/ranking/queue/mode/:mode", middleware.AllowAuth, handlers.CreateHandler(handlers.GetRankingQueue))
+	engine.GET("/v2/ranking/queue/mode/:mode", handlers.CreateHandler(handlers.GetRankingQueue))
 	engine.GET("/v2/ranking/queue/supervisors/actions", middleware.RequireAuth, handlers.CreateHandler(handlers.GetRankingSupervisorActions))
 	engine.GET("/v2/ranking/queue/:id", handlers.CreateHandler(handlers.GetRankingQueueMapset))
 	engine.POST("/v2/ranking/queue/:id/submit", middleware.RequireAuth, handlers.CreateHandler(handlers.SubmitMapsetToRankingQueue))
