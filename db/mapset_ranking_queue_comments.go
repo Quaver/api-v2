@@ -1,9 +1,10 @@
 package db
 
 import (
+	"time"
+
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
-	"time"
 )
 
 type RankingQueueAction int8
@@ -15,7 +16,6 @@ const (
 	RankingQueueActionOnHold
 	RankingQueueActionVote
 	RankingQueueActionResolved
-	RankingQueueActionPrivate
 )
 
 type MapsetRankingQueueComment struct {
@@ -30,6 +30,7 @@ type MapsetRankingQueueComment struct {
 	DateLastUpdated     int64              `gorm:"date_last_updated" json:"-"`
 	DateLastUpdatedJSON time.Time          `gorm:"-:all" json:"date_last_updated"`
 	GameMode            *enums.GameMode    `gorm:"column:game_mode" json:"game_mode"`
+	IsPrivate           bool               `gorm:"column:is_private" json:"is_private"`
 	IsAnonymous         bool               `gorm:"column:is_anonymous" json:"is_anonymous"`
 	User                *User              `gorm:"foreignKey:UserId; references:Id" json:"user,omitempty"`
 	AnonymousAuthor     *User              `gorm:"-" json:"anonymous_author,omitempty"`
@@ -79,15 +80,9 @@ func (c *MapsetRankingQueueComment) Edit(comment string) error {
 func GetRankingQueueComments(mapsetId int, includePrivate bool) ([]*MapsetRankingQueueComment, error) {
 	var comments = make([]*MapsetRankingQueueComment, 0)
 
-	query := SQL.
+	result := SQL.
 		Joins("User").
-		Where("mapset_id = ?", mapsetId)
-
-	if !includePrivate {
-		query = query.Where("action_type IS NULL OR action_type != ?", RankingQueueActionPrivate)
-	}
-
-	result := query.
+		Where("mapset_id = ? AND is_private = ?", mapsetId, includePrivate).
 		Order("id DESC").
 		Find(&comments)
 
@@ -181,8 +176,7 @@ func GetUserRankingQueueComments(userId int, timeStart int64, timeEnd int64) ([]
 	var comments = make([]*MapsetRankingQueueComment, 0)
 
 	result := SQL.
-		Where("user_id = ? AND timestamp > ? AND timestamp < ? AND action_type IN ?", userId, timeStart, timeEnd,
-			[]RankingQueueAction{RankingQueueActionDeny, RankingQueueActionBlacklist, RankingQueueActionOnHold, RankingQueueActionVote}).
+		Where("user_id = ? AND timestamp > ? AND timestamp < ? AND action_type > 0", userId, timeStart, timeEnd).
 		Find(&comments)
 
 	if result.Error != nil {

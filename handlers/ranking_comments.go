@@ -1,13 +1,14 @@
 package handlers
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
 
 // GetRankingQueueComments Returns all of the comments for a mapset in the ranking queue
@@ -34,7 +35,7 @@ func prepareRankingQueueCommentsForResponse(comments []*db.MapsetRankingQueueCom
 	prepared := make([]*db.MapsetRankingQueueComment, 0, len(comments))
 
 	for _, comment := range comments {
-		if comment.ActionType == db.RankingQueueActionPrivate && !canViewPrivate {
+		if !canViewPrivate {
 			continue
 		}
 
@@ -67,20 +68,21 @@ func prepareRankingQueueCommentsForResponse(comments []*db.MapsetRankingQueueCom
 // AddRankingQueueComment Inserts a ranking queue comment to the database
 // Endpoint: POST /v2/ranking/queue/:id/comment
 func AddRankingQueueComment(c *gin.Context) *APIError {
-	return addRankingQueueComment(c, db.RankingQueueActionComment)
+	return addRankingQueueComment(c, db.RankingQueueActionComment, false)
 }
 
 // AddPrivateRankingQueueComment inserts an attributed comment only ranking supervisors can retrieve.
 // Endpoint: POST /v2/ranking/queue/:id/private-comment
 func AddPrivateRankingQueueComment(c *gin.Context) *APIError {
-	if !canUserAccessSupervisorRoute(c) {
+	canUsePrivate := canUserAccessSupervisorRoute(c)
+	if !canUsePrivate {
 		return APIErrorForbidden("Only ranking supervisors can add a private ranking comment.")
 	}
 
-	return addRankingQueueComment(c, db.RankingQueueActionPrivate)
+	return addRankingQueueComment(c, db.RankingQueueActionComment, true)
 }
 
-func addRankingQueueComment(c *gin.Context, action db.RankingQueueAction) *APIError {
+func addRankingQueueComment(c *gin.Context, action db.RankingQueueAction, isPrivate bool) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -126,6 +128,7 @@ func addRankingQueueComment(c *gin.Context, action db.RankingQueueAction) *APIEr
 		ActionType: action,
 		Comment:    body.Comment,
 		GameMode:   &body.GameMode,
+		IsPrivate:  isPrivate,
 		IsActive:   true,
 	}
 
@@ -142,7 +145,7 @@ func addRankingQueueComment(c *gin.Context, action db.RankingQueueAction) *APIEr
 	}
 
 	message := "Your comment has been successfully added."
-	if action == db.RankingQueueActionPrivate {
+	if isPrivate {
 		message = "Your private ranking comment has been successfully added."
 	}
 
