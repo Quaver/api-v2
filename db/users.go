@@ -1,15 +1,18 @@
 package db
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/Quaver/api2/enums"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type User struct {
@@ -28,6 +31,7 @@ type User struct {
 	Country                     string            `gorm:"column:country" json:"country"`
 	IP                          string            `gorm:"column:ip" json:"-"`
 	AvatarUrl                   *string           `gorm:"column:avatar_url" json:"avatar_url"`
+	ProfileVersion              string            `gorm:"column:profile_version" json:"profile_version"`
 	Twitter                     *string           `gorm:"column:twitter" json:"twitter"`
 	Title                       *string           `gorm:"column:title" json:"title"`
 	CheckedPreviousAchievements bool              `gorm:"column:checked_previous_achievements" json:"-"`
@@ -124,6 +128,36 @@ func (u *User) SetClanTagAndColor() error {
 		u.ClanTag = &tag
 		u.ClanAccentColor = accentColor
 	}
+
+	return nil
+}
+
+func generateUserProfileVersion() (string, error) {
+	bytes := make([]byte, 8)
+
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(bytes), nil
+}
+
+// UpdateUserProfileVersion rotates the version used to cache-bust user profile assets.
+func UpdateUserProfileVersion(user *User) error {
+	version, err := generateUserProfileVersion()
+	if err != nil {
+		return err
+	}
+
+	result := SQL.Model(&User{}).
+		Where("id = ?", user.Id).
+		Update("profile_version", version)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	user.ProfileVersion = version
 
 	return nil
 }
