@@ -89,7 +89,7 @@ func GetRankingQueueMapset(c *gin.Context) *APIError {
 
 // SubmitMapsetToRankingQueue Submits a mapsets to the ranking queue
 // Endpoint: POST /v2/ranking/queue/:id/submit
-arefunc SubmitMapsetToRankingQueue(c *gin.Context) *APIError {
+func SubmitMapsetToRankingQueue(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
