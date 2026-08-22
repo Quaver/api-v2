@@ -242,6 +242,154 @@ func SubmitMapModComment(c *gin.Context) *APIError {
 	return nil
 }
 
+// EditMapMod Edits the content of a pending map mod.
+// Endpoint: POST /v2/map/mod/:id/edit
+func EditMapMod(c *gin.Context) *APIError {
+	modId, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid mod id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	body := struct {
+		MapTimestamp *string `form:"map_timestamp" json:"map_timestamp"`
+		Comment      string  `form:"comment" json:"comment" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if apiErr := validateEditableMapModComment(body.Comment); apiErr != nil {
+		return apiErr
+	}
+
+	var apiErr *APIError
+	body.MapTimestamp, apiErr = normalizeEditableMapModTimestamp(body.MapTimestamp)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
+	mod, err := db.GetModById(modId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving map mod from database", err)
+	}
+
+	if mod == nil {
+		return APIErrorNotFound("Mod")
+	}
+
+	if mod.AuthorId != user.Id {
+		return APIErrorForbidden("You are not the author of this mod.")
+	}
+
+	if mod.Status != db.ModStatusPending {
+		return APIErrorForbidden("You can only edit pending mods.")
+	}
+
+	if err := mod.Edit(body.Comment, body.MapTimestamp); err != nil {
+		return APIErrorServerError("Error updating map mod in the database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your mod has been successfully edited."})
+	return nil
+}
+
+// EditMapModComment Edits the content of a comment on a pending map mod.
+// Endpoint: POST /v2/map/mod/comment/:id/edit
+func EditMapModComment(c *gin.Context) *APIError {
+	commentId, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid comment id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	body := struct {
+		Comment string `form:"comment" json:"comment" binding:"required"`
+	}{}
+
+	if err := c.ShouldBind(&body); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if apiErr := validateEditableMapModComment(body.Comment); apiErr != nil {
+		return apiErr
+	}
+
+	comment, err := db.GetMapModCommentById(commentId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving map mod comment from database", err)
+	}
+
+	if comment == nil {
+		return APIErrorNotFound("Comment")
+	}
+
+	if comment.AuthorId != user.Id {
+		return APIErrorForbidden("You are not the author of this comment.")
+	}
+
+	mod, err := db.GetModById(comment.MapModId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving map mod from database", err)
+	}
+
+	if mod == nil {
+		return APIErrorNotFound("Mod")
+	}
+
+	if mod.Status != db.ModStatusPending {
+		return APIErrorForbidden("You can only edit comments on pending mods.")
+	}
+
+	if err := comment.Edit(body.Comment); err != nil {
+		return APIErrorServerError("Error updating map mod comment in the database", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your comment has been successfully edited."})
+	return nil
+}
+
+func validateEditableMapModComment(comment string) *APIError {
+	if len(comment) == 0 || len(comment) > 5000 {
+		return APIErrorBadRequest("Your comment must be between 1 and 5,000 characters")
+	}
+
+	return nil
+}
+
+func normalizeEditableMapModTimestamp(timestamp *string) (*string, *APIError) {
+	if timestamp == nil || len(*timestamp) == 0 {
+		return nil, nil
+	}
+
+	if len(*timestamp) > 5000 {
+		return nil, APIErrorBadRequest("The map timestamp can't be greater than 5,000 characters")
+	}
+
+	if !isMapTimestampValid(*timestamp) {
+		return nil, APIErrorBadRequest("You have provided an invalid map timestamp")
+	}
+
+	return timestamp, nil
+}
+
 // Returns if a map timestamp has valid syntax
 // Time OR Time|Lane,Time|Lane,...
 func isMapTimestampValid(str string) bool {

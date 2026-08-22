@@ -35,3 +35,29 @@ func (comment *MapModComment) Insert() error {
 
 	return nil
 }
+
+// GetMapModCommentById Gets a map mod comment by its id.
+func GetMapModCommentById(id int) (*MapModComment, error) {
+	var comment *MapModComment
+
+	result := SQL.
+		Where("id = ?", id).
+		First(&comment)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return comment, nil
+}
+
+// Edit Updates the content of a map mod comment.
+func (comment *MapModComment) Edit(content string) error {
+	comment.Comment = content
+
+	result := SQL.Model(&MapModComment{}).
+		Where("id = ?", comment.Id).
+		Update("comment", comment.Comment)
+
+	return result.Error
+}
