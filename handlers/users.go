@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/stringutil"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"io"
 	"math"
 	"net/http"
 	"regexp"
@@ -130,6 +133,76 @@ func UpdateUserAboutMe(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Your about me has been successfully updated!"})
+	return nil
+}
+
+// parseUserInformation parses a complete user information update payload.
+func parseUserInformation(body io.Reader) (db.UserInformation, error) {
+	information := db.UserInformation{
+		NotifyMapsetActions: true,
+		DefaultMode:         enums.GameModeKeys4,
+	}
+
+	var raw json.RawMessage
+	decoder := json.NewDecoder(body)
+
+	if err := decoder.Decode(&raw); err != nil {
+		return db.UserInformation{}, err
+	}
+
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		return db.UserInformation{}, fmt.Errorf("request body must contain a single JSON object")
+	}
+
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || raw[0] != '{' {
+		return db.UserInformation{}, fmt.Errorf("request body must be a JSON object")
+	}
+
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return db.UserInformation{}, err
+	}
+
+	for _, value := range fields {
+		if bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return db.UserInformation{}, fmt.Errorf("user information fields cannot be null")
+		}
+	}
+
+	decoder = json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&information); err != nil {
+		return db.UserInformation{}, err
+	}
+
+	if information.DefaultMode != enums.GameModeKeys4 && information.DefaultMode != enums.GameModeKeys7 {
+		return db.UserInformation{}, fmt.Errorf("default mode must be 1 or 2")
+	}
+
+	return information, nil
+}
+
+// UpdateUserInformation Updates the authenticated user's information.
+// Endpoint: POST /v2/user/profile/information
+func UpdateUserInformation(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	information, err := parseUserInformation(c.Request.Body)
+	if err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	if err := db.UpdateUserInformation(user.Id, information); err != nil {
+		return APIErrorServerError("Error updating user information", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Your user information has been successfully updated."})
 	return nil
 }
 

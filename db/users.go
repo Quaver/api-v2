@@ -410,6 +410,22 @@ func UpdateUserDiscordId(userId int, discordId *string) error {
 	return nil
 }
 
+// UpdateUserInformation replaces a user's information JSON field.
+func UpdateUserInformation(userId int, information UserInformation) error {
+	marshaled, err := json.Marshal(information)
+	if err != nil {
+		return err
+	}
+
+	result := SQL.Model(&User{}).Where("id = ?", userId).Update("information", string(marshaled))
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
 // UpdateUserAccentColorCustomizable Updates whether the user can update their accent_color
 func UpdateUserAccentColorCustomizable(userId int, enabled bool) error {
 	result := SQL.Model(&User{}).Where("id = ?", userId).Update("accent_color_customizable", enabled)
