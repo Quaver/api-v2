@@ -146,6 +146,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// User Profile
 	engine.POST("/v2/user/profile/aboutme", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateUserAboutMe))
+	engine.POST("/v2/user/profile/information", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateUserInformation))
 	engine.POST("/v2/user/profile/cover", middleware.RequireAuth, handlers.CreateHandler(handlers.UploadUserProfileCover))
 	engine.GET("/v2/user/profile/username/eligible", middleware.RequireAuth, handlers.CreateHandler(handlers.GetCanUserChangeUsername))
 	engine.GET("/v2/user/profile/username/available", middleware.RequireAuth, handlers.CreateHandler(handlers.IsUsernameAvailable))
