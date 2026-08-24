@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Quaver/api2/azure"
 	"github.com/Quaver/api2/cache"
+	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -29,11 +30,15 @@ func UploadUserProfileCover(c *gin.Context) *APIError {
 	}
 
 	_ = cache.RemoveCacheServerProfileCover(user.Id)
-	
+
 	err := azure.Client.UploadFile("profile-covers", fmt.Sprintf("%v.jpg", user.Id), file)
 
 	if err != nil {
 		return APIErrorServerError("Failed to upload file", err)
+	}
+
+	if err := db.UpdateUserProfileVersion(user); err != nil {
+		return APIErrorServerError("Failed to update profile version", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
