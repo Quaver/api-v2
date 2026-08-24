@@ -3,6 +3,7 @@
   "api_url": "https://api.quavergame.com",
   "website_url": "http://localhost:8081",
   "jwt_secret": "",
+  "oauth_access_token_secret": "",
   "server": {
     "port": 8080,
     "rate_limit_ip_whitelist": [

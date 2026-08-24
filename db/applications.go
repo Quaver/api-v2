@@ -1,8 +1,10 @@
 package db
 
 import (
-	"gorm.io/gorm"
+	"errors"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Application struct {
@@ -75,6 +77,67 @@ func GetActiveApplicationByClientSecret(secret string) (*Application, error) {
 	}
 
 	return application, nil
+}
+
+// GetActiveApplicationByClientId retrieves an active application by client id.
+func GetActiveApplicationByClientId(clientId string) (*Application, error) {
+	if SQL == nil {
+		return nil, errors.New("database is not initialized")
+	}
+
+	var application *Application
+
+	result := SQL.
+		Where("client_id = ? AND active = 1", clientId).
+		First(&application)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return application, nil
+}
+
+// GetActiveApplicationByClientIdAndSecret retrieves an active application by client id and secret.
+func GetActiveApplicationByClientIdAndSecret(clientId string, secret string) (*Application, error) {
+	if SQL == nil {
+		return nil, errors.New("database is not initialized")
+	}
+
+	var application *Application
+
+	result := SQL.
+		Where("client_id = ? AND client_secret = ? AND active = 1", clientId, secret).
+		First(&application)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return application, nil
+}
+
+// ApplicationUsage stores an OAuth application usage event.
+type ApplicationUsage struct {
+	Id            int   `gorm:"column:id; PRIMARY_KEY" json:"-"`
+	ApplicationId int   `gorm:"column:application_id" json:"-"`
+	Timestamp     int64 `gorm:"column:timestamp" json:"-"`
+}
+
+func (*ApplicationUsage) TableName() string {
+	return "applications_usage"
+}
+
+// RecordApplicationUsage records a successful OAuth application use.
+func RecordApplicationUsage(applicationId int) error {
+	if SQL == nil {
+		return errors.New("database is not initialized")
+	}
+
+	return SQL.Create(&ApplicationUsage{
+		ApplicationId: applicationId,
+		Timestamp:     time.Now().UnixMilli(),
+	}).Error
 }
 
 // SetActiveStatus Sets an applications active status

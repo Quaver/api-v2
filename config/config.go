@@ -17,6 +17,11 @@ type Config struct {
 
 	JWTSecret string `json:"jwt_secret"`
 
+	// OAuthAccessTokenSecret is controlled by the API server and must never be
+	// disclosed to OAuth clients. It is intentionally separate from both the
+	// application client secrets and the user JWT signing secret.
+	OAuthAccessTokenSecret string `json:"oauth_access_token_secret"`
+
 	Server struct {
 		Port                 int      `json:"port"`
 		RateLimitIpWhitelist []string `json:"rate_limit_ip_whitelist"`

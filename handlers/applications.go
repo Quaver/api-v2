@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 )
@@ -66,7 +65,7 @@ func CreateNewApplication(c *gin.Context) *APIError {
 
 	body := struct {
 		Name        string `form:"name" json:"name" binding:"required"`
-		RedirectURL string `form:"redirect_url" json:"redirect_url" binding:"required"`
+		RedirectURL string `form:"redirect_url" json:"redirect_url"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -77,8 +76,10 @@ func CreateNewApplication(c *gin.Context) *APIError {
 		return APIErrorBadRequest("The name of your application must not exceed 50 characters.")
 	}
 
-	if _, err := url.ParseRequestURI(body.RedirectURL); err != nil {
-		return APIErrorBadRequest("Your redirect URL is not valid.")
+	if body.RedirectURL != "" {
+		if err := validateOAuthRedirectURL(body.RedirectURL); err != nil {
+			return APIErrorBadRequest("Your redirect URL is not valid.")
+		}
 	}
 
 	applications, err := db.GetUserActiveApplications(user.Id)
@@ -141,8 +142,8 @@ func UpdateApplication(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Name        string `form:"name" json:"name"`
-		RedirectURL string `form:"redirect_url" json:"redirect_url"`
+		Name        string  `form:"name" json:"name"`
+		RedirectURL *string `form:"redirect_url" json:"redirect_url"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -159,12 +160,14 @@ func UpdateApplication(c *gin.Context) *APIError {
 		}
 	}
 
-	if body.RedirectURL != "" {
-		if _, err := url.ParseRequestURI(body.RedirectURL); err != nil {
-			return APIErrorBadRequest("Your redirect URL is not valid.")
+	if body.RedirectURL != nil {
+		if *body.RedirectURL != "" {
+			if err := validateOAuthRedirectURL(*body.RedirectURL); err != nil {
+				return APIErrorBadRequest("Your redirect URL is not valid.")
+			}
 		}
 
-		if err := application.SetRedirectURL(body.RedirectURL); err != nil {
+		if err := application.SetRedirectURL(*body.RedirectURL); err != nil {
 			return APIErrorServerError("Error setting application redirect url", err)
 		}
 	}

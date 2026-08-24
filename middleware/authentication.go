@@ -173,17 +173,22 @@ func authenticateJWT(header string) (*db.User, error) {
 		return []byte(config.Instance.JWTSecret), nil
 	})
 
-	switch err {
-	case nil:
-		break
-	// Return without any error, which will give them the message that they can't access resource.
-	case jwt.ErrSignatureInvalid:
-	case jwt.ErrTokenSignatureInvalid:
-	case jwt.ErrTokenExpired:
-		return nil, nil
-	// Any other internal errors which should be logged up the call stack.
-	default:
+	if err != nil {
+		// Invalid or expired tokens must never continue to claim processing. In
+		// particular, parsing claims after a signature failure could allow a
+		// token signed with another secret to influence authentication.
+		if errors.Is(err, jwt.ErrSignatureInvalid) ||
+			errors.Is(err, jwt.ErrTokenSignatureInvalid) ||
+			errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, nil
+		}
+
+		// Any other internal errors should be logged up the call stack.
 		return nil, err
+	}
+
+	if jwtToken == nil || !jwtToken.Valid {
+		return nil, nil
 	}
 
 	claims, ok := jwtToken.Claims.(*JWTClaims)

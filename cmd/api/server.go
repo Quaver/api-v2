@@ -24,7 +24,9 @@ func initializeServer(port int) {
 	logrus.Info("Starting gin server in mode: ", gin.Mode())
 
 	engine := gin.New()
-	engine.Use(cors.Default())
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "auth", "client_secret")
+	engine.Use(cors.New(corsConfig))
 	engine.Use(gin.Recovery())
 
 	initializeRateLimiter(engine)
@@ -277,6 +279,12 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Order Items
 	engine.GET("/v2/items/:id", handlers.CreateHandler(handlers.GetOrderItemById))
+
+	// OAuth 2.0
+	engine.GET("/v2/oauth2/authorize", handlers.GetOAuthAuthorization)
+	engine.POST("/v2/oauth2/authorize", middleware.RequireAuth, handlers.ApproveOAuthAuthorization)
+	engine.POST("/v2/oauth2/token", handlers.OAuthToken)
+	engine.POST("/v2/oauth2/me", handlers.OAuthMe)
 
 	// Applications
 	engine.GET("/v2/developers/applications", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserApplications))
