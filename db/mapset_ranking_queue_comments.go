@@ -80,9 +80,15 @@ func (c *MapsetRankingQueueComment) Edit(comment string) error {
 func GetRankingQueueComments(mapsetId int, includePrivate bool) ([]*MapsetRankingQueueComment, error) {
 	var comments = make([]*MapsetRankingQueueComment, 0)
 
-	result := SQL.
+	query := SQL.
 		Joins("User").
-		Where("mapset_id = ? AND is_private = ?", mapsetId, includePrivate).
+		Where("mapset_id = ?", mapsetId)
+
+	if !includePrivate {
+		query = query.Where("is_private = ?", false)
+	}
+
+	result := query.
 		Order("id DESC").
 		Find(&comments)
 

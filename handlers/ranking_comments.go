@@ -35,7 +35,7 @@ func prepareRankingQueueCommentsForResponse(comments []*db.MapsetRankingQueueCom
 	prepared := make([]*db.MapsetRankingQueueComment, 0, len(comments))
 
 	for _, comment := range comments {
-		if !canViewPrivate {
+		if comment.IsPrivate && !canViewPrivate {
 			continue
 		}
 
