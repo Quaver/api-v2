@@ -1,9 +1,10 @@
 package db
 
 import (
+	"time"
+
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
-	"time"
 )
 
 type RankingQueueAction int8
@@ -29,7 +30,10 @@ type MapsetRankingQueueComment struct {
 	DateLastUpdated     int64              `gorm:"date_last_updated" json:"-"`
 	DateLastUpdatedJSON time.Time          `gorm:"-:all" json:"date_last_updated"`
 	GameMode            *enums.GameMode    `gorm:"column:game_mode" json:"game_mode"`
+	IsPrivate           bool               `gorm:"column:is_private" json:"is_private"`
+	IsAnonymous         bool               `gorm:"column:is_anonymous" json:"is_anonymous"`
 	User                *User              `gorm:"foreignKey:UserId; references:Id" json:"user,omitempty"`
+	AnonymousAuthor     *User              `gorm:"-" json:"anonymous_author,omitempty"`
 }
 
 func (*MapsetRankingQueueComment) TableName() string {
@@ -73,12 +77,12 @@ func (c *MapsetRankingQueueComment) Edit(comment string) error {
 }
 
 // GetRankingQueueComments Retrieves the ranking queue comments for a given mapset
-func GetRankingQueueComments(mapsetId int) ([]*MapsetRankingQueueComment, error) {
+func GetRankingQueueComments(mapsetId int, includePrivate bool) ([]*MapsetRankingQueueComment, error) {
 	var comments = make([]*MapsetRankingQueueComment, 0)
 
 	result := SQL.
 		Joins("User").
-		Where("mapset_id = ?", mapsetId).
+		Where("mapset_id = ? AND is_private = ?", mapsetId, includePrivate).
 		Order("id DESC").
 		Find(&comments)
 
