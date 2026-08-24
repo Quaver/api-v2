@@ -89,6 +89,21 @@ func (mod *MapMod) Insert() error {
 	return nil
 }
 
+// Edit Updates the editable content of a pending map mod.
+func (mod *MapMod) Edit(comment string, mapTimestamp *string) error {
+	mod.Comment = comment
+	mod.MapTimestamp = mapTimestamp
+
+	result := SQL.Model(&MapMod{}).
+		Where("id = ?", mod.Id).
+		Updates(map[string]interface{}{
+			"comment":       mod.Comment,
+			"map_timestamp": mod.MapTimestamp,
+		})
+
+	return result.Error
+}
+
 // UpdateStatus Updates the status of a map mod
 func (mod *MapMod) UpdateStatus(status MapModStatus) error {
 	mod.Status = status
