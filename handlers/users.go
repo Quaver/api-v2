@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+	"unicode/utf8"
 )
 
 // SearchUsers Searches for users by username and returns them
@@ -136,6 +137,8 @@ func UpdateUserAboutMe(c *gin.Context) *APIError {
 	return nil
 }
 
+const maxUserInformationValueLength = 100
+
 // parseUserInformation parses a complete user information update payload.
 func parseUserInformation(body io.Reader) (db.UserInformation, error) {
 	information := db.UserInformation{
@@ -175,6 +178,17 @@ func parseUserInformation(body io.Reader) (db.UserInformation, error) {
 
 	if err := decoder.Decode(&information); err != nil {
 		return db.UserInformation{}, err
+	}
+
+	for _, value := range []string{
+		information.Discord,
+		information.Twitter,
+		information.Twitch,
+		information.Youtube,
+	} {
+		if utf8.RuneCountInString(value) > maxUserInformationValueLength {
+			return db.UserInformation{}, fmt.Errorf("user information values cannot exceed 100 characters")
+		}
 	}
 
 	if information.DefaultMode != enums.GameModeKeys4 && information.DefaultMode != enums.GameModeKeys7 {

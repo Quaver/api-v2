@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"strings"
@@ -41,6 +42,34 @@ func TestParseUserInformationAcceptsAllFields(t *testing.T) {
 		information.Twitch != "twitch" || information.Youtube != "youtube" ||
 		information.NotifyMapsetActions || information.DefaultMode != enums.GameModeKeys7 {
 		t.Fatalf("unexpected information: %#v", information)
+	}
+}
+
+func TestParseUserInformationAcceptsValuesUpTo100Characters(t *testing.T) {
+	value := strings.Repeat("a", maxUserInformationValueLength)
+	body := fmt.Sprintf(`{
+		"discord":%q,
+		"twitter":%q,
+		"twitch":%q,
+		"youtube":%q
+	}`, value, value, value, value)
+
+	if _, err := parseUserInformation(strings.NewReader(body)); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestParseUserInformationRejectsValuesOver100Characters(t *testing.T) {
+	value := strings.Repeat("a", maxUserInformationValueLength+1)
+	fields := []string{"discord", "twitter", "twitch", "youtube"}
+
+	for _, field := range fields {
+		t.Run(field, func(t *testing.T) {
+			body := fmt.Sprintf(`{"%s":%q}`, field, value)
+			if _, err := parseUserInformation(strings.NewReader(body)); err == nil {
+				t.Fatalf("expected %s to be rejected when longer than %d characters", field, maxUserInformationValueLength)
+			}
+		})
 	}
 }
 
