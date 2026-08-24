@@ -208,8 +208,13 @@ func NewMapsetRankedNotification(mapset *Mapset) *UserNotification {
 
 // Returns a new mapset ranking queue action notification
 func NewMapsetActionNotification(mapset *Mapset, comment *MapsetRankingQueueComment) *UserNotification {
+	senderId := comment.UserId
+	if comment.IsAnonymous {
+		senderId = QuaverBotId
+	}
+
 	notif := &UserNotification{
-		SenderId:   comment.UserId,
+		SenderId:   senderId,
 		ReceiverId: mapset.CreatorID,
 		Type:       NotificationMapsetAction,
 		Category:   NotificationCategoryRankingQueue,

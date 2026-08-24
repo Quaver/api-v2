@@ -19,6 +19,7 @@ type rankingQueueRequestData struct {
 	QueueMapset *db.RankingQueueMapset
 	Comment     string
 	GameMode    enums.GameMode
+	Anonymous   bool
 }
 
 // Validates and returns common data used for ranking queue action requests
@@ -36,8 +37,9 @@ func validateRankingQueueRequest(c *gin.Context) (*rankingQueueRequestData, *API
 	}
 
 	body := struct {
-		Comment  string         `form:"comment" json:"comment" binding:"required"`
-		GameMode enums.GameMode `form:"game_mode" json:"game_mode"`
+		Comment   string         `form:"comment" json:"comment" binding:"required"`
+		GameMode  enums.GameMode `form:"game_mode" json:"game_mode"`
+		Anonymous bool           `form:"anonymous" json:"anonymous"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -50,6 +52,10 @@ func validateRankingQueueRequest(c *gin.Context) (*rankingQueueRequestData, *API
 
 	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeRankMapsets) {
 		return nil, APIErrorForbidden("You do not have permission to perform this action.")
+	}
+
+	if body.Anonymous && !canUserAccessSupervisorRoute(c) {
+		return nil, APIErrorForbidden("Only ranking supervisors can take ranking actions anonymously.")
 	}
 
 	queueMapset, err := db.GetRankingQueueMapset(id)
@@ -68,6 +74,7 @@ func validateRankingQueueRequest(c *gin.Context) (*rankingQueueRequestData, *API
 		QueueMapset: queueMapset,
 		Comment:     body.Comment,
 		GameMode:    body.GameMode,
+		Anonymous:   body.Anonymous,
 	}, nil
 }
 
@@ -111,13 +118,14 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 	}
 
 	newVoteAction := &db.MapsetRankingQueueComment{
-		UserId:     data.User.Id,
-		User:       data.User,
-		MapsetId:   data.MapsetId,
-		ActionType: db.RankingQueueActionVote,
-		IsActive:   true,
-		Comment:    data.Comment,
-		GameMode:   &data.GameMode,
+		UserId:      data.User.Id,
+		User:        data.User,
+		MapsetId:    data.MapsetId,
+		ActionType:  db.RankingQueueActionVote,
+		IsActive:    true,
+		Comment:     data.Comment,
+		GameMode:    &data.GameMode,
+		IsAnonymous: data.Anonymous,
 	}
 
 	existingVotes = append(existingVotes, newVoteAction)
@@ -168,7 +176,7 @@ func VoteForRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating vote count for queue mapset", err)
 	}
 
-	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionVote)
+	sendRankingQueueActionWebhook(data, db.RankingQueueActionVote)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully added a vote to this mapset."})
 	return nil
 }
@@ -209,12 +217,13 @@ func DenyRankingQueueMapset(c *gin.Context) *APIError {
 	}
 
 	denyAction := &db.MapsetRankingQueueComment{
-		UserId:     data.User.Id,
-		MapsetId:   data.MapsetId,
-		ActionType: db.RankingQueueActionDeny,
-		IsActive:   true,
-		Comment:    data.Comment,
-		GameMode:   &data.GameMode,
+		UserId:      data.User.Id,
+		MapsetId:    data.MapsetId,
+		ActionType:  db.RankingQueueActionDeny,
+		IsActive:    true,
+		Comment:     data.Comment,
+		GameMode:    &data.GameMode,
+		IsAnonymous: data.Anonymous,
 	}
 
 	if err := denyAction.Insert(); err != nil {
@@ -240,7 +249,7 @@ func DenyRankingQueueMapset(c *gin.Context) *APIError {
 		}
 	}
 
-	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionDeny)
+	sendRankingQueueActionWebhook(data, db.RankingQueueActionDeny)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully added a deny to this mapset."})
 	return nil
 }
@@ -265,12 +274,13 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 	}
 
 	blacklistAction := &db.MapsetRankingQueueComment{
-		UserId:     data.User.Id,
-		MapsetId:   data.MapsetId,
-		ActionType: db.RankingQueueActionBlacklist,
-		IsActive:   true,
-		Comment:    data.Comment,
-		GameMode:   &data.GameMode,
+		UserId:      data.User.Id,
+		MapsetId:    data.MapsetId,
+		ActionType:  db.RankingQueueActionBlacklist,
+		IsActive:    true,
+		Comment:     data.Comment,
+		GameMode:    &data.GameMode,
+		IsAnonymous: data.Anonymous,
 	}
 
 	if err := blacklistAction.Insert(); err != nil {
@@ -289,7 +299,7 @@ func BlacklistRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating vote count for queue mapset", err)
 	}
 
-	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionBlacklist)
+	sendRankingQueueActionWebhook(data, db.RankingQueueActionBlacklist)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully blacklisted this mapset."})
 	return nil
 }
@@ -318,12 +328,13 @@ func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
 	}
 
 	onHoldAction := &db.MapsetRankingQueueComment{
-		UserId:     data.User.Id,
-		MapsetId:   data.MapsetId,
-		ActionType: db.RankingQueueActionOnHold,
-		IsActive:   true,
-		Comment:    data.Comment,
-		GameMode:   &data.GameMode,
+		UserId:      data.User.Id,
+		MapsetId:    data.MapsetId,
+		ActionType:  db.RankingQueueActionOnHold,
+		IsActive:    true,
+		Comment:     data.Comment,
+		GameMode:    &data.GameMode,
+		IsAnonymous: data.Anonymous,
 	}
 
 	if err := onHoldAction.Insert(); err != nil {
@@ -342,7 +353,16 @@ func OnHoldRankingQueueMapset(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating vote count for queue mapset", err)
 	}
 
-	_ = webhooks.SendQueueWebhook(data.User, queueMapset.Mapset, db.RankingQueueActionOnHold)
+	sendRankingQueueActionWebhook(data, db.RankingQueueActionOnHold)
 	c.JSON(http.StatusOK, gin.H{"message": "You have successfully placed this mapset on hold."})
 	return nil
+}
+
+func sendRankingQueueActionWebhook(data *rankingQueueRequestData, action db.RankingQueueAction) {
+	if data.Anonymous {
+		_ = webhooks.SendAnonymousQueueWebhook(data.QueueMapset.Mapset, action)
+		return
+	}
+
+	_ = webhooks.SendQueueWebhook(data.User, data.QueueMapset.Mapset, action)
 }

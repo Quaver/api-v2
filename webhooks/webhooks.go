@@ -124,6 +124,19 @@ func SendQueueWebhook(user *db.User, mapset *db.Mapset, action db.RankingQueueAc
 	return nil
 }
 
+// SendAnonymousQueueWebhook sends a ranking action as QuaverBot without exposing its author.
+func SendAnonymousQueueWebhook(mapset *db.Mapset, action db.RankingQueueAction) error {
+	avatarUrl := QuaverLogo
+	quaverBot := &db.User{
+		Id:         db.QuaverBotId,
+		Username:   "QuaverBot",
+		UserGroups: enums.UserGroupBot,
+		AvatarUrl:  &avatarUrl,
+	}
+
+	return SendQueueWebhook(quaverBot, mapset, action)
+}
+
 // SendRankedWebhook Sends a webhook that a new mapset was ranked
 func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment) error {
 	if rankedMapsets == nil {
@@ -133,7 +146,14 @@ func SendRankedWebhook(mapset *db.Mapset, votes []*db.MapsetRankingQueueComment)
 	votedBy := ""
 
 	for index, voter := range votes {
-		votedBy += fmt.Sprintf("[%v](https://quavergame.com/user/%v)", voter.User.Username, voter.UserId)
+		username := voter.User.Username
+		userId := voter.UserId
+		if voter.IsAnonymous {
+			username = "QuaverBot"
+			userId = db.QuaverBotId
+		}
+
+		votedBy += fmt.Sprintf("[%v](https://quavergame.com/user/%v)", username, userId)
 
 		if index != len(votes)-1 {
 			votedBy += ", "
