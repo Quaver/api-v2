@@ -72,6 +72,40 @@ func RemoveFriend(c *gin.Context) *APIError {
 	return nil
 }
 
+// GetRelationship Retrieves the relationship between the logged-in user and another user
+// Endpoint: GET /v2/user/:id/relationship
+func GetRelationship(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid id")
+	}
+
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	hasFriended, err := db.GetUserRelationship(user.Id, id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving user relationship", err)
+	}
+
+	isFriended, err := db.GetUserRelationship(id, user.Id)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving user relationship", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"has_friended": hasFriended != nil,
+		"is_friended":  isFriended != nil,
+	})
+	return nil
+}
+
 // GetFriendsList Retrieves the logged-in user's friend's list
 // Endpoint: GET /v2/user/relationship/friends
 func GetFriendsList(c *gin.Context) *APIError {
