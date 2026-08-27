@@ -108,8 +108,9 @@ func GetUserMapsetsFiltered(userId int, status enums.RankedStatus, page int, lim
 	offset := page * limit
 
 	result := SQL.Raw("SELECT mapsets.* FROM mapsets "+
-		"INNER JOIN maps ON maps.mapset_id = mapsets.id "+
-		"WHERE mapsets.creator_id = ? AND mapsets.visible = 1 AND maps.ranked_status = ? "+
+		"WHERE mapsets.creator_id = ? AND mapsets.visible = 1 AND EXISTS ("+
+		"SELECT 1 FROM maps WHERE maps.mapset_id = mapsets.id AND maps.ranked_status = ?"+
+		") "+
 		"ORDER BY mapsets.date_last_updated DESC "+
 		fmt.Sprintf("LIMIT %v OFFSET %v", limit, offset),
 		userId, status).Scan(&mapsets)

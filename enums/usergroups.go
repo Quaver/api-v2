@@ -12,6 +12,9 @@ const (
 	UserGroupSwan
 	UserGroupContributor
 	UserGroupDonator
+	UserGroupTrialRankingSupervisor
+	UserGroupGraphicsDesigner
+	UserGroupHeadRankingSupervisor
 )
 
 // HasUserGroup Returns if a combination of user groups contains a single group
