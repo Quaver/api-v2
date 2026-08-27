@@ -136,7 +136,7 @@ func addRankingQueueComment(c *gin.Context, action db.RankingQueueAction, isPriv
 		return APIErrorServerError("Error inserting comment into DB", err)
 	}
 
-	if action == db.RankingQueueActionComment {
+	if action == db.RankingQueueActionComment && !isPrivate {
 		if err := db.NewMapsetActionNotification(queueMapset.Mapset, comment).Insert(); err != nil {
 			return APIErrorServerError("Error inserting comment notification", err)
 		}
