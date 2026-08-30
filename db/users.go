@@ -69,6 +69,7 @@ type UserInformation struct {
 	Twitter             string         `json:"twitter,omitempty"`
 	Twitch              string         `json:"twitch,omitempty"`
 	Youtube             string         `json:"youtube,omitempty"`
+	DefaultCover        string         `json:"default_cover,omitempty"`
 	NotifyMapsetActions bool           `json:"notif_action_mapset,omitempty"`
 	DefaultMode         enums.GameMode `json:"default_mode,omitempty"`
 }
