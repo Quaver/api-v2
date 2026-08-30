@@ -121,8 +121,8 @@ func UpdateUserAboutMe(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	if len(body.AboutMe) > 3000 {
-		return APIErrorBadRequest("Your about me must not be longer than 2,000 characters.")
+	if len(body.AboutMe) > 5000 {
+		return APIErrorBadRequest("Your about me must not be longer than 5,000 characters.")
 	}
 
 	body.AboutMe = stringutil.SanitizeHTML(body.AboutMe)
