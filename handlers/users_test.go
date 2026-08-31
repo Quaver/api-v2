@@ -31,6 +31,7 @@ func TestParseUserInformationAcceptsAllFields(t *testing.T) {
 		"twitter":"twitter",
 		"twitch":"twitch",
 		"youtube":"youtube",
+		"default_cover":"cover.jpg",
 		"notif_action_mapset":false,
 		"default_mode":2
 	}`))
@@ -40,8 +41,20 @@ func TestParseUserInformationAcceptsAllFields(t *testing.T) {
 
 	if information.Discord != "discord" || information.Twitter != "twitter" ||
 		information.Twitch != "twitch" || information.Youtube != "youtube" ||
-		information.NotifyMapsetActions || information.DefaultMode != enums.GameModeKeys7 {
+		information.DefaultCover != "cover.jpg" || information.NotifyMapsetActions ||
+		information.DefaultMode != enums.GameModeKeys7 {
 		t.Fatalf("unexpected information: %#v", information)
+	}
+}
+
+func TestParseUserInformationAcceptsEmptyDefaultCover(t *testing.T) {
+	information, err := parseUserInformation(strings.NewReader(`{"default_cover":""}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if information.DefaultCover != "" {
+		t.Fatalf("expected empty default cover, got %q", information.DefaultCover)
 	}
 }
 

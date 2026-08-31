@@ -90,12 +90,32 @@ func (options *ElasticMapsetSearchOptions) BindAndValidate() {
 	})
 }
 
+// ElasticMap stores a difficulty document; MapsetPlayCount is duplicated on each difficulty so collapsed mapset searches can sort by the mapset total.
 type ElasticMap struct {
 	*MapQua
 	Explicit        bool   `json:"explicit"`
 	PackageMD5      string `json:"package_md5"`
+	MapsetPlayCount int64  `json:"mapset_play_count"`
 	DateSubmitted   int64  `json:"date_submitted"`
 	DateLastUpdated int64  `json:"date_last_updated"`
+}
+
+func getMapsetPlayCount(mapset Mapset) int64 {
+	var playCount int64
+
+	for _, mapQua := range mapset.Maps {
+		playCount += int64(mapQua.PlayCount)
+	}
+
+	return playCount
+}
+
+func elasticMapsetSortField(sort string) string {
+	if sort == "play_count" {
+		return "mapset_play_count"
+	}
+
+	return sort
 }
 
 var tagSearchTerms = []string{
@@ -156,12 +176,15 @@ func IndexElasticSearchMapset(mapset Mapset) error {
 		return err
 	}
 
+	mapsetPlayCount := getMapsetPlayCount(mapset)
+
 	for _, mapQua := range mapset.Maps {
 		elasticMap := ElasticMap{
 			MapQua:          mapQua,
 			DateSubmitted:   mapset.DateSubmitted,
 			DateLastUpdated: mapset.DateLastUpdated,
 			Explicit:        mapset.IsExplicit,
+			MapsetPlayCount: mapsetPlayCount,
 		}
 
 		data, err := json.Marshal(&elasticMap)
@@ -185,12 +208,15 @@ func IndexElasticSearchMapset(mapset Mapset) error {
 
 // UpdateElasticSearchMapset Updates an individual mapset in elastic
 func UpdateElasticSearchMapset(mapset Mapset) error {
+	mapsetPlayCount := getMapsetPlayCount(mapset)
+
 	for _, mapQua := range mapset.Maps {
 		elasticMap := ElasticMap{
 			MapQua:          mapQua,
 			DateSubmitted:   mapset.DateSubmitted,
 			DateLastUpdated: mapset.DateLastUpdated,
 			Explicit:        mapset.IsExplicit,
+			MapsetPlayCount: mapsetPlayCount,
 		}
 
 		data, err := json.Marshal(&elasticMap)
@@ -265,10 +291,13 @@ func IndexAllElasticSearchMapsets(deletePrevious bool) error {
 
 	// Put all mapsets into the task queue
 	for _, mapset := range mapsets {
+		mapsetPlayCount := getMapsetPlayCount(*mapset)
+
 		for _, mapQua := range mapset.Maps {
 			elasticMap := ElasticMap{
 				MapQua:          mapQua,
 				PackageMD5:      mapset.PackageMD5,
+				MapsetPlayCount: mapsetPlayCount,
 				DateSubmitted:   mapset.DateSubmitted,
 				DateLastUpdated: mapset.DateLastUpdated,
 				Explicit:        mapset.IsExplicit,
@@ -483,6 +512,8 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		sortOrder = options.SortOrder
 	}
 
+	sortField := elasticMapsetSortField(sort)
+
 	if options.IsClanRanked {
 		clanRankedTerm := TermCustom{}
 		clanRankedTerm.Term.IsClanRanked = &Term{
@@ -497,11 +528,11 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		// Prioritize relevance first, then fall back to the requested sort.
 		sortFields = []map[string]SortOrder{
 			{"_score": {Order: "desc"}},
-			{sort: {Order: sortOrder}},
+			{sortField: {Order: sortOrder}},
 		}
 	} else {
 		sortFields = []map[string]SortOrder{
-			{sort: {Order: sortOrder}},
+			{sortField: {Order: sortOrder}},
 		}
 	}
 
@@ -579,6 +610,7 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 			DateLastUpdated:     firstHit.DateLastUpdated,
 			DateLastUpdatedJSON: time.UnixMilli(firstHit.DateLastUpdated),
 			IsVisible:           true,
+			IsExplicit:          firstHit.Explicit,
 		}
 
 		mapsets = append(mapsets, mapset)
