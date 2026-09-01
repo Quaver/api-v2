@@ -100,6 +100,7 @@ func initializeRoutes(engine *gin.Engine) {
 
 	// Clans
 	engine.POST("/v2/clan", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateClan))
+	engine.GET("/v2/clan/search/:name", handlers.CreateHandler(handlers.SearchClans))
 	engine.GET("/v2/clan/:id", handlers.CreateHandler(handlers.GetClan))
 	engine.POST("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateClan))
 	engine.DELETE("/v2/clan/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteClan))

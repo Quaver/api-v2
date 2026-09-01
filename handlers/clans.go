@@ -140,6 +140,25 @@ func GetClan(c *gin.Context) *APIError {
 	return nil
 }
 
+// SearchClans Searches for clans by name and returns them
+// Endpoint: /v2/clan/search/:name
+func SearchClans(c *gin.Context) *APIError {
+	name := c.Param("name")
+
+	if name == "" {
+		return APIErrorBadRequest("You must supply a valid name to search.")
+	}
+
+	clans, err := db.SearchClansByName(name)
+
+	if err != nil {
+		return APIErrorServerError("Error searching for clans", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"clans": clans})
+	return nil
+}
+
 // UpdateClan Updates data about a clan
 // Endpoint: PATCH /v2/clan/:id
 func UpdateClan(c *gin.Context) *APIError {
