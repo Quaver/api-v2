@@ -385,8 +385,8 @@ func UpdateUserDiscordId(c *gin.Context) *APIError {
 		return nil
 	}
 
-	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeEditUsers) {
-		return APIErrorForbidden("You do not have permission to access this resource.")
+	if id != user.Id {
+		return APIErrorForbidden("You can only update your own Discord ID.")
 	}
 
 	if err := db.UpdateUserDiscordId(id, body.DiscordId); err != nil {
