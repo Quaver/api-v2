@@ -271,6 +271,25 @@ func GetUserOrders(userId int) ([]*Order, error) {
 	return orders, nil
 }
 
+// GetUserOrdersByIds retrieves a user's orders by their order and transaction ids.
+// Multiple order rows can share these ids when a transaction contains multiple items.
+func GetUserOrdersByIds(userId int, orderId int, transactionId string) ([]*Order, error) {
+	var orders = make([]*Order, 0)
+
+	result := SQL.
+		Preload("Receiver").
+		Preload("Item").
+		Preload("Subscription").
+		Where("orders.user_id = ? AND orders.order_id = ? AND orders.transaction_id = ?", userId, orderId, transactionId).
+		Find(&orders)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return orders, nil
+}
+
 // GetSteamOrdersByIds Retrieves orders by their steam order id & transaction id.
 // Multiple orders in the database can have them if a user has multiple items in their cart.
 func GetSteamOrdersByIds(steamOrderId string, transactionId string) ([]*Order, error) {

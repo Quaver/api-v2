@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"slices"
+	"strconv"
 )
 
 type DonatorPricing struct {
@@ -24,6 +25,12 @@ type DonatorPaymentMethod struct {
 	Months3  float32 `json:"months_3"`
 	Months6  float32 `json:"months_6"`
 	Months12 float32 `json:"months_12"`
+}
+
+type userOrderResponse struct {
+	*db.Order
+	OrderId       int    `json:"order_id"`
+	TransactionId string `json:"transaction_id"`
 }
 
 type checkoutPaymentMethod int
@@ -82,6 +89,52 @@ func GetUserOrders(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"orders": orders})
+	return nil
+}
+
+// GetUserOrder retrieves the authenticated user's orders by order and transaction ids.
+// Endpoint: GET /v2/orders/:order_id/:transaction_id
+func GetUserOrder(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	orderId, err := strconv.Atoi(c.Param("order_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid order_id.")
+	}
+
+	transactionId := c.Param("transaction_id")
+
+	if transactionId == "" {
+		return APIErrorBadRequest("You must provide a valid transaction_id.")
+	}
+
+	orders, err := db.GetUserOrdersByIds(user.Id, orderId, transactionId)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving order from db", err)
+	}
+
+	if len(orders) == 0 {
+		return APIErrorNotFound("Order")
+	}
+
+	orderResponses := make([]*userOrderResponse, 0, len(orders))
+	for _, order := range orders {
+		orderResponses = append(orderResponses, &userOrderResponse{
+			Order:         order,
+			OrderId:       order.OrderId,
+			TransactionId: order.TransactionId,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"orders": orderResponses,
+	})
 	return nil
 }
 
