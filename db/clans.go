@@ -126,6 +126,25 @@ func GetClanByName(name string) (*Clan, error) {
 	return clan, nil
 }
 
+// SearchClansByName Searches for clans whose name or tag starts with the query
+func SearchClansByName(searchQuery string) ([]*Clan, error) {
+	clans := make([]*Clan, 0)
+	likeQuery := fmt.Sprintf("%v%%", searchQuery)
+
+	result := SQL.
+		Preload("Stats").
+		Where("clans.name LIKE ? OR clans.tag LIKE ?", likeQuery, likeQuery).
+		Limit(50).
+		Order("id ASC").
+		Find(&clans)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return clans, nil
+}
+
 // GetClanByTag Gets a clan from the db by its tag (case-sensitive)
 func GetClanByTag(tag string) (*Clan, error) {
 	var clan *Clan
