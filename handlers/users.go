@@ -365,12 +365,6 @@ func BanUser(c *gin.Context) *APIError {
 // UpdateUserDiscordId Updates a user's discord id
 // Endpoint: POST /v2/user/:id/discord
 func UpdateUserDiscordId(c *gin.Context) *APIError {
-	id, err := strconv.Atoi(c.Param("id"))
-
-	if err != nil {
-		return APIErrorBadRequest("You must supply a valid username or id.")
-	}
-
 	body := struct {
 		DiscordId *string `form:"discord_id" json:"discord_id" binding:"required"`
 	}{}
@@ -385,11 +379,7 @@ func UpdateUserDiscordId(c *gin.Context) *APIError {
 		return nil
 	}
 
-	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeEditUsers) {
-		return APIErrorForbidden("You do not have permission to access this resource.")
-	}
-
-	if err := db.UpdateUserDiscordId(id, body.DiscordId); err != nil {
+	if err := db.UpdateUserDiscordId(user.Id, body.DiscordId); err != nil {
 		return APIErrorServerError("Error updating user discord id", err)
 	}
 
