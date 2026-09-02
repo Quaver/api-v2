@@ -255,7 +255,7 @@ func (order *Order) FinalizeUserAccentColor() error {
 }
 
 // GetUserOrders Gets a user's orders
-func GetUserOrders(userId int) ([]*Order, error) {
+func GetUserOrders(userId int, limit int, page int) ([]*Order, error) {
 	var orders = make([]*Order, 0)
 
 	result := SQL.
@@ -263,6 +263,9 @@ func GetUserOrders(userId int) ([]*Order, error) {
 		Preload("Item").
 		Preload("Subscription").
 		Where("orders.user_id = ? AND orders.status = ?", userId, "Completed").
+		Order("orders.timestamp DESC").
+		Limit(limit).
+		Offset(page * limit).
 		Find(&orders)
 
 	if result.Error != nil {
