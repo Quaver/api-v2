@@ -3,9 +3,10 @@ package db
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
-	"time"
 )
 
 type OrderStatus string
@@ -18,8 +19,8 @@ const (
 type Order struct {
 	Id             int                      `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	UserId         int                      `gorm:"column:user_id" json:"user_id"`
-	OrderId        int                      `gorm:"column:order_id" json:"-"`
-	TransactionId  string                   `gorm:"column:transaction_id" json:"-"`
+	OrderId        int                      `gorm:"column:order_id" json:"order_id"`
+	TransactionId  string                   `gorm:"column:transaction_id" json:"transaction_id"`
 	IPAddress      string                   `gorm:"column:ip_address" json:"-"`
 	ItemId         OrderItemId              `gorm:"column:item_id" json:"item_id"`
 	Quantity       int                      `gorm:"column:quantity" json:"quantity"`
