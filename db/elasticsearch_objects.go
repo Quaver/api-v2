@@ -64,6 +64,7 @@ type TermCustom struct {
 		RankedStatus *Term `json:"ranked_status,omitempty"`
 		Explicit     *Term `json:"explicit,omitempty"`
 		IsClanRanked *Term `json:"is_clan_ranked,omitempty"`
+		CreatorID    *Term `json:"creator_id,omitempty"`
 	} `json:"term"`
 }
 
