@@ -3,9 +3,10 @@ package db
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/Quaver/api2/enums"
 	"gorm.io/gorm"
-	"time"
 )
 
 type OrderStatus string
@@ -18,8 +19,8 @@ const (
 type Order struct {
 	Id             int                      `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	UserId         int                      `gorm:"column:user_id" json:"user_id"`
-	OrderId        int                      `gorm:"column:order_id" json:"-"`
-	TransactionId  string                   `gorm:"column:transaction_id" json:"-"`
+	OrderId        int                      `gorm:"column:order_id" json:"order_id"`
+	TransactionId  string                   `gorm:"column:transaction_id" json:"transaction_id"`
 	IPAddress      string                   `gorm:"column:ip_address" json:"-"`
 	ItemId         OrderItemId              `gorm:"column:item_id" json:"item_id"`
 	Quantity       int                      `gorm:"column:quantity" json:"quantity"`
@@ -254,7 +255,7 @@ func (order *Order) FinalizeUserAccentColor() error {
 }
 
 // GetUserOrders Gets a user's orders
-func GetUserOrders(userId int) ([]*Order, error) {
+func GetUserOrders(userId int, limit int, page int) ([]*Order, error) {
 	var orders = make([]*Order, 0)
 
 	result := SQL.
@@ -262,6 +263,9 @@ func GetUserOrders(userId int) ([]*Order, error) {
 		Preload("Item").
 		Preload("Subscription").
 		Where("orders.user_id = ? AND orders.status = ?", userId, "Completed").
+		Order("orders.timestamp DESC").
+		Limit(limit).
+		Offset(page * limit).
 		Find(&orders)
 
 	if result.Error != nil {

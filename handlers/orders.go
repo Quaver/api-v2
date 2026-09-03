@@ -82,7 +82,13 @@ func GetUserOrders(c *gin.Context) *APIError {
 		return nil
 	}
 
-	orders, err := db.GetUserOrders(user.Id)
+	page, err := strconv.Atoi(c.Query("page"))
+
+	if err != nil {
+		page = 0
+	}
+
+	orders, err := db.GetUserOrders(user.Id, 10, page)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving orders from db", err)

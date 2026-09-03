@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -62,7 +63,7 @@ func InitiateStripeDonatorCheckoutSession(c *gin.Context) *APIError {
 			},
 		},
 		Mode:         stripe.String(string(getStripeCheckoutMode(body.Recurring))),
-		SuccessURL:   stripe.String(config.Instance.Stripe.DonateRedirectUrl),
+		SuccessURL:   stripe.String(getStripeSuccessURL(config.Instance.Stripe.DonateRedirectUrl)),
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{Enabled: stripe.Bool(true)},
 	}
 
@@ -298,7 +299,7 @@ func createStripeCheckoutSession(c *gin.Context, orders []*db.Order) *APIError {
 	params := &stripe.CheckoutSessionParams{
 		LineItems:    lineItems,
 		Mode:         stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL:   stripe.String(config.Instance.Stripe.StorePaymentRedirectUrl),
+		SuccessURL:   stripe.String(getStripeSuccessURL(config.Instance.Stripe.StorePaymentRedirectUrl)),
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{Enabled: stripe.Bool(true)},
 	}
 
@@ -326,6 +327,16 @@ func createStripeCheckoutSession(c *gin.Context, orders []*db.Order) *APIError {
 	})
 
 	return nil
+}
+
+func getStripeSuccessURL(redirectURL string) string {
+	separator := "?"
+
+	if strings.Contains(redirectURL, "?") {
+		separator = "&"
+	}
+
+	return fmt.Sprintf("%s%sorder_id=-1&transaction_id={CHECKOUT_SESSION_ID}", redirectURL, separator)
 }
 
 // Gets the donator price id for Stripe
