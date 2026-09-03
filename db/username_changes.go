@@ -37,7 +37,7 @@ func CanUserChangeUsername(userId int) (bool, time.Time, error) {
 	if result.Error != nil {
 		// User has never changed their name previously.
 		if result.Error == gorm.ErrRecordNotFound {
-			return true, time.Time{}, result.Error
+			return true, time.Time{}, nil
 		}
 
 		return false, time.Time{}, result.Error
