@@ -117,8 +117,8 @@ func UpdateMapsetDescription(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	if len(body.Description) > 2000 {
-		return APIErrorBadRequest("Your mapset description cannot exceed 2,000 characters.")
+	if len(body.Description) > 5000 {
+		return APIErrorBadRequest("Your mapset description cannot exceed 5,000 characters.")
 	}
 
 	err = db.UpdateMapsetDescription(mapset.Id, body.Description)
