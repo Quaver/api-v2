@@ -102,36 +102,6 @@ func GetUserMapsets(userId int) ([]*Mapset, error) {
 	return mapsets, nil
 }
 
-func GetUserMapsetsFiltered(userId int, status enums.RankedStatus, page int, limit int) ([]*Mapset, error) {
-	var mapsets = make([]*Mapset, 0)
-
-	offset := page * limit
-
-	result := SQL.Raw("SELECT mapsets.* FROM mapsets "+
-		"WHERE mapsets.creator_id = ? AND mapsets.visible = 1 AND EXISTS ("+
-		"SELECT 1 FROM maps WHERE maps.mapset_id = mapsets.id AND maps.ranked_status = ?"+
-		") "+
-		"ORDER BY mapsets.date_last_updated DESC "+
-		fmt.Sprintf("LIMIT %v OFFSET %v", limit, offset),
-		userId, status).Scan(&mapsets)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	for _, mapset := range mapsets {
-		maps, err := GetMapsInMapset(mapset.Id)
-
-		if err != nil {
-			return nil, err
-		}
-
-		mapset.Maps = maps
-	}
-
-	return mapsets, nil
-}
-
 // GetUserMonthlyUploadMapsets Retrieves a user's mapsets that they've uploaded in the past month
 func GetUserMonthlyUploadMapsets(userId int) ([]*Mapset, error) {
 	var mapsets = make([]*Mapset, 0)

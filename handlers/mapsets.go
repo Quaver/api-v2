@@ -42,30 +42,42 @@ func GetUserMapsets(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
-	page, err := strconv.Atoi(c.Query("page"))
-
-	if err != nil {
-		page = 0
-	}
-
-	status, err := strconv.Atoi(c.Query("status"))
-
-	if err != nil {
-		status = enums.RankedStatusRanked
-	}
-
 	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 
-	mapsets, err := db.GetUserMapsetsFiltered(id, enums.RankedStatus(status), page, 50)
+	options := db.NewUserElasticMapsetSearchOptions(id)
+
+	if err := c.BindQuery(options); err != nil {
+		return APIErrorBadRequest("Invalid request body")
+	}
+
+	options.Explicit = true
+	options.RankedStatus = getUserMapsetRankedStatuses(c)
+
+	options.BindAndValidate()
+
+	mapsets, _, err := db.SearchElasticMapsets(options)
 
 	if err != nil {
-		return APIErrorServerError("Failed to get mapsets from database", err)
+		return APIErrorServerError("Failed to get mapsets from elastic search", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"mapsets": mapsets})
 	return nil
+}
+
+func getUserMapsetRankedStatuses(c *gin.Context) []enums.RankedStatus {
+	if _, statusProvided := c.GetQuery("status"); !statusProvided {
+		return []enums.RankedStatus{enums.RankedStatusUnranked, enums.RankedStatusRanked}
+	}
+
+	status, err := strconv.Atoi(c.Query("status"))
+	if err != nil {
+		status = enums.RankedStatusRanked
+	}
+
+	return []enums.RankedStatus{enums.RankedStatus(status)}
 }
 
 // UpdateMapsetDescription Updates the description of a given mapset
@@ -105,8 +117,8 @@ func UpdateMapsetDescription(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid request body")
 	}
 
-	if len(body.Description) > 2000 {
-		return APIErrorBadRequest("Your mapset description cannot exceed 2,000 characters.")
+	if len(body.Description) > 5000 {
+		return APIErrorBadRequest("Your mapset description cannot exceed 5,000 characters.")
 	}
 
 	err = db.UpdateMapsetDescription(mapset.Id, body.Description)

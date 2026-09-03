@@ -19,6 +19,7 @@ import (
 )
 
 type ElasticMapsetSearchOptions struct {
+	CreatorID         *int                 `form:"-" json:"-"`
 	Search            string               `form:"search" json:"search"`
 	RankedStatus      []enums.RankedStatus `form:"ranked_status" json:"ranked_status"`
 	RankedStatusArray []enums.RankedStatus `form:"ranked_status[]" json:"ranked_status[]"`
@@ -75,8 +76,19 @@ func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
 	}
 }
 
+func NewUserElasticMapsetSearchOptions(userID int) *ElasticMapsetSearchOptions {
+	options := NewElasticMapsetSearchOptions()
+	options.CreatorID = &userID
+	options.RankedStatus = []enums.RankedStatus{enums.RankedStatusUnranked, enums.RankedStatusRanked}
+	options.Explicit = true
+
+	return options
+}
+
 func (options *ElasticMapsetSearchOptions) BindAndValidate() {
-	if options.Limit > 50 {
+	if options.Limit < 1 {
+		options.Limit = 1
+	} else if options.Limit > 50 {
 		options.Limit = 50
 	}
 
@@ -454,6 +466,16 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		}
 
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQueryMode)
+	}
+
+	if options.CreatorID != nil {
+		creatorTerm := TermCustom{}
+		creatorTerm.Term.CreatorID = &Term{
+			Value: *options.CreatorID,
+			Boost: 1.0,
+		}
+
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, creatorTerm)
 	}
 
 	if options.RankedStatus != nil {

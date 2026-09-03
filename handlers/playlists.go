@@ -33,8 +33,8 @@ func CreatePlaylist(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Your playlist name cannot be longer than 100 characters.")
 	}
 
-	if len(body.Description) > 2000 {
-		return APIErrorBadRequest("Your playlist description cannot be longer than 2000 characters.")
+	if len(body.Description) > 5000 {
+		return APIErrorBadRequest("Your playlist description cannot be longer than 5000 characters.")
 	}
 
 	playlist := db.Playlist{
