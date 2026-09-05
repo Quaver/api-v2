@@ -382,6 +382,10 @@ func GetMapsetsSearch(c *gin.Context) *APIError {
 
 	body.BindAndValidate()
 
+	if err := body.ApplyAdvancedSearch(); err != nil {
+		return APIErrorBadRequest(err.Error())
+	}
+
 	mapsets, total, err := db.SearchElasticMapsets(body)
 
 	if err != nil {
