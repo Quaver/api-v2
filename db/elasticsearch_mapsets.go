@@ -21,6 +21,7 @@ import (
 type ElasticMapsetSearchOptions struct {
 	CreatorID         *int                 `form:"-" json:"-"`
 	Search            string               `form:"search" json:"search"`
+	AdvancedSearch    string               `form:"advanced_search" json:"advanced_search"`
 	RankedStatus      []enums.RankedStatus `form:"ranked_status" json:"ranked_status"`
 	RankedStatusArray []enums.RankedStatus `form:"ranked_status[]" json:"ranked_status[]"`
 	Mode              []enums.GameMode     `form:"mode" json:"mode"`
@@ -48,6 +49,9 @@ type ElasticMapsetSearchOptions struct {
 	MaxLastUpdated      int64   `form:"max_last_updated" json:"max_last_updated"`
 	Explicit            bool    `form:"show_explicit" json:"show_explicit"`
 	IsClanRanked        bool    `form:"is_clan_ranked" json:"is_clan_ranked"`
+
+	advancedRanges map[string]advancedRangeConstraint
+	advancedTags   []string
 }
 
 func NewElasticMapsetSearchOptions() *ElasticMapsetSearchOptions {
@@ -452,6 +456,23 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		}
 	}
 
+	if len(options.advancedTags) > 0 {
+		tagQuery := BoolQuery{}
+		tagQuery.BoolQuery.MinimumShouldMatch = 1
+
+		for _, tag := range options.advancedTags {
+			tagQuery.BoolQuery.Should = append(tagQuery.BoolQuery.Should, map[string]interface{}{
+				"match": map[string]interface{}{
+					"tags": map[string]interface{}{
+						"query": tag,
+					},
+				},
+			})
+		}
+
+		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, tagQuery)
+	}
+
 	if options.Mode != nil {
 		boolQueryMode := BoolQuery{}
 
@@ -494,14 +515,14 @@ func SearchElasticMapsets(options *ElasticMapsetSearchOptions) ([]*Mapset, int, 
 		boolQuery.BoolQuery.Must = append(boolQuery.BoolQuery.Must, boolQueryStatus)
 	}
 
-	addRangeQuery(&boolQuery, "difficulty_rating", options.MinDifficultyRating, options.MaxDifficultyRating)
-	addRangeQuery(&boolQuery, "bpm", options.MinBPM, options.MaxBPM)
-	addRangeQuery(&boolQuery, "length", options.MinLength, options.MaxLength)
-	addRangeQuery(&boolQuery, "long_note_percentage", options.MinLongNotePercent, options.MaxLongNotePercent)
-	addRangeQuery(&boolQuery, "play_count", options.MinPlayCount, options.MaxPlayCount)
+	addSearchRangeQuery(&boolQuery, options, "difficulty_rating", options.MinDifficultyRating, options.MaxDifficultyRating)
+	addSearchRangeQuery(&boolQuery, options, "bpm", options.MinBPM, options.MaxBPM)
+	addSearchRangeQuery(&boolQuery, options, "length", options.MinLength, options.MaxLength)
+	addSearchRangeQuery(&boolQuery, options, "long_note_percentage", options.MinLongNotePercent, options.MaxLongNotePercent)
+	addSearchRangeQuery(&boolQuery, options, "play_count", options.MinPlayCount, options.MaxPlayCount)
 	addRangeQuery(&boolQuery, "max_combo", options.MinCombo, options.MaxCombo)
 	addRangeQuery(&boolQuery, "date_submitted", options.MinDateSubmitted, options.MaxDateSubmitted)
-	addRangeQuery(&boolQuery, "date_last_updated", options.MinLastUpdated, options.MaxLastUpdated)
+	addSearchRangeQuery(&boolQuery, options, "date_last_updated", options.MinLastUpdated, options.MaxLastUpdated)
 
 	if !options.Explicit {
 		explicitTerm := TermCustom{}
