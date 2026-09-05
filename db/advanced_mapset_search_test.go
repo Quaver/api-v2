@@ -13,7 +13,7 @@ import (
 )
 
 func TestParseAdvancedSearch(t *testing.T) {
-	parsed, err := parseAdvancedSearch("Camellia t=sv t=mixed_ln t=sv k=4 k=7 k=4 s=r s=u d>2 d<=10 b>=120 l=90 ln<30 pc>=100 lu<=1757001600000")
+	parsed, err := parseAdvancedSearch("Camellia t=sv t=mixed_ln t=sv k=4 k=7 k=4 s=r s=u s=c d>2 d<=10 b>=120 l=90 ln<30 pc>=100 lu<=1757001600000")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,6 +31,9 @@ func TestParseAdvancedSearch(t *testing.T) {
 	}
 	if got, want := strings.Join(parsed.tags, ","), "sv,mixed ln"; got != want {
 		t.Fatalf("tags = %q, want %q", got, want)
+	}
+	if !parsed.clanRanked {
+		t.Fatal("clanRanked = false, want true")
 	}
 
 	assertRange(t, parsed.ranges["difficulty_rating"], false, 2, false, 10, true)
@@ -149,7 +152,7 @@ func TestSearchElasticMapsetsAdvancedSearchQuery(t *testing.T) {
 	options.MinDifficultyRating = 1
 	options.MaxDifficultyRating = 20
 	options.MinBPM = 120
-	options.AdvancedSearch = "Camellia t=sv t=mixed_ln k=4 k=7 s=r s=u d>2 d<=10"
+	options.AdvancedSearch = "Camellia t=sv t=mixed_ln k=4 k=7 s=r s=u s=c d>2 d<=10"
 	options.BindAndValidate()
 	if err := options.ApplyAdvancedSearch(); err != nil {
 		t.Fatal(err)
@@ -172,6 +175,7 @@ func TestSearchElasticMapsetsAdvancedSearchQuery(t *testing.T) {
 		`"game_mode":{"value":2`,
 		`"ranked_status":{"value":2`,
 		`"ranked_status":{"value":1`,
+		`"is_clan_ranked":{"value":true`,
 		`"match":{"tags":{"query":"sv"`,
 		`"match":{"tags":{"query":"mixed ln"`,
 		`"minimum_should_match":1`,

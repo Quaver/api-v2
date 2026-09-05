@@ -33,6 +33,7 @@ type parsedAdvancedSearch struct {
 	tags        []string
 	hasModes    bool
 	hasStatuses bool
+	clanRanked  bool
 }
 
 // ApplyAdvancedSearch parses advanced_search after normal query binding. It deliberately
@@ -58,6 +59,10 @@ func (options *ElasticMapsetSearchOptions) ApplyAdvancedSearch() error {
 
 	if parsed.hasStatuses {
 		options.RankedStatus = parsed.statuses
+	}
+
+	if parsed.clanRanked {
+		options.IsClanRanked = true
 	}
 
 	return nil
@@ -115,6 +120,10 @@ func parseAdvancedSearch(expression string) (*parsedAdvancedSearch, error) {
 		case "s":
 			if operator != "=" {
 				return nil, fmt.Errorf("advanced search filter %q only supports =", field)
+			}
+			if strings.EqualFold(value, "c") {
+				parsed.clanRanked = true
+				continue
 			}
 
 			status, err := rankedStatusFromAdvancedSearch(value)
@@ -286,7 +295,7 @@ func rankedStatusFromAdvancedSearch(value string) (enums.RankedStatus, error) {
 	case "u":
 		return enums.RankedStatusUnranked, nil
 	default:
-		return 0, fmt.Errorf("invalid ranked status %q", value)
+		return 0, fmt.Errorf("invalid ranked status %q (expected r, u, or c)", value)
 	}
 }
 
