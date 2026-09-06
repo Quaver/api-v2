@@ -22,11 +22,18 @@ func GetUserMostPlayedMaps(c *gin.Context) *APIError {
 		page = 0
 	}
 
+	limit := 10
+	requestedLimit, err := strconv.Atoi(c.Query("limit"))
+
+	if err == nil && requestedLimit > 0 {
+		limit = min(requestedLimit, limit)
+	}
+
 	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 
-	maps, err := db.GetUserMostPlayedMaps(id, 10, page)
+	maps, err := db.GetUserMostPlayedMaps(id, limit, page)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving most played maps in db", err)

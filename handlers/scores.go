@@ -11,10 +11,11 @@ import (
 )
 
 type userScoreParams struct {
-	Id   int
-	User *db.User
-	Mode enums.GameMode
-	Page int
+	Id    int
+	User  *db.User
+	Mode  enums.GameMode
+	Page  int
+	Limit int
 }
 
 // Function that parses and returns a struct containing recurring data to query user scores.
@@ -38,6 +39,13 @@ func parseUserScoreParams(c *gin.Context) (*userScoreParams, *APIError) {
 		page = 0
 	}
 
+	limit := 50
+	requestedLimit, err := strconv.Atoi(c.Query("limit"))
+
+	if err == nil && requestedLimit > 0 {
+		limit = min(requestedLimit, limit)
+	}
+
 	user, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c))
 
 	if apiErr != nil {
@@ -45,10 +53,11 @@ func parseUserScoreParams(c *gin.Context) (*userScoreParams, *APIError) {
 	}
 
 	return &userScoreParams{
-		Id:   id,
-		User: user,
-		Mode: enums.GameMode(mode),
-		Page: page,
+		Id:    id,
+		User:  user,
+		Mode:  enums.GameMode(mode),
+		Page:  page,
+		Limit: limit,
 	}, nil
 }
 
@@ -61,7 +70,7 @@ func GetUserBestScoresForMode(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	scores, err := db.GetUserBestScoresForMode(query.Id, query.Mode, 50, query.Page)
+	scores, err := db.GetUserBestScoresForMode(query.Id, query.Mode, query.Limit, query.Page)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving scores from database", err)
@@ -86,7 +95,7 @@ func GetUserRecentScoresForMode(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	scores, err := db.GetUserRecentScoresForMode(query.Id, query.Mode, isDonator, 50, query.Page)
+	scores, err := db.GetUserRecentScoresForMode(query.Id, query.Mode, isDonator, query.Limit, query.Page)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving scores from database", err)
@@ -105,7 +114,7 @@ func GetUserFirstPlaceScoresForMode(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	scores, err := db.GetUserFirstPlaceScoresForMode(query.Id, query.Mode, 50, query.Page)
+	scores, err := db.GetUserFirstPlaceScoresForMode(query.Id, query.Mode, query.Limit, query.Page)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving scores from database", err)
@@ -124,7 +133,7 @@ func GetUserGradesForMode(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	scores, err := db.GetUserGradeScoresForMode(query.Id, query.Mode, c.Param("grade"), 50, query.Page)
+	scores, err := db.GetUserGradeScoresForMode(query.Id, query.Mode, c.Param("grade"), query.Limit, query.Page)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving scores from database", err)

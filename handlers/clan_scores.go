@@ -31,7 +31,14 @@ func GetClanScoresForMode(c *gin.Context) *APIError {
 		page = 0
 	}
 
-	scores, err := db.GetClanScoresForModeFull(id, enums.GameMode(mode), page)
+	limit := 50
+	requestedLimit, err := strconv.Atoi(c.Query("limit"))
+
+	if err == nil && requestedLimit > 0 {
+		limit = min(requestedLimit, limit)
+	}
+
+	scores, err := db.GetClanScoresForModeFull(id, enums.GameMode(mode), page, limit)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving clan scores from db", err)
