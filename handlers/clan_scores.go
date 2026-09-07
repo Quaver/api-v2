@@ -31,12 +31,7 @@ func GetClanScoresForMode(c *gin.Context) *APIError {
 		page = 0
 	}
 
-	limit := 50
-	requestedLimit, err := strconv.Atoi(c.Query("limit"))
-
-	if err == nil && requestedLimit > 0 {
-		limit = min(requestedLimit, limit)
-	}
+	limit := getQueryLimit(c, defaultClanScoreLimit)
 
 	scores, err := db.GetClanScoresForModeFull(id, enums.GameMode(mode), page, limit)
 

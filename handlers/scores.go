@@ -39,13 +39,6 @@ func parseUserScoreParams(c *gin.Context) (*userScoreParams, *APIError) {
 		page = 0
 	}
 
-	limit := 50
-	requestedLimit, err := strconv.Atoi(c.Query("limit"))
-
-	if err == nil && requestedLimit > 0 {
-		limit = min(requestedLimit, limit)
-	}
-
 	user, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c))
 
 	if apiErr != nil {
@@ -57,7 +50,7 @@ func parseUserScoreParams(c *gin.Context) (*userScoreParams, *APIError) {
 		User:  user,
 		Mode:  enums.GameMode(mode),
 		Page:  page,
-		Limit: limit,
+		Limit: getQueryLimit(c, defaultUserScoreLimit),
 	}, nil
 }
 

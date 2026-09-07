@@ -22,12 +22,7 @@ func GetUserMostPlayedMaps(c *gin.Context) *APIError {
 		page = 0
 	}
 
-	limit := 10
-	requestedLimit, err := strconv.Atoi(c.Query("limit"))
-
-	if err == nil && requestedLimit > 0 {
-		limit = min(requestedLimit, limit)
-	}
+	limit := getQueryLimit(c, defaultMostPlayedLimit)
 
 	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
