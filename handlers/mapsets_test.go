@@ -1,12 +1,23 @@
 package handlers
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 )
+
+func TestGetMapsetsSearchRejectsInvalidAdvancedSearch(t *testing.T) {
+	context, _ := gin.CreateTestContext(httptest.NewRecorder())
+	context.Request = httptest.NewRequest(http.MethodGet, "/v2/mapset/search?advanced_search=d%3C10%20d%3E20", nil)
+
+	apiErr := GetMapsetsSearch(context)
+	if apiErr == nil || apiErr.Status != http.StatusBadRequest {
+		t.Fatalf("API error = %#v, want bad request", apiErr)
+	}
+}
 
 func TestGetUserMapsetRankedStatuses(t *testing.T) {
 	tests := []struct {

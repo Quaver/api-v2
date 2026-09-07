@@ -69,7 +69,9 @@ type TermCustom struct {
 }
 
 type Range struct {
+	Gt    interface{} `json:"gt,omitempty"`
 	Gte   interface{} `json:"gte,omitempty"`
+	Lt    interface{} `json:"lt,omitempty"`
 	Lte   interface{} `json:"lte,omitempty"`
 	Boost interface{} `json:"boost,omitempty"`
 }
