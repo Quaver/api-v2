@@ -35,6 +35,18 @@ func DoesPlaylistContainMap(playlistId int, mapId int) (bool, error) {
 	return true, nil
 }
 
+// CountPlaylistMapsForMapset Counts the maps in a playlist mapset
+func CountPlaylistMapsForMapset(playlistId int, playlistMapsetId int) (int64, error) {
+	var count int64
+
+	result := SQL.
+		Model(&PlaylistMap{}).
+		Where("playlist_id = ? AND playlists_mapsets_id = ?", playlistId, playlistMapsetId).
+		Count(&count)
+
+	return count, result.Error
+}
+
 // Insert Inserts a playlist map into the db
 func (pm *PlaylistMap) Insert() error {
 	if err := SQL.Create(&pm).Error; err != nil {
