@@ -22,11 +22,13 @@ func GetUserActivity(c *gin.Context) *APIError {
 		page = 0
 	}
 
+	limit := getQueryLimit(c, defaultUserActivityLimit)
+
 	if _, apiErr := getUserById(id, canAuthedUserViewBannedUsers(c)); apiErr != nil {
 		return apiErr
 	}
 
-	activities, err := db.GetRecentUserActivity(id, 50, page)
+	activities, err := db.GetRecentUserActivity(id, limit, page)
 
 	if err != nil {
 		return APIErrorServerError("Error getting user activities", err)

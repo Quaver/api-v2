@@ -85,10 +85,8 @@ func GetClanScoresForMode(clanId int, mode enums.GameMode) ([]*ClanScore, error)
 }
 
 // GetClanScoresForModeFull Retrieves clan scores with full data
-func GetClanScoresForModeFull(clanId int, mode enums.GameMode, page int) ([]*ClanScore, error) {
+func GetClanScoresForModeFull(clanId int, mode enums.GameMode, page int, limit int) ([]*ClanScore, error) {
 	clanScores := make([]*ClanScore, 0)
-
-	const limit int = 50
 
 	result := SQL.
 		Preload("Map").
