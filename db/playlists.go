@@ -133,12 +133,44 @@ func GetPlaylist(id int) (*Playlist, error) {
 
 // GetPlaylistFull Gets an individual playlist with mapsets/maps included
 func GetPlaylistFull(id int) (*Playlist, error) {
+	return getPlaylistWithMapsets(id, nil)
+}
+
+// GetPlaylistPage Gets an individual playlist with a page of mapsets/maps included
+func GetPlaylistPage(id int, page int, limit int) (*Playlist, error) {
+	return getPlaylistWithMapsets(id, playlistMapsetPageScope(page, limit))
+}
+
+func playlistMapsetPageScope(page int, limit int) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.
+			Order("playlists_mapsets.id ASC").
+			Limit(limit).
+			Offset(page * limit)
+	}
+}
+
+func playlistMapsetOrderScope(db *gorm.DB) *gorm.DB {
+	return db.Order("playlists_mapsets.id ASC")
+}
+
+func playlistMapOrderScope(db *gorm.DB) *gorm.DB {
+	return db.Order("playlists_maps.id ASC")
+}
+
+func getPlaylistWithMapsets(id int, mapsetScope func(*gorm.DB) *gorm.DB) (*Playlist, error) {
 	var playlist *Playlist
 
-	result := SQL.
-		Preload("Mapsets").
+	query := SQL
+
+	if mapsetScope == nil {
+		mapsetScope = playlistMapsetOrderScope
+	}
+
+	result := query.
+		Preload("Mapsets", mapsetScope).
 		Preload("Mapsets.Mapset").
-		Preload("Mapsets.Maps").
+		Preload("Mapsets.Maps", playlistMapOrderScope).
 		Preload("Mapsets.Maps.Map").
 		Joins("User").
 		Where("playlists.id = ? AND playlists.visible = 1", id).

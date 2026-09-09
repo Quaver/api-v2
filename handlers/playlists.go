@@ -64,7 +64,10 @@ func GetPlaylist(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
-	playlist, err := db.GetPlaylistFull(id)
+	page := getQueryPage(c)
+	limit := getQueryLimit(c, defaultPlaylistMapsetLimit)
+
+	playlist, err := db.GetPlaylistPage(id, page, limit)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return APIErrorServerError("Error retrieving playlist from db", err)
@@ -74,7 +77,13 @@ func GetPlaylist(c *gin.Context) *APIError {
 		return APIErrorNotFound("Playlist")
 	}
 
-	c.JSON(http.StatusOK, gin.H{"playlist": playlist})
+	mapsets := playlist.Mapsets
+
+	if mapsets == nil {
+		mapsets = make([]*db.PlaylistMapset, 0)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"playlist": playlistPageResponse{Playlist: playlist, Mapsets: mapsets}})
 	return nil
 }
 
@@ -263,6 +272,11 @@ type addRemoveMapPlaylistData struct {
 	Map      *db.MapQua
 }
 
+type playlistPageResponse struct {
+	*db.Playlist
+	Mapsets []*db.PlaylistMapset `json:"mapsets"`
+}
+
 // Parses any ids, performs validation and returns data to be used when adding/removing maps from playlists
 func validateAddRemoveMapFromPlaylist(c *gin.Context) (*addRemoveMapPlaylistData, *APIError) {
 	playlistId, err := strconv.Atoi(c.Param("id"))
@@ -283,7 +297,7 @@ func validateAddRemoveMapFromPlaylist(c *gin.Context) (*addRemoveMapPlaylistData
 		return nil, APIErrorUnauthorized("User not authenticated")
 	}
 
-	playlist, err := db.GetPlaylistFull(playlistId)
+	playlist, err := db.GetPlaylist(playlistId)
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, APIErrorServerError("Error retrieving playlist from database", err)
@@ -327,19 +341,24 @@ func AddMapToPlaylist(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	var existingMapset *db.PlaylistMapset
+	containsMap, err := db.DoesPlaylistContainMap(data.Playlist.Id, data.Map.Id)
 
-	for _, mapset := range data.Playlist.Mapsets {
-		for _, playlistMap := range mapset.Maps {
-			if playlistMap.MapId == data.Map.Id {
-				return APIErrorBadRequest("This map already exists in the playlist.")
-			}
-		}
+	if err != nil {
+		return APIErrorServerError("Error checking if map exists in playlist", err)
+	}
 
-		// Set existing mapset
-		if mapset.MapsetId == data.Map.MapsetId {
-			existingMapset = mapset
-		}
+	if containsMap {
+		return APIErrorBadRequest("This map already exists in the playlist.")
+	}
+
+	existingMapset, err := db.GetPlaylistMapsetByIds(data.Playlist.Id, data.Map.MapsetId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving playlist mapset from database", err)
+	}
+
+	if err == gorm.ErrRecordNotFound {
+		existingMapset = nil
 	}
 
 	// Create new playlist mapset
@@ -381,30 +400,37 @@ func RemoveMapFromPlaylist(c *gin.Context) *APIError {
 		return apiErr
 	}
 
-	var deleteMap bool
-	var deleteMapset bool
+	containsMap, err := db.DoesPlaylistContainMap(data.Playlist.Id, data.Map.Id)
 
-	for _, playlistMapset := range data.Playlist.Mapsets {
-		for _, playlistMap := range playlistMapset.Maps {
-			if playlistMap.MapId == data.Map.Id {
-				deleteMap = true
-			}
-
-			if len(playlistMapset.Maps) == 1 {
-				deleteMapset = true
-			}
-		}
+	if err != nil {
+		return APIErrorServerError("Error checking if map exists in playlist", err)
 	}
 
-	if !deleteMap {
+	if !containsMap {
 		return APIErrorBadRequest("This map is not in your playlist.")
+	}
+
+	playlistMapset, err := db.GetPlaylistMapsetByIds(data.Playlist.Id, data.Map.MapsetId)
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return APIErrorBadRequest("This map is not in your playlist.")
+		}
+
+		return APIErrorServerError("Error retrieving playlist mapset from database", err)
+	}
+
+	mapCount, err := db.CountPlaylistMapsForMapset(data.Playlist.Id, playlistMapset.Id)
+
+	if err != nil {
+		return APIErrorServerError("Error counting maps in playlist mapset", err)
 	}
 
 	if err := db.DeletePlaylistMap(data.Playlist.Id, data.Map.Id); err != nil {
 		return APIErrorServerError("Error removing playlist map from db", err)
 	}
 
-	if deleteMapset {
+	if mapCount == 1 {
 		if err := db.DeletePlaylistMapset(data.Playlist.Id, data.Map.MapsetId); err != nil {
 			return APIErrorServerError("Error removing playlist mapset from db", err)
 		}
