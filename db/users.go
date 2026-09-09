@@ -373,7 +373,7 @@ func SearchUsersByName(searchQuery string) ([]*User, error) {
 		Joins("StatsKeys7").
 		Where("username LIKE ? AND allowed = 1", fmt.Sprintf("%v%%", searchQuery)).
 		Limit(50).
-		Order("id ASC").
+		Order("username ASC, id ASC").
 		Find(&users)
 
 	if result.Error != nil {
