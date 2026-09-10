@@ -42,6 +42,35 @@ func getMapModsPagination(c *gin.Context) (int, int) {
 	return getQueryPage(c), getQueryLimit(c, defaultMapModLimit)
 }
 
+// GetMapMod gets a single mod for a map, including all of its replies.
+// Endpoint: GET /v2/map/:id/mods/:mod_id
+func GetMapMod(c *gin.Context) *APIError {
+	mapId, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid map id")
+	}
+
+	modId, err := strconv.Atoi(c.Param("mod_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid mod id")
+	}
+
+	mod, err := db.GetModById(modId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving map mod from db", err)
+	}
+
+	if mod == nil || mod.MapId != mapId {
+		return APIErrorNotFound("Mod")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"mod": mod})
+	return nil
+}
+
 // SubmitMapMod Inserts a map mod to the db
 // Endpoint: POST /v2/maps/:id/mods
 func SubmitMapMod(c *gin.Context) *APIError {
