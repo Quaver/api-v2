@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-// GetMapMods Gets mods for a given map
-// Endpoint: GET /v2/maps/:id/mods
+// GetMapMods Gets a page of mods for a given map, including all replies to each mod.
+// Endpoint: GET /v2/map/:id/mods?page=0&limit=20
 func GetMapMods(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
@@ -20,14 +20,26 @@ func GetMapMods(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
-	mods, err := db.GetMapMods(id)
+	page, limit := getMapModsPagination(c)
+
+	mods, err := db.GetMapMods(id, page, limit)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving map mods from db", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"mods": mods})
+	total, err := db.GetMapModsCount(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving map mods count from db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"mods": mods, "total": total})
 	return nil
+}
+
+func getMapModsPagination(c *gin.Context) (int, int) {
+	return getQueryPage(c), getQueryLimit(c, defaultMapModLimit)
 }
 
 // SubmitMapMod Inserts a map mod to the db
