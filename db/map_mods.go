@@ -41,15 +41,18 @@ func (mod *MapMod) AfterFind(*gorm.DB) (err error) {
 	return nil
 }
 
-// GetMapMods Retrieves map mods for a given map
-func GetMapMods(id int) ([]*MapMod, error) {
+// GetMapMods retrieves a page of map mods and all replies belonging to those mods.
+func GetMapMods(id int, page int, limit int) ([]*MapMod, error) {
 	var mods = make([]*MapMod, 0)
 
 	result := SQL.
 		Joins("Author").
 		Preload("Replies").
 		Preload("Replies.Author").
-		Where("map_id = ?", id).
+		Where("map_mods.map_id = ?", id).
+		Order("map_mods.id ASC").
+		Limit(limit).
+		Offset(page * limit).
 		Find(&mods)
 
 	if result.Error != nil {
@@ -57,6 +60,22 @@ func GetMapMods(id int) ([]*MapMod, error) {
 	}
 
 	return mods, nil
+}
+
+// GetMapModsCount gets the total number of mods for a map.
+func GetMapModsCount(id int) (int64, error) {
+	var count int64
+
+	result := SQL.
+		Model(&MapMod{}).
+		Where("map_id = ?", id).
+		Count(&count)
+
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return count, nil
 }
 
 // GetModById Gets a mod by its id

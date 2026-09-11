@@ -13,6 +13,7 @@ const (
 	defaultUserActivityLimit   = 50
 	defaultUserPlaylistLimit   = 50
 	defaultPlaylistMapsetLimit = 25
+	defaultMapModLimit         = 20
 )
 
 // getQueryLimit returns a requested limit bounded by the endpoint's default limit.

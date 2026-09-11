@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-// GetMapMods Gets mods for a given map
-// Endpoint: GET /v2/maps/:id/mods
+// GetMapMods Gets a page of mods for a given map, including all replies to each mod.
+// Endpoint: GET /v2/map/:id/mods?page=0&limit=20
 func GetMapMods(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
@@ -20,13 +20,54 @@ func GetMapMods(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
-	mods, err := db.GetMapMods(id)
+	page, limit := getMapModsPagination(c)
+
+	mods, err := db.GetMapMods(id, page, limit)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving map mods from db", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"mods": mods})
+	total, err := db.GetMapModsCount(id)
+
+	if err != nil {
+		return APIErrorServerError("Error retrieving map mods count from db", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"mods": mods, "total": total})
+	return nil
+}
+
+func getMapModsPagination(c *gin.Context) (int, int) {
+	return getQueryPage(c), getQueryLimit(c, defaultMapModLimit)
+}
+
+// GetMapMod gets a single mod for a map, including all of its replies.
+// Endpoint: GET /v2/map/:id/mods/:mod_id
+func GetMapMod(c *gin.Context) *APIError {
+	mapId, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid map id")
+	}
+
+	modId, err := strconv.Atoi(c.Param("mod_id"))
+
+	if err != nil {
+		return APIErrorBadRequest("Invalid mod id")
+	}
+
+	mod, err := db.GetModById(modId)
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving map mod from db", err)
+	}
+
+	if mod == nil || mod.MapId != mapId {
+		return APIErrorNotFound("Mod")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"mod": mod})
 	return nil
 }
 
