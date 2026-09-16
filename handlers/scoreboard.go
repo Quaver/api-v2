@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"errors"
+	"net/http"
+	"strconv"
+
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
 
 const (
@@ -124,6 +126,10 @@ func GetModifierScoresForMap(c *gin.Context) *APIError {
 
 	scores, err := db.GetModifierScoresForMap(dbMap.MD5, mods)
 
+	if errors.Is(err, db.ErrUnsupportedScoreModifierFilter) {
+		return APIErrorBadRequest("This modifier is not supported by score lookup columns.")
+	}
+
 	if err != nil {
 		return APIErrorServerError("Error retrieving modifier scoreboard", err)
 	}
@@ -158,6 +164,10 @@ func GetRateScoresForMap(c *gin.Context) *APIError {
 	}
 
 	scores, err := db.GetRateScoresForMap(dbMap.MD5, mods)
+
+	if errors.Is(err, db.ErrUnsupportedScoreModifierFilter) {
+		return APIErrorBadRequest("You must provide a valid speed modifier value.")
+	}
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving rate scoreboard", err)
@@ -338,6 +348,10 @@ func GetUserPersonalBestScoreMods(c *gin.Context) *APIError {
 
 	score, err := db.GetUserPersonalBestScoreMods(userId, dbMap.MD5, mods)
 
+	if errors.Is(err, db.ErrUnsupportedScoreModifierFilter) {
+		return APIErrorBadRequest("This modifier is not supported by score lookup columns.")
+	}
+
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return APIErrorServerError("Error retrieving personal best mods score from database", err)
 	}
@@ -376,6 +390,10 @@ func GetUserPersonalBestScoreRate(c *gin.Context) *APIError {
 	}
 
 	score, err := db.GetUserPersonalBestScoreRate(userId, dbMap.MD5, mods)
+
+	if errors.Is(err, db.ErrUnsupportedScoreModifierFilter) {
+		return APIErrorBadRequest("You must provide a valid speed modifier value.")
+	}
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return APIErrorServerError("Error retrieving personal best rate score from database", err)

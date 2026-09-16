@@ -86,33 +86,45 @@ func (u *User) BeforeCreate(*gorm.DB) (err error) {
 }
 
 func (u *User) AfterFind(*gorm.DB) (err error) {
+	if err := u.populateAfterFindFields(); err != nil {
+		return nil
+	}
+
+	if status, err := GetUserClientStatus(u.Id); err == nil {
+		u.ClientStatus = status
+	}
+
+	if u.StatsKeys4 != nil {
+		if keys4Ranks, err := GetUserRanksForMode(u, enums.GameModeKeys4); err == nil {
+			u.StatsKeys4.Ranks = keys4Ranks
+		}
+	}
+
+	if u.StatsKeys7 != nil {
+		if keys7Ranks, err := GetUserRanksForMode(u, enums.GameModeKeys7); err == nil {
+			u.StatsKeys7.Ranks = keys7Ranks
+		}
+	}
+
+	if err := u.SetClanTagAndColor(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *User) populateAfterFindFields() error {
 	u.TimeRegisteredJSON = time.UnixMilli(u.TimeRegistered)
 	u.MuteEndTimeJSON = time.UnixMilli(u.MuteEndTime)
 	u.LatestActivityJSON = time.UnixMilli(u.LatestActivity)
 	u.DonatorEndTimeJSON = time.UnixMilli(u.DonatorEndTime)
 	u.ClanLeaveTimeJSON = time.UnixMilli(u.ClanLeaveTime)
 
-	if status, err := GetUserClientStatus(u.Id); err == nil {
-		u.ClientStatus = status
-	}
-
-	if keys4Ranks, err := GetUserRanksForMode(u, enums.GameModeKeys4); err == nil && u.StatsKeys4 != nil {
-		u.StatsKeys4.Ranks = keys4Ranks
-	}
-
-	if keys7Ranks, err := GetUserRanksForMode(u, enums.GameModeKeys7); err == nil && u.StatsKeys7 != nil {
-		u.StatsKeys7.Ranks = keys7Ranks
-	}
-
 	if u.Information != nil {
 		if err := json.Unmarshal([]byte(*u.Information), &u.MiscInformation); err != nil {
 			logrus.Errorf("Error unmarshalling misc user info for user: %v", u.Id)
-			return nil
+			return err
 		}
-	}
-
-	if err := u.SetClanTagAndColor(); err != nil {
-		return err
 	}
 
 	return nil
@@ -492,15 +504,46 @@ func GetUserClientStatus(id int) (*UserClientStatus, error) {
 		return nil, err
 	}
 
-	if len(result) == 0 {
-		return nil, nil
+	return userClientStatusFromValues(result), nil
+}
+
+// getUserClientStatuses retrieves multiple client statuses in one Redis round trip.
+func getUserClientStatuses(ids []int) (map[int]*UserClientStatus, error) {
+	statuses := make(map[int]*UserClientStatus, len(ids))
+	commands := make(map[int]*redis.MapStringStringCmd, len(ids))
+
+	_, err := Redis.Pipelined(RedisCtx, func(pipe redis.Pipeliner) error {
+		for _, id := range ids {
+			commands[id] = pipe.HGetAll(RedisCtx, fmt.Sprintf("quaver:server:user_status:%v", id))
+		}
+
+		return nil
+	})
+
+	if err != nil && err != redis.Nil {
+		logrus.Errorf("Error getting user statuses from redis: %v", err)
+		return nil, err
+	}
+
+	for id, command := range commands {
+		if status := userClientStatusFromValues(command.Val()); status != nil {
+			statuses[id] = status
+		}
+	}
+
+	return statuses, nil
+}
+
+func userClientStatusFromValues(values map[string]string) *UserClientStatus {
+	if len(values) == 0 {
+		return nil
 	}
 
 	return &UserClientStatus{
-		Status:  parseRedisIntWithDefault(result["s"], 0),
-		Mode:    parseRedisIntWithDefault(result["m"], 1),
-		Content: result["c"],
-	}, nil
+		Status:  parseRedisIntWithDefault(values["s"], 0),
+		Mode:    parseRedisIntWithDefault(values["m"], 1),
+		Content: values["c"],
+	}
 }
 
 // GetUserRanksForMode Retrieves a user's global and country ranks for a game mode

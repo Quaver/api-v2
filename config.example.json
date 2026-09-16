@@ -1,5 +1,6 @@
 {
   "is_production": false,
+  "score_mod_columns_ready": false,
   "api_url": "https://api.quavergame.com",
   "website_url": "http://localhost:8081",
   "jwt_secret": "",
