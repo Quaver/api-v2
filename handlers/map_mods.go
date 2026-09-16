@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/enums"
 	"github.com/gin-gonic/gin"
@@ -20,15 +21,19 @@ func GetMapMods(c *gin.Context) *APIError {
 		return APIErrorBadRequest("Invalid id")
 	}
 
-	page, limit := getMapModsPagination(c)
+	page, limit, statuses, modType, sort, paginationError := getMapModsPagination(c)
 
-	mods, err := db.GetMapMods(id, page, limit)
+	if paginationError != nil {
+		return paginationError
+	}
+
+	mods, err := db.GetMapMods(id, page, limit, statuses, modType, sort)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving map mods from db", err)
 	}
 
-	total, err := db.GetMapModsCount(id)
+	total, err := db.GetMapModsCount(id, statuses, modType)
 
 	if err != nil {
 		return APIErrorServerError("Error retrieving map mods count from db", err)
@@ -38,8 +43,78 @@ func GetMapMods(c *gin.Context) *APIError {
 	return nil
 }
 
-func getMapModsPagination(c *gin.Context) (int, int) {
-	return getQueryPage(c), getQueryLimit(c, defaultMapModLimit)
+func getMapModsPagination(c *gin.Context) (int, int, []db.MapModStatus, *db.MapModType, db.MapModSort, *APIError) {
+	statuses, err := getMapModStatuses(c.Query("status"))
+
+	if err != nil {
+		return 0, 0, nil, nil, db.ModSortRecent, APIErrorBadRequest("Invalid mod status filter")
+	}
+
+	modType, err := getMapModType(c.Query("type"))
+
+	if err != nil {
+		return 0, 0, nil, nil, db.ModSortRecent, APIErrorBadRequest("Invalid mod type filter")
+	}
+
+	sort, err := getMapModSort(c.Query("sort"))
+
+	if err != nil {
+		return 0, 0, nil, nil, db.ModSortRecent, APIErrorBadRequest("Invalid mod sort")
+	}
+
+	return getQueryPage(c), getQueryLimit(c, defaultMapModLimit), statuses, modType, sort, nil
+}
+
+func getMapModStatuses(value string) ([]db.MapModStatus, error) {
+	if value == "" {
+		return nil, nil
+	}
+
+	statuses := make([]db.MapModStatus, 0)
+	seen := make(map[db.MapModStatus]struct{})
+
+	for _, value := range strings.Split(value, ",") {
+		status := db.MapModStatus(strings.TrimSpace(value))
+
+		if status != db.ModStatusPending && status != db.ModStatusAccepted && status != db.ModStatusDenied && status != db.ModStatusIgnored {
+			return nil, fmt.Errorf("invalid map mod status")
+		}
+
+		if _, exists := seen[status]; !exists {
+			statuses = append(statuses, status)
+			seen[status] = struct{}{}
+		}
+	}
+
+	return statuses, nil
+}
+
+func getMapModType(value string) (*db.MapModType, error) {
+	if value == "" {
+		return nil, nil
+	}
+
+	modType := db.MapModType(value)
+
+	if modType != db.ModTypeIssue && modType != db.ModTypeSuggestion {
+		return nil, fmt.Errorf("invalid map mod type")
+	}
+
+	return &modType, nil
+}
+
+func getMapModSort(value string) (db.MapModSort, error) {
+	if value == "" {
+		return db.ModSortRecent, nil
+	}
+
+	sort := db.MapModSort(value)
+
+	if sort != db.ModSortRecent && sort != db.ModSortStatus && sort != db.ModSortType {
+		return db.ModSortRecent, fmt.Errorf("invalid map mod sort")
+	}
+
+	return sort, nil
 }
 
 // GetMapMod gets a single mod for a map, including all of its replies.

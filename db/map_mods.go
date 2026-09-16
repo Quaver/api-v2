@@ -7,6 +7,7 @@ import (
 
 type MapModStatus string
 type MapModType string
+type MapModSort string
 
 const (
 	ModStatusPending  MapModStatus = "Pending"
@@ -16,6 +17,10 @@ const (
 
 	ModTypeIssue      MapModType = "Issue"
 	ModTypeSuggestion MapModType = "Suggestion"
+
+	ModSortRecent MapModSort = "recent"
+	ModSortStatus MapModSort = "status"
+	ModSortType   MapModSort = "type"
 )
 
 type MapMod struct {
@@ -42,15 +47,14 @@ func (mod *MapMod) AfterFind(*gorm.DB) (err error) {
 }
 
 // GetMapMods retrieves a page of map mods and all replies belonging to those mods.
-func GetMapMods(id int, page int, limit int) ([]*MapMod, error) {
+func GetMapMods(id int, page int, limit int, statuses []MapModStatus, modType *MapModType, sort MapModSort) ([]*MapMod, error) {
 	var mods = make([]*MapMod, 0)
 
-	result := SQL.
+	result := mapModsQuery(id, statuses, modType).
 		Joins("Author").
 		Preload("Replies").
 		Preload("Replies.Author").
-		Where("map_mods.map_id = ?", id).
-		Order("map_mods.id ASC").
+		Order(mapModsOrder(sort)).
 		Limit(limit).
 		Offset(page * limit).
 		Find(&mods)
@@ -63,12 +67,10 @@ func GetMapMods(id int, page int, limit int) ([]*MapMod, error) {
 }
 
 // GetMapModsCount gets the total number of mods for a map.
-func GetMapModsCount(id int) (int64, error) {
+func GetMapModsCount(id int, statuses []MapModStatus, modType *MapModType) (int64, error) {
 	var count int64
 
-	result := SQL.
-		Model(&MapMod{}).
-		Where("map_id = ?", id).
+	result := mapModsQuery(id, statuses, modType).
 		Count(&count)
 
 	if result.Error != nil {
@@ -76,6 +78,31 @@ func GetMapModsCount(id int) (int64, error) {
 	}
 
 	return count, nil
+}
+
+func mapModsQuery(id int, statuses []MapModStatus, modType *MapModType) *gorm.DB {
+	query := SQL.Model(&MapMod{}).Where("map_mods.map_id = ?", id)
+
+	if len(statuses) > 0 {
+		query = query.Where("map_mods.status IN ?", statuses)
+	}
+
+	if modType != nil {
+		query = query.Where("map_mods.type = ?", *modType)
+	}
+
+	return query
+}
+
+func mapModsOrder(sort MapModSort) string {
+	switch sort {
+	case ModSortStatus:
+		return "CASE map_mods.status WHEN 'Pending' THEN 0 WHEN 'Accepted' THEN 1 WHEN 'Denied' THEN 2 WHEN 'Ignored' THEN 3 ELSE 4 END ASC, map_mods.timestamp DESC, map_mods.id DESC"
+	case ModSortType:
+		return "CASE map_mods.type WHEN 'None' THEN 0 WHEN 'Issue' THEN 1 WHEN 'Suggestion' THEN 2 ELSE 3 END ASC, map_mods.timestamp DESC, map_mods.id DESC"
+	default:
+		return "map_mods.timestamp DESC, map_mods.id DESC"
+	}
 }
 
 // GetModById Gets a mod by its id
