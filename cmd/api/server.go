@@ -49,8 +49,9 @@ func initializeServer(port int) {
 // Initializes the rate limiter for the server
 func initializeRateLimiter(engine *gin.Engine) {
 	rateLimitBypassRoutes := map[string]struct{}{
-		"/v2/mapset/search": {},
-		"/v2/map/:id":       {},
+		"/v2/mapset/search":       {},
+		"/v2/map/:id":             {},
+		"/v2/download/mapset/:id": {},
 	}
 
 	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{

@@ -4,11 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/downloadlimit"
 	"github.com/Quaver/api2/files"
 	"github.com/Quaver/api2/tools"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -79,11 +81,23 @@ func DownloadMapset(c *gin.Context) *APIError {
 		return setFileContentLength(c, path)
 	}
 
+	reservation, apiErr := reserveMapsetDownloadQuota(c, user.Id, path)
+
+	if apiErr != nil {
+		return apiErr
+	}
+
 	if err := db.InsertMapsetDownload(&db.MapsetDownload{
 		UserId:    user.Id,
 		MapsetId:  mapset.Id,
 		Timestamp: time.Now().UnixMilli(),
 	}); err != nil {
+		if reservation != nil {
+			if releaseErr := downloadlimit.Release(db.RedisCtx, db.Redis, reservation); releaseErr != nil {
+				logrus.Errorf("Error releasing download quota for user %d: %v", user.Id, releaseErr)
+			}
+		}
+
 		return APIErrorServerError("Error inserting mapset download into db", err)
 	}
 
@@ -183,4 +197,94 @@ func setFileContentLength(c *gin.Context, path string) *APIError {
 	return nil
 }
 
+func reserveMapsetDownloadQuota(c *gin.Context, userID int, path string) (*downloadlimit.Reservation, *APIError) {
+	fileInfo, err := os.Stat(path)
 
+	if err != nil {
+		return nil, APIErrorServerError("Error getting mapset file information", err)
+	}
+
+	byteCount, err := mapsetResponseByteCount(c, path, fileInfo)
+
+	if err != nil {
+		return nil, APIErrorServerError("Error determining mapset response size", err)
+	}
+
+	if byteCount == 0 {
+		return nil, nil
+	}
+
+	reservation, allowed, err := downloadlimit.TryReserve(c.Request.Context(), db.Redis, userID, byteCount)
+
+	if err != nil {
+		return nil, APIErrorServerError("Error checking mapset download rate limit", err)
+	}
+
+	if !allowed {
+		return nil, &APIError{
+			Status:  http.StatusTooManyRequests,
+			Message: "Download rate limit has been reached",
+		}
+	}
+
+	return reservation, nil
+}
+
+// mapsetResponseByteCount asks net/http to evaluate the request as a HEAD
+// response so quota accounting follows the same range and precondition rules as
+// FileAttachment without reading the response body.
+func mapsetResponseByteCount(c *gin.Context, path string, fileInfo os.FileInfo) (int64, error) {
+	file, err := os.Open(path)
+
+	if err != nil {
+		return 0, err
+	}
+
+	defer file.Close()
+
+	request := c.Request.Clone(c.Request.Context())
+	request.Method = http.MethodHead
+	response := &responseMetadataWriter{header: c.Writer.Header().Clone()}
+	http.ServeContent(response, request, fileInfo.Name(), fileInfo.ModTime(), file)
+
+	if response.status != http.StatusOK && response.status != http.StatusPartialContent {
+		return 0, nil
+	}
+
+	contentLength := response.header.Get("Content-Length")
+
+	if contentLength == "" && response.status == http.StatusOK {
+		return fileInfo.Size(), nil
+	}
+
+	byteCount, err := strconv.ParseInt(contentLength, 10, 64)
+
+	if err != nil || byteCount < 0 {
+		return 0, fmt.Errorf("invalid response content length %q", contentLength)
+	}
+
+	return byteCount, nil
+}
+
+type responseMetadataWriter struct {
+	header http.Header
+	status int
+}
+
+func (w *responseMetadataWriter) Header() http.Header {
+	return w.header
+}
+
+func (w *responseMetadataWriter) WriteHeader(status int) {
+	if w.status == 0 {
+		w.status = status
+	}
+}
+
+func (w *responseMetadataWriter) Write(body []byte) (int, error) {
+	if w.status == 0 {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return len(body), nil
+}
