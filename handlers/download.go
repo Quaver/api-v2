@@ -4,11 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/downloadlimit"
 	"github.com/Quaver/api2/files"
 	"github.com/Quaver/api2/tools"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -77,6 +79,10 @@ func DownloadMapset(c *gin.Context) *APIError {
 
 	if isHeadRequest(c) {
 		return setFileContentLength(c, path)
+	}
+
+	if apiErr := enforceMapsetDownloadLimit(c, user.Id, path); apiErr != nil {
+		return apiErr
 	}
 
 	if err := db.InsertMapsetDownload(&db.MapsetDownload{
@@ -183,4 +189,29 @@ func setFileContentLength(c *gin.Context, path string) *APIError {
 	return nil
 }
 
+func enforceMapsetDownloadLimit(c *gin.Context, userID int, path string) *APIError {
+	fileInfo, err := os.Stat(path)
 
+	if err != nil {
+		return APIErrorServerError("Error getting mapset file information", err)
+	}
+
+	if fileInfo.Size() == 0 {
+		return nil
+	}
+
+	allowed, err := downloadlimit.TryConsume(c.Request.Context(), db.Redis, userID, fileInfo.Size())
+
+	if err != nil {
+		return APIErrorServerError("Error checking mapset download rate limit", err)
+	}
+
+	if !allowed {
+		return &APIError{
+			Status:  http.StatusTooManyRequests,
+			Message: "Download rate limit has been reached",
+		}
+	}
+
+	return nil
+}
