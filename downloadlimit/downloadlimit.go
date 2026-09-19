@@ -3,6 +3,7 @@ package downloadlimit
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -11,6 +12,10 @@ import (
 // DailyLimitBytes is the maximum number of mapset bytes a user can download
 // during a single server-local calendar day.
 const DailyLimitBytes int64 = 1 << 30 // 1GB max: 1 << 30, easier test with 50MB max: 50 * 1024 * 1024
+
+// downloadLimitMu keeps the Redis increment, rollback, and expiry operations from
+// interleaving.
+var downloadLimitMu sync.Mutex
 
 // TryConsume adds byteCount to a user's daily download total. It returns false
 // and restores the counter when the new total exceeds DailyLimitBytes.
@@ -25,6 +30,9 @@ func tryConsumeAt(
 	byteCount int64,
 	now time.Time,
 ) (bool, error) {
+	downloadLimitMu.Lock()
+	defer downloadLimitMu.Unlock()
+
 	key, expiresAt := quotaWindow(userID, now)
 	used, err := redisClient.IncrBy(ctx, key, byteCount).Result()
 
