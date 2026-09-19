@@ -2,44 +2,35 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/downloadlimit"
-	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 )
 
+var downloadTestUserSequence atomic.Int64
+
 func TestEnforceMapsetDownloadLimitUsesFileSize(t *testing.T) {
-	_, client := useTestDownloadRedis(t)
+	client, userID := useTestDownloadRedis(t)
 	path := writeTestMapset(t, []byte("mapset-data"))
 	ctx := newDownloadTestContext()
 
-	apiErr := enforceMapsetDownloadLimit(ctx, 101, path)
-
-	if apiErr != nil {
+	if apiErr := enforceMapsetDownloadLimit(ctx, userID, path); apiErr != nil {
 		t.Fatalf("API error = %#v", apiErr)
 	}
 
-	keys, err := client.Keys(context.Background(), "quaver:download_rate_limit:*").Result()
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(keys) != 1 {
-		t.Fatalf("quota keys = %v, want exactly one", keys)
-	}
-
-	actual, err := client.Get(context.Background(), keys[0]).Int64()
-
+	actual, err := client.Get(context.Background(), downloadLimitKey(userID)).Int64()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,12 +41,12 @@ func TestEnforceMapsetDownloadLimitUsesFileSize(t *testing.T) {
 }
 
 func TestEnforceMapsetDownloadLimitReturnsTooManyRequests(t *testing.T) {
-	_, client := useTestDownloadRedis(t)
+	client, userID := useTestDownloadRedis(t)
 	ctx := newDownloadTestContext()
 	allowed, err := downloadlimit.TryConsume(
 		ctx.Request.Context(),
 		client,
-		202,
+		userID,
 		downloadlimit.DailyLimitBytes,
 	)
 
@@ -63,7 +54,7 @@ func TestEnforceMapsetDownloadLimitReturnsTooManyRequests(t *testing.T) {
 		t.Fatalf("initial usage: allowed=%v err=%v", allowed, err)
 	}
 
-	apiErr := enforceMapsetDownloadLimit(ctx, 202, writeTestMapset(t, []byte{1}))
+	apiErr := enforceMapsetDownloadLimit(ctx, userID, writeTestMapset(t, []byte{1}))
 
 	if apiErr == nil || apiErr.Status != http.StatusTooManyRequests {
 		t.Fatalf("API error = %#v, want status %d", apiErr, http.StatusTooManyRequests)
@@ -73,18 +64,7 @@ func TestEnforceMapsetDownloadLimitReturnsTooManyRequests(t *testing.T) {
 		t.Fatalf("message = %q", apiErr.Message)
 	}
 
-	keys, err := client.Keys(context.Background(), "quaver:download_rate_limit:*").Result()
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(keys) != 1 {
-		t.Fatalf("quota keys = %v, want exactly one", keys)
-	}
-
-	actual, err := client.Get(context.Background(), keys[0]).Int64()
-
+	actual, err := client.Get(context.Background(), downloadLimitKey(userID)).Int64()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,19 +75,28 @@ func TestEnforceMapsetDownloadLimitReturnsTooManyRequests(t *testing.T) {
 }
 
 func TestEnforceMapsetDownloadLimitReturnsServerError(t *testing.T) {
-	server, _ := useTestDownloadRedis(t)
-	server.Close()
-	ctx := newDownloadTestContext()
+	previousClient := db.Redis
+	client := redis.NewClient(&redis.Options{
+		Addr:         "127.0.0.1:0",
+		MaxRetries:   -1,
+		DialTimeout:  10 * time.Millisecond,
+		ReadTimeout:  10 * time.Millisecond,
+		WriteTimeout: 10 * time.Millisecond,
+	})
+	db.Redis = client
+	t.Cleanup(func() {
+		db.Redis = previousClient
+		_ = client.Close()
+	})
 
-	apiErr := enforceMapsetDownloadLimit(ctx, 303, writeTestMapset(t, []byte{1}))
+	apiErr := enforceMapsetDownloadLimit(newDownloadTestContext(), 303, writeTestMapset(t, []byte{1}))
 
 	if apiErr == nil || apiErr.Status != http.StatusInternalServerError {
 		t.Fatalf("API error = %#v, want status %d", apiErr, http.StatusInternalServerError)
 	}
 }
 
-func TestSetFileContentLengthDoesNotCountQuota(t *testing.T) {
-	_, client := useTestDownloadRedis(t)
+func TestSetFileContentLength(t *testing.T) {
 	path := writeTestMapset(t, []byte("head-response"))
 	response := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(response)
@@ -120,38 +109,35 @@ func TestSetFileContentLengthDoesNotCountQuota(t *testing.T) {
 	if got := response.Header().Get("Content-Length"); got != strconv.Itoa(len("head-response")) {
 		t.Fatalf("Content-Length = %q, want %d", got, len("head-response"))
 	}
+}
 
-	keys, err := client.Keys(context.Background(), "quaver:download_rate_limit:*").Result()
+func useTestDownloadRedis(t *testing.T) (*redis.Client, int) {
+	t.Helper()
 
-	if err != nil {
+	if config.Instance == nil {
+		if err := config.Load("../config.json"); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	db.InitializeRedis()
+	if err := db.Redis.Ping(context.Background()).Err(); err != nil {
 		t.Fatal(err)
 	}
 
-	if len(keys) != 0 {
-		t.Fatalf("HEAD request created quota keys: %v", keys)
-	}
+	userID := int(time.Now().UnixNano() + downloadTestUserSequence.Add(1))
+	key := downloadLimitKey(userID)
+	t.Cleanup(func() { _ = db.Redis.Del(context.Background(), key).Err() })
+
+	return db.Redis, userID
 }
 
-func useTestDownloadRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
-	t.Helper()
-
-	server := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{
-		Addr:         server.Addr(),
-		MaxRetries:   -1,
-		DialTimeout:  100 * time.Millisecond,
-		ReadTimeout:  100 * time.Millisecond,
-		WriteTimeout: 100 * time.Millisecond,
-	})
-	previousClient := db.Redis
-	db.Redis = client
-
-	t.Cleanup(func() {
-		db.Redis = previousClient
-		_ = client.Close()
-	})
-
-	return server, client
+func downloadLimitKey(userID int) string {
+	return fmt.Sprintf(
+		"quaver:download_rate_limit:%s:%d",
+		time.Now().In(time.Local).Format("2006-01-02"),
+		userID,
+	)
 }
 
 func newDownloadTestContext() *gin.Context {
