@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	ratelimit "github.com/JGLTechnologies/gin-rate-limit"
 	"github.com/Quaver/api2/config"
+	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/handlers"
 	"github.com/Quaver/api2/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	redisrate "github.com/go-redis/redis_rate/v10"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -17,6 +18,14 @@ import (
 	"syscall"
 	"time"
 )
+
+const apiRateLimitKeyPrefix = "quaver:api_rate_limit:"
+
+var apiRequestRateLimit = redisrate.PerMinute(100)
+
+type apiRateLimiter interface {
+	Allow(ctx context.Context, key string, limit redisrate.Limit) (*redisrate.Result, error)
+}
 
 // Starts the server on a given port
 func initializeServer(port int) {
@@ -48,19 +57,20 @@ func initializeServer(port int) {
 
 // Initializes the rate limiter for the server
 func initializeRateLimiter(engine *gin.Engine) {
+	engine.Use(newRateLimitMiddleware(redisrate.NewLimiter(db.Redis)))
+}
+
+func newRateLimitMiddleware(limiter apiRateLimiter) gin.HandlerFunc {
 	rateLimitBypassRoutes := map[string]struct{}{
 		"/v2/mapset/search":       {},
 		"/v2/map/:id":             {},
 		"/v2/download/mapset/:id": {},
 	}
 
-	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
-		Rate:  time.Minute,
-		Limit: 100,
-	})
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
 
-	engine.Use(func(c *gin.Context) {
-		if !config.Instance.IsProduction || slices.Contains(config.Instance.Server.RateLimitIpWhitelist, c.ClientIP()) {
+		if !config.Instance.IsProduction || slices.Contains(config.Instance.Server.RateLimitIpWhitelist, clientIP) {
 			c.Next()
 			return
 		}
@@ -74,19 +84,48 @@ func initializeRateLimiter(engine *gin.Engine) {
 			}
 		}
 
-		info := store.Limit(c.ClientIP(), c)
-		c.Header("X-Rate-Limit-Limit", fmt.Sprintf("%d", info.Limit))
-		c.Header("X-Rate-Limit-Remaining", fmt.Sprintf("%v", info.RemainingHits))
-		c.Header("X-Rate-Limit-Reset", fmt.Sprintf("%d", info.ResetTime.Unix()))
+		result, err := limiter.Allow(
+			c.Request.Context(),
+			apiRateLimitKeyPrefix+clientIP,
+			apiRequestRateLimit,
+		)
 
-		if info.RateLimited {
+		if err != nil {
+			// Rate limiting should not make the entire API unavailable when Redis
+			// is temporarily unreachable. Authentication and individual handlers
+			// can still apply their own Redis failure policies.
+			logrus.Errorf("Error checking API rate limit: %v", err)
+			c.Next()
+			return
+		}
+
+		resetAfter := result.ResetAfter
+
+		if resetAfter < 0 {
+			resetAfter = 0
+		}
+
+		c.Header("X-Rate-Limit-Limit", fmt.Sprintf("%d", result.Limit.Rate))
+		c.Header("X-Rate-Limit-Remaining", fmt.Sprintf("%d", result.Remaining))
+		c.Header("X-Rate-Limit-Reset", fmt.Sprintf("%d", time.Now().Add(resetAfter).Unix()))
+
+		if result.Allowed == 0 {
+			c.Header("Retry-After", fmt.Sprintf("%d", retryAfterSeconds(result.RetryAfter)))
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests"})
 			c.Abort()
 			return
 		}
 
 		c.Next()
-	})
+	}
+}
+
+func retryAfterSeconds(retryAfter time.Duration) int64 {
+	if retryAfter <= 0 {
+		return 1
+	}
+
+	return int64((retryAfter + time.Second - 1) / time.Second)
 }
 
 // Initializes all the routes for the server.
