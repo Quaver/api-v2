@@ -2,7 +2,6 @@ package downloadlimit
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -12,37 +11,29 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func TestTryReserveAccumulatesAndEnforcesLimit(t *testing.T) {
+func TestTryConsumeAccumulatesAndEnforcesLimit(t *testing.T) {
 	server, client := newTestRedis(t)
 	ctx := context.Background()
 	now := time.Date(2026, time.September, 18, 12, 0, 0, 0, time.UTC)
 	server.SetTime(now)
 
-	first, allowed, err := tryReserveAt(ctx, client, 42, 128, now, nil)
+	allowed, err := tryConsumeAt(ctx, client, 42, 128, now)
+	if err != nil || !allowed {
+		t.Fatalf("first download: allowed=%v err=%v", allowed, err)
+	}
+
+	allowed, err = tryConsumeAt(ctx, client, 42, DailyLimitBytes-128, now)
+	if err != nil || !allowed {
+		t.Fatalf("download reaching limit: allowed=%v err=%v", allowed, err)
+	}
+
+	allowed, err = tryConsumeAt(ctx, client, 42, 1, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !allowed || first == nil {
-		t.Fatal("expected first reservation to be allowed")
-	}
-
-	second, allowed, err := tryReserveAt(ctx, client, 42, DailyLimitBytes-128, now, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !allowed || second == nil {
-		t.Fatal("expected reservation reaching the exact limit to be allowed")
-	}
-
-	reservation, allowed, err := tryReserveAt(ctx, client, 42, 1, now, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if allowed || reservation != nil {
-		t.Fatal("expected reservation above the limit to be rejected")
+	if allowed {
+		t.Fatal("expected download above the limit to be rejected")
 	}
 
 	key, expiresAt := quotaWindow(42, now)
@@ -53,84 +44,7 @@ func TestTryReserveAccumulatesAndEnforcesLimit(t *testing.T) {
 	}
 }
 
-func TestTryReserveRetriesWatchConflict(t *testing.T) {
-	server, client := newTestRedis(t)
-	otherClient := redis.NewClient(client.Options())
-	t.Cleanup(func() { _ = otherClient.Close() })
-
-	ctx := context.Background()
-	now := time.Date(2026, time.September, 18, 12, 0, 0, 0, time.UTC)
-	server.SetTime(now)
-	key, _ := quotaWindow(7, now)
-	hookCalls := 0
-
-	reservation, allowed, err := tryReserveAt(ctx, client, 7, 11, now, func(attempt int) error {
-		hookCalls++
-
-		if attempt == 0 {
-			return otherClient.IncrBy(ctx, key, 7).Err()
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !allowed || reservation == nil {
-		t.Fatal("expected reservation to succeed after retry")
-	}
-
-	if hookCalls < 2 {
-		t.Fatalf("hook called %d times, want at least 2", hookCalls)
-	}
-
-	assertCounterValue(t, ctx, client, key, 18)
-}
-
-func TestTryReserveRetriesStaleRejection(t *testing.T) {
-	server, client := newTestRedis(t)
-	otherClient := redis.NewClient(client.Options())
-	t.Cleanup(func() { _ = otherClient.Close() })
-
-	ctx := context.Background()
-	now := time.Date(2026, time.September, 18, 12, 0, 0, 0, time.UTC)
-	server.SetTime(now)
-	fullReservation, allowed, err := tryReserveAt(ctx, client, 8, DailyLimitBytes, now, nil)
-
-	if err != nil || !allowed {
-		t.Fatalf("initial reservation: allowed=%v err=%v", allowed, err)
-	}
-
-	hookCalls := 0
-	reservation, allowed, err := tryReserveAt(ctx, client, 8, 1, now, func(attempt int) error {
-		hookCalls++
-
-		if attempt == 0 {
-			return Release(ctx, otherClient, fullReservation)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !allowed || reservation == nil {
-		t.Fatal("expected reservation to be allowed after the concurrent release")
-	}
-
-	if hookCalls < 2 {
-		t.Fatalf("hook called %d times, want at least 2", hookCalls)
-	}
-
-	key, _ := quotaWindow(8, now)
-	assertCounterValue(t, ctx, client, key, 1)
-}
-
-func TestTryReserveConcurrentRequestsDoNotExceedLimit(t *testing.T) {
+func TestTryConsumeConcurrentRequestsDoNotExceedLimit(t *testing.T) {
 	server, client := newTestRedis(t)
 	ctx := context.Background()
 	now := time.Date(2026, time.September, 18, 12, 0, 0, 0, time.UTC)
@@ -150,7 +64,7 @@ func TestTryReserveConcurrentRequestsDoNotExceedLimit(t *testing.T) {
 			defer waitGroup.Done()
 			<-start
 
-			_, allowed, err := tryReserveAt(ctx, client, 99, chunkSize, now, nil)
+			allowed, err := tryConsumeAt(ctx, client, 99, chunkSize, now)
 
 			if err != nil {
 				errorsChannel <- err
@@ -172,14 +86,14 @@ func TestTryReserveConcurrentRequestsDoNotExceedLimit(t *testing.T) {
 	}
 
 	if got := successful.Load(); got != allowedCount {
-		t.Fatalf("allowed reservations = %d, want %d", got, allowedCount)
+		t.Fatalf("allowed downloads = %d, want %d", got, allowedCount)
 	}
 
 	key, _ := quotaWindow(99, now)
 	assertCounterValue(t, ctx, client, key, DailyLimitBytes)
 }
 
-func TestTryReserveExpiresAtNextLocalMidnightAcrossDST(t *testing.T) {
+func TestTryConsumeExpiresAtNextLocalMidnightAcrossDST(t *testing.T) {
 	server, client := newTestRedis(t)
 	ctx := context.Background()
 	location, err := time.LoadLocation("Europe/Sofia")
@@ -190,14 +104,10 @@ func TestTryReserveExpiresAtNextLocalMidnightAcrossDST(t *testing.T) {
 
 	now := time.Date(2026, time.March, 29, 0, 30, 0, 0, location)
 	server.SetTime(now)
-	_, allowed, err := tryReserveAt(ctx, client, 15, 1, now, nil)
+	allowed, err := tryConsumeAt(ctx, client, 15, 1, now)
 
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !allowed {
-		t.Fatal("expected reservation to be allowed")
+	if err != nil || !allowed {
+		t.Fatalf("download: allowed=%v err=%v", allowed, err)
 	}
 
 	key, expiresAt := quotaWindow(15, now)
@@ -212,104 +122,20 @@ func TestTryReserveExpiresAtNextLocalMidnightAcrossDST(t *testing.T) {
 	}
 }
 
-func TestReleaseRestoresCounterAndHandlesExpiredReservation(t *testing.T) {
-	server, client := newTestRedis(t)
-	ctx := context.Background()
-	dayOne := time.Date(2026, time.September, 18, 12, 0, 0, 0, time.UTC)
-	server.SetTime(dayOne)
-
-	first, allowed, err := tryReserveAt(ctx, client, 21, 100, dayOne, nil)
-	if err != nil || !allowed {
-		t.Fatalf("first reservation: allowed=%v err=%v", allowed, err)
-	}
-
-	_, allowed, err = tryReserveAt(ctx, client, 21, 25, dayOne, nil)
-	if err != nil || !allowed {
-		t.Fatalf("second reservation: allowed=%v err=%v", allowed, err)
-	}
-
-	if err := Release(ctx, client, first); err != nil {
-		t.Fatal(err)
-	}
-
-	dayOneKey, dayOneExpiry := quotaWindow(21, dayOne)
-	assertCounterValue(t, ctx, client, dayOneKey, 25)
-
-	server.FastForward(dayOneExpiry.Sub(dayOne) + time.Second)
-	dayTwo := dayOneExpiry.Add(time.Hour)
-	server.SetTime(dayTwo)
-	_, allowed, err = tryReserveAt(ctx, client, 21, 200, dayTwo, nil)
-	if err != nil || !allowed {
-		t.Fatalf("day two reservation: allowed=%v err=%v", allowed, err)
-	}
-
-	if err := Release(ctx, client, first); err != nil {
-		t.Fatal(err)
-	}
-
-	dayTwoKey, _ := quotaWindow(21, dayTwo)
-	assertCounterValue(t, ctx, client, dayTwoKey, 200)
-}
-
-func TestReleaseRetriesConcurrentCounterChange(t *testing.T) {
-	server, client := newTestRedis(t)
-	otherClient := redis.NewClient(client.Options())
-	t.Cleanup(func() { _ = otherClient.Close() })
-
-	ctx := context.Background()
-	now := time.Date(2026, time.September, 18, 12, 0, 0, 0, time.UTC)
-	server.SetTime(now)
-	reservation, allowed, err := tryReserveAt(ctx, client, 31, 100, now, nil)
-
-	if err != nil || !allowed {
-		t.Fatalf("initial reservation: allowed=%v err=%v", allowed, err)
-	}
-
-	hookCalls := 0
-	err = release(ctx, client, reservation, func(attempt int) error {
-		hookCalls++
-
-		if attempt == 0 {
-			_, allowed, err := tryReserveAt(ctx, otherClient, 31, 25, now, nil)
-
-			if err != nil {
-				return err
-			}
-
-			if !allowed {
-				return errors.New("concurrent reservation was unexpectedly rejected")
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if hookCalls < 2 {
-		t.Fatalf("hook called %d times, want at least 2", hookCalls)
-	}
-
-	key, _ := quotaWindow(31, now)
-	assertCounterValue(t, ctx, client, key, 25)
-}
-
-func TestTryReserveReturnsRedisAndCounterErrors(t *testing.T) {
+func TestTryConsumeReturnsRedisErrors(t *testing.T) {
 	server, client := newTestRedis(t)
 	ctx := context.Background()
 	now := time.Date(2026, time.September, 18, 12, 0, 0, 0, time.UTC)
 	key, _ := quotaWindow(55, now)
 	server.Set(key, "not-an-integer")
 
-	if _, _, err := tryReserveAt(ctx, client, 55, 1, now, nil); err == nil {
+	if _, err := tryConsumeAt(ctx, client, 55, 1, now); err == nil {
 		t.Fatal("expected malformed counter to return an error")
 	}
 
 	server.Close()
 
-	if _, _, err := tryReserveAt(ctx, client, 56, 1, now, nil); err == nil {
+	if _, err := tryConsumeAt(ctx, client, 56, 1, now); err == nil {
 		t.Fatal("expected unavailable redis to return an error")
 	}
 }
