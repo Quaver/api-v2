@@ -289,6 +289,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Applications
 	engine.GET("/v2/developers/applications", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserApplications))
 	engine.POST("/v2/developers/applications", middleware.RequireAuth, handlers.CreateHandler(handlers.CreateNewApplication))
+	engine.GET("/v2/developers/applications/client/:client_id", middleware.RequireAuth, handlers.CreateHandler(handlers.GetApplicationByClientId))
 	engine.GET("/v2/developers/applications/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.GetUserApplication))
 	engine.POST("/v2/developers/applications/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.UpdateApplication))
 	engine.DELETE("/v2/developers/applications/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.DeleteUserApplication))

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/Quaver/api2/db"
+	"github.com/Quaver/api2/enums"
 	"github.com/Quaver/api2/stringutil"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -50,6 +51,33 @@ func GetUserApplication(c *gin.Context) *APIError {
 	}
 
 	application.ClientSecret = ""
+
+	c.JSON(http.StatusOK, gin.H{"application": application})
+	return nil
+}
+
+// GetApplicationByClientId returns an active application, including its client secret.
+// Endpoint: GET /v2/developers/applications/client/:client_id
+func GetApplicationByClientId(c *gin.Context) *APIError {
+	user := getAuthedUser(c)
+
+	if user == nil {
+		return nil
+	}
+
+	if !enums.HasPrivilege(user.Privileges, enums.PrivilegeManageBuilds) {
+		return APIErrorForbidden("You do not have permission to access this route.")
+	}
+
+	application, err := db.GetActiveApplicationByClientId(c.Param("client_id"))
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving application from db", err)
+	}
+
+	if application == nil {
+		return APIErrorNotFound("Application")
+	}
 
 	c.JSON(http.StatusOK, gin.H{"application": application})
 	return nil
