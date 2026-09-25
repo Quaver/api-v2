@@ -1,7 +1,6 @@
 package files
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
