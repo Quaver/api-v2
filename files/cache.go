@@ -10,7 +10,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+	"time"
 )
+
+const cacheAccessUpdateInterval = 24 * time.Hour
 
 // CreateDirectories Creates the directories needed for the cache
 func CreateDirectories() {
@@ -43,7 +46,7 @@ func CacheQuaFile(mapQua *db.MapQua) (string, error) {
 	path, _ := filepath.Abs(fmt.Sprintf("%v/%v", getMapsDirectory(), fileName))
 
 	// Check for existing file & see if md5 hash matches
-	if _, err := os.Stat(path); err == nil {
+	if info, err := os.Stat(path); err == nil {
 		md5, err := GetFileMD5(path)
 
 		if err != nil {
@@ -51,6 +54,9 @@ func CacheQuaFile(mapQua *db.MapQua) (string, error) {
 		}
 
 		if md5 == mapQua.MD5 {
+			if err := markCacheAccess(path, info); err != nil {
+				logrus.Warnf("Failed to update access time for %v: %v", path, err)
+			}
 			return path, nil
 		}
 	}
@@ -89,7 +95,7 @@ func CacheMapset(mapset *db.Mapset) (string, error) {
 	path, _ := filepath.Abs(fmt.Sprintf("%v/%v", getMapsetDirectory(), fileName))
 
 	// Check MD5 hash of existing file
-	if _, err := os.Stat(path); err == nil {
+	if info, err := os.Stat(path); err == nil {
 		md5, err := GetFileMD5(path)
 
 		if err != nil {
@@ -97,6 +103,9 @@ func CacheMapset(mapset *db.Mapset) (string, error) {
 		}
 
 		if md5 == mapset.PackageMD5 {
+			if err := markCacheAccess(path, info); err != nil {
+				logrus.Warnf("Failed to update access time for %v: %v", path, err)
+			}
 			return path, nil
 		}
 	}
@@ -113,7 +122,10 @@ func CacheReplay(scoreId int) (string, error) {
 	fileName := fmt.Sprintf("%v.qr", scoreId)
 	path, _ := filepath.Abs(fmt.Sprintf("%v/%v", getReplayDirectory(), fileName))
 
-	if _, err := os.Stat(path); err == nil {
+	if info, err := os.Stat(path); err == nil {
+		if err := markCacheAccess(path, info); err != nil {
+			logrus.Warnf("Failed to update access time for %v: %v", path, err)
+		}
 		return path, nil
 	}
 
@@ -143,4 +155,14 @@ func GetBackupsDirectory() string {
 
 func GetTempDirectory() string {
 	return "../../temp"
+}
+
+func markCacheAccess(path string, info os.FileInfo) error {
+	now := time.Now()
+
+	if now.Sub(info.ModTime()) < cacheAccessUpdateInterval {
+		return nil
+	}
+
+	return os.Chtimes(path, now, now)
 }

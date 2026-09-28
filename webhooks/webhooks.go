@@ -381,10 +381,10 @@ func SendClanFirstPlaceWebhook(clan *db.Clan, mapQua *db.MapQua, newScore *db.Cl
 
 	embed := discord.NewEmbedBuilder().
 		SetAuthor(fmt.Sprintf("[%v] %v", clan.Tag, clan.Name),
-			fmt.Sprintf("https://two.quavergame.com/clans/%v", newScore.ClanId), clan.AvatarURL()).
+			fmt.Sprintf("https://quavergame.com/clans/%v", newScore.ClanId), clan.AvatarURL()).
 		SetDescription("🏆 Achieved a new first place clan score!\n\n"+
-			"**Note: Clans is in private beta which is only available to [donators](https://two.quavergame.com/donate).**").
-		AddField("Map", fmt.Sprintf("[%v](https://two.quavergame.com/mapset/%v/map/%v?type=clan)", mapQua, mapQua.MapsetId, mapQua.Id), false).
+			"**Note: Clans is in private beta which is only available to [donators](https://quavergame.com/donate).**").
+		AddField("Map", fmt.Sprintf("[%v](https://quavergame.com/mapset/%v/map/%v?type=clans)", mapQua, mapQua.MapsetId, mapQua.Id), false).
 		AddField("Overall Rating", fmt.Sprintf("%.2f", newScore.OverallRating), true).
 		AddField("Overall Accuracy", fmt.Sprintf("%.2f%%", newScore.OverallAccuracy), true).
 		SetImagef("https://cdn.quavergame.com/mapsets/%v.jpg", mapQua.MapsetId).
@@ -394,7 +394,7 @@ func SendClanFirstPlaceWebhook(clan *db.Clan, mapQua *db.MapQua, newScore *db.Cl
 		SetColor(0x00FF00)
 
 	if oldScore != nil {
-		embed.AddField("Previous #1 Holder", fmt.Sprintf("[[%v] %v](https://two.quavergame.com/clans/%v)", oldScore.Clan.Tag, oldScore.Clan.Name, oldScore.ClanId), false)
+		embed.AddField("Previous #1 Holder", fmt.Sprintf("[[%v] %v](https://quavergame.com/clans/%v)", oldScore.Clan.Tag, oldScore.Clan.Name, oldScore.ClanId), false)
 	}
 
 	_, err := clansFirstPlace.CreateMessage(discord.WebhookMessageCreate{
@@ -417,8 +417,8 @@ func SendClanRankedWebhook(mapQua *db.MapQua) error {
 	embed := discord.NewEmbedBuilder().
 		SetTitle("✅ New Map Clan Ranked!").
 		SetDescription("A new map has been clan ranked and is now available to get scores on.\n\n"+
-			"**Note: Clans is in private beta which is only available to [donators](https://two.quavergame.com/donate).**").
-		AddField("Map", fmt.Sprintf("[%v](https://two.quavergame.com/mapset/%v/map/%v?type=clan)", mapQua, mapQua.MapsetId, mapQua.Id), false).
+			"**Note: Clans is in private beta which is only available to [donators](https://quavergame.com/donate).**").
+		AddField("Map", fmt.Sprintf("[%v](https://quavergame.com/mapset/%v/map/%v?type=clans)", mapQua, mapQua.MapsetId, mapQua.Id), false).
 		AddField("Creator", fmt.Sprintf("[%v](https://quavergame.com/user/%v)", mapQua.CreatorUsername, mapQua.CreatorId), true).
 		AddField("Game Mode", enums.GetShorthandGameModeString(mapQua.GameMode), true).
 		AddField("Difficulty ", fmt.Sprintf("%.2f", mapQua.DifficultyRating), true).

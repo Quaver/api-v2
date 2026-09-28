@@ -138,6 +138,11 @@
       "enabled": true,
       "name": "Performs a full recalculation on clans",
       "schedule": "0 * * * *"
+    },
+    "cache_prune": {
+      "enabled": true,
+      "name": "Deletes 90+ days older cached maps, mapsets, and replays",
+      "schedule": "0 3 * * *"
     }
   }
 }

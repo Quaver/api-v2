@@ -38,6 +38,7 @@ func init() {
 
 	// Commands
 	RootCmd.AddCommand(commands.CacheClearCmd)
+	RootCmd.AddCommand(commands.CachePruneCmd)
 	RootCmd.AddCommand(commands.CacheLeaderboardCmd)
 	RootCmd.AddCommand(commands.CacheClanLeaderboard)
 	RootCmd.AddCommand(commands.ElasticIndexMapsets)
