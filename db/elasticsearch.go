@@ -8,7 +8,6 @@ import (
 
 var ElasticSearch *elasticsearch.Client
 
-const elasticMapsetIndex = "mapsets-v2"
 const elasticMapSearchIndex = "maps"
 
 // InitializeElasticSearch Initializes the ElasticSearch client
