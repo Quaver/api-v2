@@ -23,7 +23,7 @@ type JWTClaims struct {
 
 const (
 	messageNoHeader       = "You must provide a valid `Authorization` or `auth` header."
-	messageNoAuthOrSecret = "You must provide a valid `Authorization`, `auth`, or `client_secret`."
+	messageNoAuthOrSecret = "You must provide a valid `Authorization`, `auth`, or `X-Client-Secret`."
 )
 
 // RequireAuth Middleware authentication function
@@ -129,7 +129,7 @@ func authenticateUser(c *gin.Context) (*db.User, *handlers.APIError) {
 
 // authenticateApplicationClientSecret authenticates an active application client secret.
 func authenticateApplicationClientSecret(c *gin.Context) (*db.Application, *handlers.APIError) {
-	secret := c.GetHeader("client_secret")
+	secret := c.GetHeader("X-Client-Secret")
 
 	if secret == "" {
 		return nil, &handlers.APIError{Status: http.StatusUnauthorized, Message: messageNoAuthOrSecret, Error: gorm.ErrRecordNotFound}
@@ -177,7 +177,8 @@ func authenticateJWT(header string) (*db.User, error) {
 		// Invalid or expired tokens must never continue to claim processing. In
 		// particular, parsing claims after a signature failure could allow a
 		// token signed with another secret to influence authentication.
-		if errors.Is(err, jwt.ErrSignatureInvalid) ||
+		if errors.Is(err, jwt.ErrTokenMalformed) ||
+			errors.Is(err, jwt.ErrSignatureInvalid) ||
 			errors.Is(err, jwt.ErrTokenSignatureInvalid) ||
 			errors.Is(err, jwt.ErrTokenExpired) {
 			return nil, nil
