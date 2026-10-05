@@ -49,13 +49,7 @@ func (m *MapQua) TableName() string {
 }
 
 func (m *MapQua) AfterFind(*gorm.DB) error {
-	m.MaxCombo = m.CountHitObjectLong*2 + m.CountHitObjectNormal
-	m.PlayAttempts = m.PlayCount + m.FailCount
-
-	if m.CountHitObjectLong != 0 {
-		m.LongNotePercentage = float32(m.CountHitObjectLong) /
-			float32(m.CountHitObjectNormal+m.CountHitObjectLong) * 100
-	}
+	m.UpdateComputedValues()
 
 	if m.DateClanRanked != nil {
 		t := time.UnixMilli(*m.DateClanRanked)
@@ -63,6 +57,18 @@ func (m *MapQua) AfterFind(*gorm.DB) error {
 	}
 
 	return nil
+}
+
+// UpdateComputedValues Calculates display and search fields from the map's stored counts.
+func (m *MapQua) UpdateComputedValues() {
+	m.MaxCombo = m.CountHitObjectLong*2 + m.CountHitObjectNormal
+	m.PlayAttempts = m.PlayCount + m.FailCount
+
+	m.LongNotePercentage = 0
+	if m.CountHitObjectNormal+m.CountHitObjectLong > 0 {
+		m.LongNotePercentage = float32(m.CountHitObjectLong) /
+			float32(m.CountHitObjectNormal+m.CountHitObjectLong) * 100
+	}
 }
 
 func (m *MapQua) String() string {
@@ -151,13 +157,16 @@ func DeleteMap(id int) error {
 	return result.Error
 }
 
-// UpdateMapDifficultyRating Updates the difficulty rating of a map
-func UpdateMapDifficultyRating(id int, difficultyRating float64) error {
+// UpdateMapDifficultyRating Saves and indexes a calculation only for the matching uploaded map version.
+func UpdateMapDifficultyRating(id int, md5 string, difficultyRating float64) error {
 	result := SQL.Model(&MapQua{}).
-		Where("id = ?", id).
+		Where("id = ? AND md5 = ?", id, md5).
 		Update("difficulty_rating", difficultyRating)
 
-	return result.Error
+	if result.Error != nil {
+		return result.Error
+	}
+	return UpdateElasticSearchMapDifficulty(id, md5, difficultyRating)
 }
 
 // UpdateMapClanRanked Updates the clan ranked status of a map

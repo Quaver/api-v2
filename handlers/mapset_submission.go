@@ -13,7 +13,6 @@ import (
 	"github.com/Quaver/api2/qua"
 	"github.com/Quaver/api2/sliceutil"
 	"github.com/Quaver/api2/tools"
-	v1 "github.com/Quaver/api2/v1"
 	"github.com/Quaver/api2/webhooks"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
@@ -53,6 +52,8 @@ const (
 	errAudioPreviewFileNoExists string = "could not create audio preview (file no exists)"
 )
 
+type mapDifficultyFiles map[*db.MapQua]string
+
 // HandleMapsetSubmission Handles the uploading/updating of a mapset archive (.qp) file
 // Endpoint: POST /v2/mapset
 func HandleMapsetSubmission(c *gin.Context) *APIError {
@@ -61,6 +62,15 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 	if user == nil {
 		return nil
 	}
+
+	difficultyFiles := make(mapDifficultyFiles)
+	defer func() {
+		for _, filePath := range difficultyFiles {
+			if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+				logrus.Error("Error removing map difficulty file: ", filePath, err)
+			}
+		}
+	}()
 
 	zipReader, apiErr := checkValidRequestMapset(c, user)
 
@@ -94,9 +104,9 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 	var mapset *db.Mapset
 
 	if isUploadingNewMapset {
-		mapset, apiErr = uploadNewMapset(user, quaFiles)
+		mapset, apiErr = uploadNewMapset(user, quaFiles, difficultyFiles)
 	} else {
-		mapset, apiErr = updateExistingMapset(user, quaFiles)
+		mapset, apiErr = updateExistingMapset(user, quaFiles, difficultyFiles)
 	}
 
 	if apiErr != nil {
@@ -123,8 +133,9 @@ func HandleMapsetSubmission(c *gin.Context) *APIError {
 		return APIErrorServerError("Error updating elastic search", err)
 	}
 
-	if err := v1.UpdateElasticSearchMapset(mapset.Id); err != nil {
-		logrus.Error(err)
+	for songMap, filePath := range difficultyFiles {
+		delete(difficultyFiles, songMap)
+		go calcMapDifficulty(songMap.Id, songMap.MD5, filePath)
 	}
 
 	if apiErr := resolveMapsetInRankingQueue(user, mapset); apiErr != nil {
@@ -314,7 +325,7 @@ func validateQuaFiles(user *db.User, quaFiles map[*zip.File]*qua.Qua) *APIError 
 }
 
 // Handles the uploading of a brand new mapset
-func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset, *APIError) {
+func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua, difficultyFiles mapDifficultyFiles) (*db.Mapset, *APIError) {
 	if apiErr := checkUserUploadEligibility(user); apiErr != nil {
 		return nil, apiErr
 	}
@@ -335,7 +346,7 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 	}
 
 	for _, quaFile := range quaFiles {
-		songMap, apiErr := InsertOrUpdateMap(user, mapset, quaFile)
+		songMap, apiErr := InsertOrUpdateMap(user, mapset, quaFile, difficultyFiles)
 
 		if apiErr != nil {
 			return nil, apiErr
@@ -356,7 +367,7 @@ func uploadNewMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset
 }
 
 // Handles the updating of an existing mapset
-func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.Mapset, *APIError) {
+func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua, difficultyFiles mapDifficultyFiles) (*db.Mapset, *APIError) {
 	quaSlice := sliceutil.Values(quaFiles)
 
 	if !sliceutil.All(quaSlice, func(q *qua.Qua) bool {
@@ -400,7 +411,7 @@ func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.M
 
 	// Insert new maps & update existing ones
 	for _, quaFile := range quaFiles {
-		songMap, apiErr := InsertOrUpdateMap(user, mapset, quaFile)
+		songMap, apiErr := InsertOrUpdateMap(user, mapset, quaFile, difficultyFiles)
 
 		if apiErr != nil {
 			return nil, apiErr
@@ -440,7 +451,7 @@ func updateExistingMapset(user *db.User, quaFiles map[*zip.File]*qua.Qua) (*db.M
 }
 
 // InsertOrUpdateMap Inserts/Updates a map in the database
-func InsertOrUpdateMap(user *db.User, mapset *db.Mapset, quaFile *qua.Qua) (*db.MapQua, *APIError) {
+func InsertOrUpdateMap(user *db.User, mapset *db.Mapset, quaFile *qua.Qua, difficultyFiles mapDifficultyFiles) (*db.MapQua, *APIError) {
 	songMap := &db.MapQua{
 		MapsetId:             mapset.Id,
 		CreatorId:            user.Id,
@@ -457,8 +468,8 @@ func InsertOrUpdateMap(user *db.User, mapset *db.Mapset, quaFile *qua.Qua) (*db.
 		BPM:                  quaFile.CommonBPM(),
 		CountHitObjectNormal: quaFile.CountHitObjectNormal(),
 		CountHitObjectLong:   quaFile.CountHitObjectLong(),
-		MaxCombo:             quaFile.MaxCombo(),
 	}
+	songMap.UpdateComputedValues()
 
 	if quaFile.MapId != -1 {
 		songMap.Id = quaFile.MapId
@@ -475,7 +486,15 @@ func InsertOrUpdateMap(user *db.User, mapset *db.Mapset, quaFile *qua.Qua) (*db.
 		return nil, APIErrorServerError("Error saving map in db", err)
 	}
 
-	filePath := fmt.Sprintf("%v/%v.qua", files.GetTempDirectory(), songMap.Id)
+	tempMapFile, err := os.CreateTemp(files.GetTempDirectory(), fmt.Sprintf("%d-*.qua", songMap.Id))
+	if err != nil {
+		return nil, APIErrorServerError("Error creating temporary map file", err)
+	}
+	filePath := tempMapFile.Name()
+	difficultyFiles[songMap] = filePath
+	if err := tempMapFile.Close(); err != nil {
+		return nil, APIErrorServerError("Error closing temporary map file", err)
+	}
 
 	if err := quaFile.Write(filePath); err != nil {
 		return nil, APIErrorServerError("Error writing .qua file to disk", err)
@@ -484,14 +503,6 @@ func InsertOrUpdateMap(user *db.User, mapset *db.Mapset, quaFile *qua.Qua) (*db.
 	if err := azure.Client.UploadFile("maps", quaFile.FileName(), quaFile.RawBytes); err != nil {
 		return nil, APIErrorServerError("Error uploading .qua file to azure", err)
 	}
-
-	go func() {
-		calcMapDifficulty(songMap, filePath)
-
-		if err := os.Remove(filePath); err != nil {
-			logrus.Error("Error removing file: ", filePath)
-		}
-	}()
 
 	return songMap, nil
 }
@@ -560,7 +571,13 @@ func getUserMaxUploadsPerMonth(user *db.User) int {
 }
 
 // Calculates a map's difficulty rating
-func calcMapDifficulty(songMap *db.MapQua, filePath string) {
+func calcMapDifficulty(id int, md5 string, filePath string) {
+	defer func() {
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			logrus.Error("Error removing map difficulty file: ", filePath, err)
+		}
+	}()
+
 	calc, err := tools.RunDifficultyCalculator(filePath, 0)
 
 	if err != nil {
@@ -568,8 +585,8 @@ func calcMapDifficulty(songMap *db.MapQua, filePath string) {
 		return
 	}
 
-	if err := db.UpdateMapDifficultyRating(songMap.Id, calc.Difficulty.OverallDifficulty); err != nil {
-		logrus.Error("Error updating map difficulty rating in DB: ", err)
+	if err := db.UpdateMapDifficultyRating(id, md5, calc.Difficulty.OverallDifficulty); err != nil {
+		logrus.Errorf("Error saving difficulty rating for map %d: %v", id, err)
 		return
 	}
 }

@@ -197,6 +197,7 @@ func IndexElasticSearchMapset(mapset Mapset) error {
 	for _, mapQua := range mapset.Maps {
 		elasticMap := ElasticMap{
 			MapQua:          mapQua,
+			PackageMD5:      mapset.PackageMD5,
 			DateSubmitted:   mapset.DateSubmitted,
 			DateLastUpdated: mapset.DateLastUpdated,
 			Explicit:        mapset.IsExplicit,
@@ -210,13 +211,13 @@ func IndexElasticSearchMapset(mapset Mapset) error {
 		}
 
 		resp, err := ElasticSearch.Create(elasticMapSearchIndex,
-			fmt.Sprintf("%v", mapQua.Id), bytes.NewReader(data))
+			strconv.Itoa(mapQua.Id), bytes.NewReader(data))
 
 		if err != nil {
 			return err
 		}
 
-		defer resp.Body.Close()
+		resp.Body.Close()
 	}
 
 	return nil
@@ -229,19 +230,23 @@ func UpdateElasticSearchMapset(mapset Mapset) error {
 	for _, mapQua := range mapset.Maps {
 		elasticMap := ElasticMap{
 			MapQua:          mapQua,
+			PackageMD5:      mapset.PackageMD5,
 			DateSubmitted:   mapset.DateSubmitted,
 			DateLastUpdated: mapset.DateLastUpdated,
 			Explicit:        mapset.IsExplicit,
 			MapsetPlayCount: mapsetPlayCount,
 		}
 
-		data, err := json.Marshal(&elasticMap)
+		data, err := json.Marshal(struct {
+			Doc         ElasticMap `json:"doc"`
+			DocAsUpsert bool       `json:"doc_as_upsert"`
+		}{Doc: elasticMap, DocAsUpsert: true})
 
 		if err != nil {
 			return err
 		}
 
-		resp, err := ElasticSearch.Update(elasticMapsetIndex, fmt.Sprintf("%v", mapQua.Id), bytes.NewReader(data))
+		resp, err := ElasticSearch.Update(elasticMapSearchIndex, strconv.Itoa(mapQua.Id), bytes.NewReader(data))
 
 		if err != nil {
 			return err
@@ -250,6 +255,28 @@ func UpdateElasticSearchMapset(mapset Mapset) error {
 		resp.Body.Close()
 	}
 
+	return nil
+}
+
+// UpdateElasticSearchMapDifficulty Updates only the rating of the matching uploaded map version.
+func UpdateElasticSearchMapDifficulty(id int, md5 string, difficultyRating float64) error {
+	data, err := json.Marshal(map[string]interface{}{
+		"script": map[string]interface{}{
+			"source": "if (ctx._source.md5 == params.md5) { ctx._source.difficulty_rating = params.difficulty_rating } else { ctx.op = 'noop' }",
+			"params": map[string]interface{}{
+				"md5":               md5,
+				"difficulty_rating": difficultyRating,
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	resp, err := ElasticSearch.Update(elasticMapSearchIndex, strconv.Itoa(id), bytes.NewReader(data), ElasticSearch.Update.WithRetryOnConflict(3))
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
 	return nil
 }
 

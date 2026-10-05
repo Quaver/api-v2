@@ -186,23 +186,30 @@ func GetMapsetOnlineOffsets() (interface{}, error) {
 	return offsets, nil
 }
 
-// RankMapset Ranks all maps in a mapset
-func RankMapset(id int) error {
+// RankMapset Ranks all maps in SQL and synchronizes the loaded mapset for indexing.
+func RankMapset(mapset *Mapset) error {
 	result := SQL.Model(&MapQua{}).
-		Where("mapset_id = ?", id).
+		Where("mapset_id = ?", mapset.Id).
 		Update("ranked_status", enums.RankedStatusRanked)
 
 	if result.Error != nil {
 		return result.Error
 	}
 
+	dateLastUpdated := time.Now().UnixMilli()
 	result = SQL.Model(&Mapset{}).
-		Where("id = ?", id).
-		Update("date_last_updated", time.Now().UnixMilli())
+		Where("id = ?", mapset.Id).
+		Update("date_last_updated", dateLastUpdated)
 
 	if result.Error != nil {
 		return result.Error
 	}
+
+	for _, songMap := range mapset.Maps {
+		songMap.RankedStatus = enums.RankedStatusRanked
+	}
+	mapset.DateLastUpdated = dateLastUpdated
+	mapset.DateLastUpdatedJSON = time.UnixMilli(dateLastUpdated)
 
 	return nil
 }
@@ -249,6 +256,7 @@ func UpdateMapsetPackageMD5(id int, md5 string) error {
 
 // UpdateMetadata Updates the metadata of a given mapset (username, artist, title, etc)
 func (m *Mapset) UpdateMetadata() error {
+	dateLastUpdated := time.Now().UnixMilli()
 	result := SQL.Model(&Mapset{}).
 		Where("id = ?", m.Id).
 		Updates(map[string]interface{}{
@@ -257,10 +265,15 @@ func (m *Mapset) UpdateMetadata() error {
 			"title":             m.Title,
 			"source":            m.Source,
 			"tags":              m.Tags,
-			"date_last_updated": time.Now().UnixMilli(),
+			"date_last_updated": dateLastUpdated,
 		})
 
-	return result.Error
+	if result.Error != nil {
+		return result.Error
+	}
+	m.DateLastUpdated = dateLastUpdated
+	m.DateLastUpdatedJSON = time.UnixMilli(dateLastUpdated)
+	return nil
 }
 
 // UpdateExplicit Sets the explicit state of the mapset
