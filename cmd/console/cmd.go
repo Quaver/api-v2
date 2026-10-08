@@ -52,6 +52,7 @@ func init() {
 	RootCmd.AddCommand(commands.ClanRankMapCmd)
 	RootCmd.AddCommand(commands.DenyOnHoldCmd)
 	RootCmd.AddCommand(commands.DatabaseScoresBatchDeleteFailed)
+	RootCmd.AddCommand(commands.DatabaseScoresModsBackfill)
 	RootCmd.AddCommand(commands.DeleteScoreCmd)
 	RootCmd.AddCommand(commands.FixStatsCmd)
 	RootCmd.AddCommand(commands.UpdateStripePriceId)

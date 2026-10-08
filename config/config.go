@@ -9,7 +9,8 @@ import (
 )
 
 type Config struct {
-	IsProduction bool `json:"is_production"`
+	IsProduction         bool `json:"is_production"`
+	ScoreModColumnsReady bool `json:"score_mod_columns_ready"`
 
 	APIUrl string `json:"api_url"`
 
