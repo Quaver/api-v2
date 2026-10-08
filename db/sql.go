@@ -2,6 +2,8 @@ package db
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/Quaver/api2/config"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
@@ -36,6 +38,7 @@ func ConnectMySQL() {
 
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetMaxIdleConns(20)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	SQL = db
 	logrus.Infof("Connected to MySQL database: %v/%v", cfg.Host, cfg.Database)
