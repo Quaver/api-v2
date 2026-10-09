@@ -130,6 +130,8 @@ func retryAfterSeconds(retryAfter time.Duration) int64 {
 
 // Initializes all the routes for the server.
 func initializeRoutes(engine *gin.Engine) {
+	engine.DELETE("/v2/private/scoreboards/:md5/cache", middleware.RequireInternalSecret, handlers.CreateHandler(handlers.ClearScoreboardCache))
+
 	// Clan Invites
 	engine.POST("/v2/clan/invite", middleware.RequireAuth, handlers.CreateHandler(handlers.InviteUserToClan))
 	engine.GET("/v2/clan/invite/:id", middleware.RequireAuth, handlers.CreateHandler(handlers.GetClanInvite))

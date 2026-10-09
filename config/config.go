@@ -19,6 +19,7 @@ type Config struct {
 
 	Server struct {
 		Port                 int      `json:"port"`
+		InternalAPISecret    string   `json:"internal_api_secret"`
 		RateLimitIpWhitelist []string `json:"rate_limit_ip_whitelist"`
 	} `json:"server"`
 
