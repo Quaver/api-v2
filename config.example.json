@@ -5,6 +5,7 @@
   "jwt_secret": "",
   "server": {
     "port": 8080,
+    "internal_api_secret": "",
     "rate_limit_ip_whitelist": [
       "::1",
       "127.0.0.1"

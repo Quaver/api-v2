@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Quaver/api2/enums"
@@ -196,7 +198,7 @@ func GetLastScoreId() (int, error) {
 // GetGlobalScoresForMap Retrieves the global scores for a map
 func GetGlobalScoresForMap(md5 string, useCache bool) ([]*Score, error) {
 	if useCache {
-		cached, err := getCachedScoreboard(scoreboardGlobal, md5, 0)
+		cached, err := getCachedScoreboard(scoreboardGlobal, md5, "")
 
 		if err != nil {
 			return nil, err
@@ -229,7 +231,7 @@ func GetGlobalScoresForMap(md5 string, useCache bool) ([]*Score, error) {
 	}
 
 	if useCache {
-		if err := cacheScoreboard(scoreboardGlobal, md5, scores, 0); err != nil {
+		if err := cacheScoreboard(scoreboardGlobal, md5, scores, ""); err != nil {
 			return nil, err
 		}
 	}
@@ -239,7 +241,7 @@ func GetGlobalScoresForMap(md5 string, useCache bool) ([]*Score, error) {
 
 // GetCountryScoresForMap Retrieves the country scores for a map
 func GetCountryScoresForMap(md5 string, country string) ([]*Score, error) {
-	cached, err := getCachedScoreboard(scoreboardCountry, md5, 0)
+	cached, err := getCachedScoreboard(scoreboardCountry, md5, country)
 
 	if err != nil {
 		return nil, err
@@ -271,7 +273,7 @@ func GetCountryScoresForMap(md5 string, country string) ([]*Score, error) {
 		}
 	}
 
-	if err := cacheScoreboard(scoreboardCountry, md5, scores, 0); err != nil {
+	if err := cacheScoreboard(scoreboardCountry, md5, scores, country); err != nil {
 		return nil, err
 	}
 
@@ -280,7 +282,7 @@ func GetCountryScoresForMap(md5 string, country string) ([]*Score, error) {
 
 // GetModifierScoresForMap Retrieves the modifier scores for a map
 func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
-	cached, err := getCachedScoreboard(scoreboardMods, md5, mods)
+	cached, err := getCachedScoreboard(scoreboardMods, md5, strconv.FormatInt(mods, 10))
 
 	if err != nil {
 		return nil, err
@@ -321,7 +323,7 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 		}
 	}
 
-	if err := cacheScoreboard(scoreboardMods, md5, scores, mods); err != nil {
+	if err := cacheScoreboard(scoreboardMods, md5, scores, strconv.FormatInt(mods, 10)); err != nil {
 		return nil, err
 	}
 
@@ -330,7 +332,7 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 
 // GetRateScoresForMap Retrieves the rate scores for a map
 func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
-	cached, err := getCachedScoreboard(scoreboardRate, md5, mods)
+	cached, err := getCachedScoreboard(scoreboardRate, md5, strconv.FormatInt(mods, 10))
 
 	if err != nil {
 		return nil, err
@@ -343,10 +345,11 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 	var scores = make([]*Score, 0)
 
 	modsQuery := ""
+	queryMods := mods
 
 	if mods == 0 {
 		modsQuery = "AND (s.mods = 0 OR s.mods = ?) "
-		mods = 2147483648 // TODO: USE ENUM
+		queryMods = 2147483648 // TODO: USE ENUM
 	} else {
 		modsQuery = "AND (s.mods & ?) != 0 "
 	}
@@ -363,7 +366,7 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 				AND s.failed = 0
 				%v
 		)
-		%v`, modsQuery, getSelectUserScoreboardQuery(100)), md5, mods).
+		%v`, modsQuery, getSelectUserScoreboardQuery(100)), md5, queryMods).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -380,7 +383,7 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 		}
 	}
 
-	if err := cacheScoreboard(scoreboardRate, md5, scores, mods); err != nil {
+	if err := cacheScoreboard(scoreboardRate, md5, scores, strconv.FormatInt(mods, 10)); err != nil {
 		return nil, err
 	}
 
@@ -389,7 +392,7 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 
 // GetAllScoresForMap Retrieves all scores for a map
 func GetAllScoresForMap(md5 string) ([]*Score, error) {
-	cached, err := getCachedScoreboard(scoreboardAll, md5, 0)
+	cached, err := getCachedScoreboard(scoreboardAll, md5, "")
 
 	if err != nil {
 		return nil, err
@@ -429,7 +432,7 @@ func GetAllScoresForMap(md5 string) ([]*Score, error) {
 		}
 	}
 
-	if err := cacheScoreboard(scoreboardAll, md5, scores, 0); err != nil {
+	if err := cacheScoreboard(scoreboardAll, md5, scores, ""); err != nil {
 		return nil, err
 	}
 
@@ -675,18 +678,24 @@ const (
 	scoreboardAll     scoreboardType = "all"
 )
 
-// Returns the redis key for a scoreboard
-func scoreboardRedisKey(md5 string, scoreboard scoreboardType, mods int64) string {
+const scoreboardCacheTTL = time.Hour * 24 * 3
+
+// Returns the Redis hash key containing all cached scoreboards for a map.
+func scoreboardRedisKey(md5 string) string {
+	return "quaver:scoreboard:" + strings.ToLower(md5)
+}
+
+func scoreboardRedisField(scoreboard scoreboardType, filter string) string {
 	switch scoreboard {
-	case scoreboardMods, scoreboardRate:
-		return fmt.Sprintf("quaver:scoreboard:%v:%v:%v", md5, scoreboard, mods)
+	case scoreboardMods, scoreboardRate, scoreboardCountry:
+		return fmt.Sprintf("%s:%s", scoreboard, filter)
 	default:
-		return fmt.Sprintf("quaver:scoreboard:%v:%v", md5, scoreboard)
+		return string(scoreboard)
 	}
 }
 
 // Caches a scoreboard to Redis
-func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score, mods int64) error {
+func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score, filter string) error {
 	if len(scores) == 0 {
 		return nil
 	}
@@ -697,12 +706,17 @@ func cacheScoreboard(scoreboard scoreboardType, md5 string, scores []*Score, mod
 		return err
 	}
 
-	return Redis.Set(RedisCtx, scoreboardRedisKey(md5, scoreboard, mods), scoresJson, time.Hour*24*3).Err()
+	key := scoreboardRedisKey(md5)
+	if err := Redis.HSet(RedisCtx, key, scoreboardRedisField(scoreboard, filter), scoresJson).Err(); err != nil {
+		return err
+	}
+
+	return Redis.Expire(RedisCtx, key, scoreboardCacheTTL).Err()
 }
 
 // Retrieves a cached scoreboard from redis
-func getCachedScoreboard(scoreboard scoreboardType, md5 string, mods int64) ([]*Score, error) {
-	result, err := Redis.Get(RedisCtx, scoreboardRedisKey(md5, scoreboard, mods)).Result()
+func getCachedScoreboard(scoreboard scoreboardType, md5 string, filter string) ([]*Score, error) {
+	result, err := Redis.HGet(RedisCtx, scoreboardRedisKey(md5), scoreboardRedisField(scoreboard, filter)).Result()
 
 	if err != nil {
 		if err == redis.Nil {
