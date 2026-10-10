@@ -171,12 +171,18 @@ func UpdateMapDifficultyRating(id int, md5 string, difficultyRating float64) err
 
 // UpdateMapClanRanked Updates the clan ranked status of a map
 func UpdateMapClanRanked(id int, clanRanked bool) error {
+	dateClanRanked := time.Now().UnixMilli()
 	result := SQL.Model(&MapQua{}).
 		Where("id = ?", id).
-		Update("clan_ranked", clanRanked).
-		Update("date_clan_ranked", time.Now().UnixMilli())
+		Updates(map[string]interface{}{
+			"clan_ranked":      clanRanked,
+			"date_clan_ranked": dateClanRanked,
+		})
 
-	return result.Error
+	if result.Error != nil {
+		return result.Error
+	}
+	return UpdateElasticSearchMapClanRanked(id, clanRanked, dateClanRanked)
 }
 
 func GetBundledMapMd5s() ([]string, error) {

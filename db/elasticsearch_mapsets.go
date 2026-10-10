@@ -280,6 +280,26 @@ func UpdateElasticSearchMapDifficulty(id int, md5 string, difficultyRating float
 	return nil
 }
 
+// UpdateElasticSearchMapClanRanked Updates the clan ranking fields of a difficulty document.
+func UpdateElasticSearchMapClanRanked(id int, clanRanked bool, dateClanRanked int64) error {
+	data, err := json.Marshal(map[string]interface{}{
+		"doc": map[string]interface{}{
+			"is_clan_ranked":   clanRanked,
+			"date_clan_ranked": time.UnixMilli(dateClanRanked),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	resp, err := ElasticSearch.Update(elasticMapSearchIndex, strconv.Itoa(id), bytes.NewReader(data), ElasticSearch.Update.WithRetryOnConflict(3))
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
+}
+
 // DeleteElasticSearchMapset Deletes an individual mapset in elastic
 func DeleteElasticSearchMapset(id int) error {
 	queryMap := map[string]interface{}{
