@@ -280,7 +280,7 @@ func UpdateElasticSearchMapDifficulty(id int, md5 string, difficultyRating float
 	return nil
 }
 
-// UpdateElasticSearchMapClanRanked Updates the clan ranking fields of a difficulty document.
+// UpdateElasticSearchMapClanRanked Updates the map to set clan ranked status and date
 func UpdateElasticSearchMapClanRanked(id int, clanRanked bool, dateClanRanked int64) error {
 	data, err := json.Marshal(map[string]interface{}{
 		"doc": map[string]interface{}{
