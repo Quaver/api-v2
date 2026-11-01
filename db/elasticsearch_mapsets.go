@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -96,14 +97,16 @@ func (options *ElasticMapsetSearchOptions) BindAndValidate() {
 		options.Limit = 50
 	}
 
-	options.Mode = sliceutil.BindMultiple(options.Mode, options.ModeArray, []enums.GameMode{
-		enums.GameModeKeys4,
-		enums.GameModeKeys7,
-	})
-
 	options.RankedStatus = sliceutil.BindMultiple(options.RankedStatus, options.RankedStatusArray, []enums.RankedStatus{
 		enums.RankedStatusRanked,
 	})
+
+	defaultModes := []enums.GameMode{enums.GameModeKeys4, enums.GameModeKeys7}
+	if options.CreatorID != nil && slices.Contains(options.RankedStatus, enums.RankedStatusUnranked) {
+		// User uploads include unranked maps in every mode unless explicitly filtered.
+		defaultModes = nil
+	}
+	options.Mode = sliceutil.BindMultiple(options.Mode, options.ModeArray, defaultModes)
 }
 
 // ElasticMap stores a difficulty document; MapsetPlayCount is duplicated on each difficulty so collapsed mapset searches can sort by the mapset total.
