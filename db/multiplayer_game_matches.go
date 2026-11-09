@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/Quaver/api2/enums"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -26,4 +27,9 @@ type MultiplayerGameMatches struct {
 
 func (*MultiplayerGameMatches) TableName() string {
 	return "multiplayer_game_matches"
+}
+
+func (m *MultiplayerGameMatches) AfterFind(*gorm.DB) error {
+	m.TimePlayedJSON = time.UnixMilli(m.TimePlayed)
+	return nil
 }
