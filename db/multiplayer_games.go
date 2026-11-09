@@ -74,3 +74,24 @@ func GetMultiplayerGame(id int) (*MultiplayerGame, error) {
 
 	return game, nil
 }
+
+// GetMultiplayerMatch retrieves an individual multiplayer match by its match id.
+func GetMultiplayerMatch(id int) (*MultiplayerGameMatches, *MultiplayerGame, error) {
+	var match *MultiplayerGameMatches
+	result := SQL.
+		Preload("Map").
+		Preload("Scores").
+		Preload("Scores.User").
+		Where("id = ?", id).
+		First(&match)
+	if result.Error != nil {
+		return nil, nil, result.Error
+	}
+
+	var game MultiplayerGame
+	if err := SQL.Where("id = ?", match.GameId).First(&game).Error; err != nil {
+		return nil, nil, err
+	}
+
+	return match, &game, nil
+}

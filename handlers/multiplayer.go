@@ -38,7 +38,7 @@ func GetRecentMultiplayerGames(c *gin.Context) *APIError {
 }
 
 // GetMultiplayerGame Gets an individual multiplayer game
-// Endpoint: GET /v2/multiplayer/games/:id
+// Endpoint: GET /v2/multiplayer/game/:id
 func GetMultiplayerGame(c *gin.Context) *APIError {
 	id, err := strconv.Atoi(c.Param("id"))
 
@@ -57,5 +57,28 @@ func GetMultiplayerGame(c *gin.Context) *APIError {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"game": game})
+	return nil
+}
+
+// GetMultiplayerMatch Gets an individual multiplayer match.
+// Endpoint: GET /v2/multiplayer/match/:id
+func GetMultiplayerMatch(c *gin.Context) *APIError {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return APIErrorBadRequest("You must provide a valid match id")
+	}
+
+	match, game, err := db.GetMultiplayerMatch(id)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return APIErrorServerError("Error retrieving multiplayer match", err)
+	}
+	if match == nil {
+		return APIErrorNotFound("Multiplayer Match")
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"game":  game,
+		"match": match,
+	})
 	return nil
 }

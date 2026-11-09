@@ -296,6 +296,7 @@ func initializeRoutes(engine *gin.Engine) {
 	// Multiplayer
 	engine.GET("/v2/multiplayer/games", handlers.CreateHandler(handlers.GetRecentMultiplayerGames))
 	engine.GET("/v2/multiplayer/game/:id", handlers.CreateHandler(handlers.GetMultiplayerGame))
+	engine.GET("/v2/multiplayer/match/:id", handlers.CreateHandler(handlers.GetMultiplayerMatch))
 
 	// Playlists
 	engine.POST("/v2/playlists", middleware.RequireAuth, handlers.CreateHandler(handlers.CreatePlaylist))
