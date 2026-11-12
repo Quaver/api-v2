@@ -15,7 +15,7 @@ const (
 	UserGroupTrialRankingSupervisor
 	UserGroupGraphicsDesigner
 	UserGroupHeadRankingSupervisor
-	CommunityManager
+	UserGroupCommunityManager
 )
 
 // HasUserGroup Returns if a combination of user groups contains a single group
