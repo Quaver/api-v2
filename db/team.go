@@ -11,6 +11,7 @@ type Team struct {
 	Moderators         []*User `json:"moderators"`
 	RankingSupervisors []*User `json:"ranking_supervisors"`
 	Contributors       []*User `json:"contributors"`
+	CommunityManagers  []*User `json:"community_managers"`
 }
 
 // GetTeamMembers Returns users in the Quaver team
@@ -38,6 +39,10 @@ func GetTeamMembers() (*Team, error) {
 	}
 
 	for _, user := range users {
+		if enums.HasUserGroup(user.UserGroups, enums.UserGroupCommunityManager) {
+			team.CommunityManagers = append(team.CommunityManagers, user)
+		}
+
 		if enums.HasUserGroup(user.UserGroups, enums.UserGroupDeveloper) {
 			team.Developers = append(team.Developers, user)
 		} else if enums.HasUserGroup(user.UserGroups, enums.UserGroupAdmin) {
