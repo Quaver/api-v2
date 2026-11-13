@@ -20,8 +20,9 @@ func AddCrashLog(c *gin.Context) *APIError {
 	}
 
 	body := struct {
-		Runtime string `form:"runtime" json:"runtime" binding:"required"`
-		Network string `form:"network" json:"network" binding:"required"`
+		Runtime string  `form:"runtime" json:"runtime" binding:"required"`
+		Network string  `form:"network" json:"network" binding:"required"`
+		Version *string `form:"version" json:"version"`
 	}{}
 
 	if err := c.ShouldBind(&body); err != nil {
@@ -39,7 +40,7 @@ func AddCrashLog(c *gin.Context) *APIError {
 		return APIErrorServerError("Error inserting crash log", err)
 	}
 
-	if err := webhooks.SendCrashLogWebhook(user, crashLog); err != nil {
+	if err := webhooks.SendCrashLogWebhook(user, crashLog, body.Version); err != nil {
 		logrus.Error("Error sending crash log webhook: ", err)
 	}
 

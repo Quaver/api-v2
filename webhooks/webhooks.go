@@ -441,12 +441,12 @@ func SendClanRankedWebhook(mapQua *db.MapQua) error {
 	return nil
 }
 
-func SendCrashLogWebhook(user *db.User, log *db.CrashLog) error {
+func SendCrashLogWebhook(user *db.User, log *db.CrashLog, version *string) error {
 	if crashLog == nil {
 		return nil
 	}
 
-	embed := discord.NewEmbedBuilder().
+	embedBuilder := discord.NewEmbedBuilder().
 		SetAuthor(user.Username, fmt.Sprintf("https://quavergame.com/user/%v", user.Id), *user.AvatarUrl).
 		SetTitle("❌ Crash Log Submitted").
 		SetDescription("A new crash log has been submitted.").
@@ -454,8 +454,13 @@ func SendCrashLogWebhook(user *db.User, log *db.CrashLog) error {
 		SetThumbnail(QuaverLogo).
 		SetFooter("Quaver", QuaverLogo).
 		SetTimestamp(time.Now()).
-		SetColor(0xFF0000).
-		Build()
+		SetColor(0xFF0000)
+
+	if version != nil {
+		embedBuilder.AddField("Game Version", *version, true)
+	}
+
+	embed := embedBuilder.Build()
 
 	msg := discord.WebhookMessageCreate{
 		Embeds: []discord.Embed{embed},
