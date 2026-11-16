@@ -86,12 +86,6 @@ func (u *User) BeforeCreate(*gorm.DB) (err error) {
 }
 
 func (u *User) AfterFind(*gorm.DB) (err error) {
-	u.TimeRegisteredJSON = time.UnixMilli(u.TimeRegistered)
-	u.MuteEndTimeJSON = time.UnixMilli(u.MuteEndTime)
-	u.LatestActivityJSON = time.UnixMilli(u.LatestActivity)
-	u.DonatorEndTimeJSON = time.UnixMilli(u.DonatorEndTime)
-	u.ClanLeaveTimeJSON = time.UnixMilli(u.ClanLeaveTime)
-
 	if status, err := GetUserClientStatus(u.Id); err == nil {
 		u.ClientStatus = status
 	}
@@ -103,6 +97,17 @@ func (u *User) AfterFind(*gorm.DB) (err error) {
 	if keys7Ranks, err := GetUserRanksForMode(u, enums.GameModeKeys7); err == nil && u.StatsKeys7 != nil {
 		u.StatsKeys7.Ranks = keys7Ranks
 	}
+
+	return u.populateDisplayFields()
+}
+
+// Populates serialized user fields without fetching status or ranks from Redis.
+func (u *User) populateDisplayFields() error {
+	u.TimeRegisteredJSON = time.UnixMilli(u.TimeRegistered)
+	u.MuteEndTimeJSON = time.UnixMilli(u.MuteEndTime)
+	u.LatestActivityJSON = time.UnixMilli(u.LatestActivity)
+	u.DonatorEndTimeJSON = time.UnixMilli(u.DonatorEndTime)
+	u.ClanLeaveTimeJSON = time.UnixMilli(u.ClanLeaveTime)
 
 	if u.Information != nil {
 		if err := json.Unmarshal([]byte(*u.Information), &u.MiscInformation); err != nil {
