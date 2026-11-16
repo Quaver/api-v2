@@ -217,7 +217,7 @@ func GetGlobalScoresForMap(md5 string, useCache bool) ([]*Score, error) {
 		Where("scores.map_md5 = ? "+
 			"AND scores.personal_best = 1 "+
 			"AND User.allowed = 1", md5).
-		Order("scores.performance_rating DESC").
+		Order("scores.performance_rating DESC, scores.timestamp ASC, scores.id ASC").
 		Limit(100).
 		Find(&scores)
 
@@ -260,7 +260,7 @@ func GetCountryScoresForMap(md5 string, country string) ([]*Score, error) {
 			"AND scores.personal_best = 1 "+
 			"AND User.country = ? "+
 			"AND User.allowed = 1", md5, country).
-		Order("scores.performance_rating DESC").
+		Order("scores.performance_rating DESC, scores.timestamp ASC, scores.id ASC").
 		Limit(100).
 		Find(&scores)
 
@@ -303,7 +303,7 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 			SELECT 
 				s.user_id,
 				s.id AS score_id,
-				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp DESC) AS rnk
+				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp ASC, s.id ASC) AS rnk
 			FROM scores s
 			WHERE 
 				s.map_md5 = ?
@@ -356,7 +356,7 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 			SELECT 
 				s.user_id,
 				s.id AS score_id,
-				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp DESC) AS rnk
+				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp ASC, s.id ASC) AS rnk
 			FROM scores s
 			WHERE 
 				s.map_md5 = ?
@@ -406,7 +406,7 @@ func GetAllScoresForMap(md5 string) ([]*Score, error) {
 			SELECT 
 				s.user_id,
 				s.id AS score_id,
-				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp DESC) AS rnk
+				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp ASC, s.id ASC) AS rnk
 			FROM scores s
 			WHERE 
 				s.map_md5 = ?
@@ -454,7 +454,7 @@ func GetFriendScoresForMap(md5 string, userId int, friends []*UserFriend, limit 
 			"AND scores.personal_best = 1 "+
 			friendLookup+
 			"AND User.allowed = 1", md5).
-		Order("scores.performance_rating DESC").
+		Order("scores.performance_rating DESC, scores.timestamp ASC, scores.id ASC").
 		Limit(limit).
 		Offset(page * limit).
 		Find(&scores)
@@ -499,7 +499,7 @@ func GetUserPersonalBestScoreAll(userId int, md5 string) (*Score, error) {
 			"AND scores.failed = 0 "+
 			"AND User.id =  ? "+
 			"AND User.allowed = 1", md5, userId).
-		Order("scores.performance_rating DESC").
+		Order("scores.performance_rating DESC, scores.timestamp ASC, scores.id ASC").
 		First(&score)
 
 	if result.Error != nil {
@@ -524,7 +524,7 @@ func GetUserPersonalBestScoreMods(userId int, md5 string, mods int64) (*Score, e
 			"AND scores.failed = 0 "+
 			"AND User.id = ? "+
 			"AND User.allowed = 1", md5, userId).
-		Order("scores.performance_rating DESC").
+		Order("scores.performance_rating DESC, scores.timestamp ASC, scores.id ASC").
 		First(&score)
 
 	if result.Error != nil {
@@ -549,7 +549,7 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 			"AND scores.failed = 0 "+
 			"AND User.id = ? "+
 			"AND User.allowed = 1", md5, userId).
-		Order("scores.performance_rating DESC").
+		Order("scores.performance_rating DESC, scores.timestamp ASC, scores.id ASC").
 		First(&score)
 
 	if result.Error != nil {
@@ -593,7 +593,7 @@ func GetClanPlayerScoresOnMap(md5 string, clanId int, callAfterFind bool) ([]*Sc
 			SELECT 
 				s.user_id,
 				s.id AS score_id,
-				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp DESC) AS rnk
+				ROW_NUMBER() OVER (PARTITION BY s.user_id ORDER BY s.performance_rating DESC, s.timestamp ASC, s.id ASC) AS rnk
 			FROM scores s
 			WHERE 
 				s.map_md5 = ?
@@ -808,7 +808,7 @@ func getSelectUserScoreboardQuery(limit int, donatorOnly ...bool) string {
 	}
 
 	query += `
-		ORDER BY s.performance_rating DESC
+		ORDER BY s.performance_rating DESC, s.timestamp ASC, s.id ASC
 		LIMIT`
 
 	query += fmt.Sprintf(" %v;", limit)
