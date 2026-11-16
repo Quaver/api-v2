@@ -88,7 +88,7 @@ func getFirstPlaceScoreOnMap(md5 string) (*Score, error) {
 		Where("scores.map_md5 = ? "+
 			"AND scores.personal_best = 1 "+
 			"AND user.allowed = 1", md5).
-		Order("scores.performance_rating DESC").
+		Order("scores.performance_rating DESC, scores.timestamp ASC, scores.id ASC").
 		First(&score)
 
 	if result.Error != nil {
