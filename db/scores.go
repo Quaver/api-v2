@@ -11,6 +11,7 @@ import (
 	"github.com/Quaver/api2/enums"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Score struct {
@@ -225,7 +226,7 @@ func GetGlobalScoresForMap(md5 string, useCache bool) ([]*Score, error) {
 	}
 
 	for _, score := range scores {
-		if err := score.User.AfterFind(SQL); err != nil {
+		if err := score.User.populateDisplayFields(); err != nil {
 			return nil, err
 		}
 	}
@@ -268,7 +269,7 @@ func GetCountryScoresForMap(md5 string, country string) ([]*Score, error) {
 	}
 
 	for _, score := range scores {
-		if err := score.User.AfterFind(SQL); err != nil {
+		if err := score.User.populateDisplayFields(); err != nil {
 			return nil, err
 		}
 	}
@@ -294,6 +295,9 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 
 	var scores = make([]*Score, 0)
 
+	modsFilter := getScoreboardModsFilter(mods, "s", false)
+	queryArgs := append([]interface{}{md5}, modsFilter.Vars...)
+
 	result := SQL.Raw(fmt.Sprintf(`
 		WITH RankedScores AS (
 			SELECT 
@@ -303,10 +307,10 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 			FROM scores s
 			WHERE 
 				s.map_md5 = ?
-			    AND (mods & ?) != 0
+				AND %s
 				AND s.failed = 0
 		)
-		%v`, getSelectUserScoreboardQuery(100)), md5, mods).
+		%v`, modsFilter.SQL, getSelectUserScoreboardQuery(100)), queryArgs...).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -318,7 +322,7 @@ func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
 			return nil, err
 		}
 
-		if err := score.User.AfterFind(SQL); err != nil {
+		if err := score.User.populateDisplayFields(); err != nil {
 			return nil, err
 		}
 	}
@@ -344,15 +348,8 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 
 	var scores = make([]*Score, 0)
 
-	modsQuery := ""
-	queryMods := mods
-
-	if mods == 0 {
-		modsQuery = "AND (s.mods = 0 OR s.mods = ?) "
-		queryMods = 2147483648 // TODO: USE ENUM
-	} else {
-		modsQuery = "AND (s.mods & ?) != 0 "
-	}
+	modsFilter := getScoreboardModsFilter(mods, "s", true)
+	queryArgs := append([]interface{}{md5}, modsFilter.Vars...)
 
 	result := SQL.Raw(fmt.Sprintf(`
 		WITH RankedScores AS (
@@ -364,9 +361,9 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 			WHERE 
 				s.map_md5 = ?
 				AND s.failed = 0
-				%v
+				AND %s
 		)
-		%v`, modsQuery, getSelectUserScoreboardQuery(100)), md5, queryMods).
+		%v`, modsFilter.SQL, getSelectUserScoreboardQuery(100)), queryArgs...).
 		Scan(&scores)
 
 	if result.Error != nil {
@@ -378,7 +375,7 @@ func GetRateScoresForMap(md5 string, mods int64) ([]*Score, error) {
 			return nil, err
 		}
 
-		if err := score.User.AfterFind(SQL); err != nil {
+		if err := score.User.populateDisplayFields(); err != nil {
 			return nil, err
 		}
 	}
@@ -427,7 +424,7 @@ func GetAllScoresForMap(md5 string) ([]*Score, error) {
 			return nil, err
 		}
 
-		if err := score.User.AfterFind(SQL); err != nil {
+		if err := score.User.populateDisplayFields(); err != nil {
 			return nil, err
 		}
 	}
@@ -485,7 +482,7 @@ func GetUserPersonalBestScoreGlobal(userId int, md5 string) (*Score, error) {
 		return nil, result.Error
 	}
 
-	if err := score.User.AfterFind(nil); err != nil {
+	if err := score.User.populateDisplayFields(); err != nil {
 		return nil, err
 	}
 
@@ -509,7 +506,7 @@ func GetUserPersonalBestScoreAll(userId int, md5 string) (*Score, error) {
 		return nil, result.Error
 	}
 
-	if err := score.User.AfterFind(nil); err != nil {
+	if err := score.User.populateDisplayFields(); err != nil {
 		return nil, err
 	}
 
@@ -520,21 +517,13 @@ func GetUserPersonalBestScoreAll(userId int, md5 string) (*Score, error) {
 func GetUserPersonalBestScoreMods(userId int, md5 string, mods int64) (*Score, error) {
 	var score *Score
 
-	modsQueryStr := ""
-
-	if mods == 0 {
-		modsQueryStr = "AND scores.mods = ? "
-	} else {
-		modsQueryStr = "AND (scores.mods & ?) != 0 "
-	}
-
 	result := SQL.
 		Joins("User").
+		Where(getScoreboardModsFilter(mods, "scores", false)).
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
-			modsQueryStr+
 			"AND User.id = ? "+
-			"AND User.allowed = 1", md5, mods, userId).
+			"AND User.allowed = 1", md5, userId).
 		Order("scores.performance_rating DESC").
 		First(&score)
 
@@ -542,7 +531,7 @@ func GetUserPersonalBestScoreMods(userId int, md5 string, mods int64) (*Score, e
 		return nil, result.Error
 	}
 
-	if err := score.User.AfterFind(nil); err != nil {
+	if err := score.User.populateDisplayFields(); err != nil {
 		return nil, err
 	}
 
@@ -553,22 +542,13 @@ func GetUserPersonalBestScoreMods(userId int, md5 string, mods int64) (*Score, e
 func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, error) {
 	var score *Score
 
-	modsQuery := ""
-
-	if mods == 0 {
-		modsQuery = "AND (scores.mods = 0 OR scores.mods = ?) "
-		mods = 2147483648 // TODO: USE ENUM
-	} else {
-		modsQuery = "AND (scores.mods & ?) != 0 "
-	}
-
 	result := SQL.
 		Joins("User").
+		Where(getScoreboardModsFilter(mods, "scores", true)).
 		Where("scores.map_md5 = ? "+
 			"AND scores.failed = 0 "+
-			modsQuery+
 			"AND User.id = ? "+
-			"AND User.allowed = 1", md5, mods, userId).
+			"AND User.allowed = 1", md5, userId).
 		Order("scores.performance_rating DESC").
 		First(&score)
 
@@ -576,11 +556,32 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 		return nil, result.Error
 	}
 
-	if err := score.User.AfterFind(nil); err != nil {
+	if err := score.User.populateDisplayFields(); err != nil {
 		return nil, err
 	}
 
 	return score, nil
+}
+
+// Builds the same metadata filter for scoreboard lists and personal bests.
+// alias is a SQL table alias supplied by the caller, never request input.
+func getScoreboardModsFilter(mods int64, alias string, rateOnly bool) clause.Expr {
+	metadata := enums.GetScoreMods(enums.Mods(mods))
+	filter := clause.Expr{
+		SQL:  fmt.Sprintf("%s.speed_rate = ?", alias),
+		Vars: []interface{}{metadata.SpeedRate},
+	}
+	if !rateOnly {
+		filter.SQL += fmt.Sprintf(" AND %[1]s.no_miss = ?"+
+			" AND %[1]s.full_ln = ?"+
+			" AND %[1]s.inverse = ?"+
+			" AND %[1]s.no_long_notes = ?"+
+			" AND %[1]s.no_slider_velocities = ?"+
+			" AND %[1]s.mirror = ?", alias)
+		filter.Vars = append(filter.Vars, metadata.NoMiss, metadata.FullLN,
+			metadata.Inverse, metadata.NoLongNotes, metadata.NoSliderVelocities, metadata.Mirror)
+	}
+	return filter
 }
 
 // GetClanPlayerScoresOnMap Fetches the top 10 scores from a clan on a given map
@@ -609,7 +610,7 @@ func GetClanPlayerScoresOnMap(md5 string, clanId int, callAfterFind bool) ([]*Sc
 	if callAfterFind {
 		for _, score := range scores {
 			_ = score.AfterFind(nil)
-			_ = score.User.AfterFind(nil)
+			_ = score.User.populateDisplayFields()
 		}
 	}
 
@@ -687,7 +688,9 @@ func scoreboardRedisKey(md5 string) string {
 
 func scoreboardRedisField(scoreboard scoreboardType, filter string) string {
 	switch scoreboard {
-	case scoreboardMods, scoreboardRate, scoreboardCountry:
+	case scoreboardMods, scoreboardRate:
+		return fmt.Sprintf("%s:v2:%s", scoreboard, filter)
+	case scoreboardCountry:
 		return fmt.Sprintf("%s:%s", scoreboard, filter)
 	default:
 		return string(scoreboard)
@@ -738,9 +741,11 @@ func getCachedScoreboard(scoreboard scoreboardType, md5 string, filter string) (
 
 	// Cache invalidation by checking for updated values
 	for _, score := range scores {
+		score.User.ClientStatus = nil
 		var user *User
 
 		result := SQL.
+			Session(&gorm.Session{SkipHooks: true}).
 			Select("allowed", "username", "country", "clan_id").
 			Where("id = ?", score.UserId).
 			First(&user)
