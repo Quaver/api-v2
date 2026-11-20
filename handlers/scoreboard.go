@@ -105,11 +105,6 @@ func GetModifierScoresForMap(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide a valid modifier value.")
 	}
 
-	// No mods active, so it's the same as the global leaderboard.
-	if mods == 0 {
-		return GetGlobalScoresForMap(c)
-	}
-
 	dbMap, apiErr := getScoreboardMap(c)
 
 	if apiErr != nil {
@@ -117,6 +112,9 @@ func GetModifierScoresForMap(c *gin.Context) *APIError {
 	}
 
 	user := getAuthedUser(c)
+	if mods == 0 && (user == nil || !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator)) {
+		return APIErrorForbidden("You must be a donator to access this scoreboard.")
+	}
 
 	if !hasDonatorScoreboardAccess(dbMap, user) {
 		return APIErrorForbidden("You must be a donator to access this scoreboard.")
