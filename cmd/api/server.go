@@ -3,6 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"slices"
+	"syscall"
+	"time"
+
 	"github.com/Quaver/api2/config"
 	"github.com/Quaver/api2/db"
 	"github.com/Quaver/api2/handlers"
@@ -11,12 +18,6 @@ import (
 	"github.com/gin-gonic/gin"
 	redisrate "github.com/go-redis/redis_rate/v10"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"os"
-	"os/signal"
-	"slices"
-	"syscall"
-	"time"
 )
 
 const apiRateLimitKeyPrefix = "quaver:api_rate_limit:"
@@ -131,6 +132,10 @@ func retryAfterSeconds(retryAfter time.Duration) int64 {
 // Initializes all the routes for the server.
 func initializeRoutes(engine *gin.Engine) {
 	engine.DELETE("/v2/private/scoreboards/:md5/cache", middleware.RequireInternalSecret, handlers.CreateHandler(handlers.ClearScoreboardCache))
+
+	engine.POST("/v2/private/donator/discord/add", middleware.RequireInternalSecret, handlers.CreateHandler(handlers.AddDiscordDonatorRole))
+	engine.POST("/v2/private/donator/discord/remove", middleware.RequireInternalSecret, handlers.CreateHandler(handlers.RemoveDiscordDonatorRole))
+	engine.GET("/v2/private/donator/discord/check/:id", middleware.RequireInternalSecret, handlers.CreateHandler(handlers.CheckDiscordPremiumRole))
 
 	// Clan Invites
 	engine.POST("/v2/clan/invite", middleware.RequireAuth, handlers.CreateHandler(handlers.InviteUserToClan))
