@@ -563,24 +563,44 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 	return score, nil
 }
 
-// Builds the same metadata filter for scoreboard lists and personal bests.
+// Builds the same filter for scoreboard lists and personal bests.
 // alias is a SQL table alias supplied by the caller, never request input.
 func getScoreboardModsFilter(mods int64, alias string, rateOnly bool) clause.Expr {
+	if !rateOnly && mods == 0 {
+		return clause.Expr{SQL: alias + ".mods = 0"}
+	}
+
 	metadata := enums.GetScoreMods(enums.Mods(mods))
-	filter := clause.Expr{
-		SQL:  fmt.Sprintf("%s.speed_rate = ?", alias),
-		Vars: []interface{}{metadata.SpeedRate},
+	if rateOnly {
+		return clause.Expr{SQL: alias + ".speed_rate = ?", Vars: []interface{}{metadata.SpeedRate}}
 	}
-	if !rateOnly {
-		filter.SQL += fmt.Sprintf(" AND %[1]s.no_miss = ?"+
-			" AND %[1]s.full_ln = ?"+
-			" AND %[1]s.inverse = ?"+
-			" AND %[1]s.no_long_notes = ?"+
-			" AND %[1]s.no_slider_velocities = ?"+
-			" AND %[1]s.mirror = ?", alias)
-		filter.Vars = append(filter.Vars, metadata.NoMiss, metadata.FullLN,
-			metadata.Inverse, metadata.NoLongNotes, metadata.NoSliderVelocities, metadata.Mirror)
+	var predicates []string
+	var filter clause.Expr
+	// A missing speed modifier defaults to 100 in the metadata, but Mods spans all rates.
+	if metadata.SpeedRate != 100 {
+		predicates = append(predicates, alias+".speed_rate = ?")
+		filter.Vars = []interface{}{metadata.SpeedRate}
 	}
+	for _, mod := range []struct {
+		column   string
+		selected bool
+	}{
+		{"no_miss", metadata.NoMiss},
+		{"full_ln", metadata.FullLN},
+		{"inverse", metadata.Inverse},
+		{"no_long_notes", metadata.NoLongNotes},
+		{"no_slider_velocities", metadata.NoSliderVelocities},
+		{"mirror", metadata.Mirror},
+	} {
+		if mod.selected {
+			predicates = append(predicates, alias+"."+mod.column+" = TRUE")
+		}
+	}
+	if len(predicates) == 0 {
+		// A nonzero mask with no tracked filters has no match.
+		return clause.Expr{SQL: "1 = 0"}
+	}
+	filter.SQL = strings.Join(predicates, " AND ")
 	return filter
 }
 
@@ -688,7 +708,9 @@ func scoreboardRedisKey(md5 string) string {
 
 func scoreboardRedisField(scoreboard scoreboardType, filter string) string {
 	switch scoreboard {
-	case scoreboardMods, scoreboardRate:
+	case scoreboardMods:
+		return fmt.Sprintf("%s:v3:%s", scoreboard, filter)
+	case scoreboardRate:
 		return fmt.Sprintf("%s:v2:%s", scoreboard, filter)
 	case scoreboardCountry:
 		return fmt.Sprintf("%s:%s", scoreboard, filter)

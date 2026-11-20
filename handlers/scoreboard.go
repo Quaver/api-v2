@@ -105,11 +105,6 @@ func GetModifierScoresForMap(c *gin.Context) *APIError {
 		return APIErrorBadRequest("You must provide a valid modifier value.")
 	}
 
-	// No mods active, so it's the same as the global leaderboard.
-	if mods == 0 {
-		return GetGlobalScoresForMap(c)
-	}
-
 	dbMap, apiErr := getScoreboardMap(c)
 
 	if apiErr != nil {
