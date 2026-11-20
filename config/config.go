@@ -89,7 +89,11 @@ type Config struct {
 	} `json:"stripe"`
 
 	Discord struct {
-		BotAPI string `json:"bot_api"`
+		BotAPI              string `json:"bot_api"`
+		BotToken            string `json:"bot_token"`
+		GuildID             string `json:"guild_id"`
+		DonatorRoleID       string `json:"donator_role_id"`
+		PremiumMemberRoleID string `json:"premium_member_role_id"`
 	} `json:"discord"`
 
 	OpenAIAPIKey string `json:"openai_api_key"`
