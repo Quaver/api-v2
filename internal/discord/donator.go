@@ -15,8 +15,19 @@ import (
 )
 
 const unknownMemberCode = 10007
+const maxRateLimitWait = 5 * time.Second
 
 var ErrMemberNotFound = errors.New("Discord guild member not found")
+
+type RequestError struct {
+	Method string
+	Status int
+	Code   int
+}
+
+func (err *RequestError) Error() string {
+	return fmt.Sprintf("Discord %s returned HTTP %d (code %d)", err.Method, err.Status, err.Code)
+}
 
 type Client struct {
 	http *resty.Client
@@ -26,7 +37,18 @@ func NewClient(httpClient *http.Client) *Client {
 	client := resty.NewWithClient(httpClient).
 		SetBaseURL("https://discord.com/api/v10").
 		SetTimeout(10 * time.Second).
-		SetRedirectPolicy(resty.NoRedirectPolicy())
+		SetRedirectPolicy(resty.NoRedirectPolicy()).
+		SetRetryCount(1).
+		SetRetryMaxWaitTime(maxRateLimitWait).
+		AddRetryCondition(func(response *resty.Response, err error) bool {
+			if err != nil || response == nil {
+				return false
+			}
+			status := response.StatusCode()
+			return status == http.StatusTooManyRequests ||
+				(status >= 500 && response.Request.Method != http.MethodGet)
+		}).
+		SetRetryAfter(discordRetryAfter)
 	return &Client{http: client}
 }
 
@@ -104,5 +126,23 @@ func (client *Client) requestMember(ctx context.Context, method, memberID, suffi
 	if response.StatusCode() == http.StatusNotFound && discordError.Code == unknownMemberCode {
 		return nil, ErrMemberNotFound
 	}
-	return nil, fmt.Errorf("Discord %s returned HTTP %d (code %d)", method, response.StatusCode(), discordError.Code)
+	return nil, &RequestError{Method: method, Status: response.StatusCode(), Code: discordError.Code}
+}
+
+func discordRetryAfter(_ *resty.Client, response *resty.Response) (time.Duration, error) {
+	if response.StatusCode() != http.StatusTooManyRequests {
+		return 0, nil
+	}
+	seconds, err := strconv.ParseFloat(response.Header().Get("Retry-After"), 64)
+	if err != nil {
+		var limit struct {
+			RetryAfter float64 `json:"retry_after"`
+		}
+		_ = json.Unmarshal(response.Body(), &limit)
+		seconds = limit.RetryAfter
+	}
+	if !(seconds > 0 && seconds <= maxRateLimitWait.Seconds()) {
+		return 0, &RequestError{Method: response.Request.Method, Status: http.StatusTooManyRequests}
+	}
+	return time.Duration(seconds * float64(time.Second)), nil
 }
