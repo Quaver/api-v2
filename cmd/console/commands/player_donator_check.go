@@ -68,15 +68,14 @@ func checkPlayerDonator(ctx context.Context, database *gorm.DB, client *discord.
 	removeRole := false
 	if *premiumLookupAvailable && user.DiscordId != nil && discord.ValidID(*user.DiscordId) {
 		hasPremium, err := client.HasPremiumRole(ctx, *user.DiscordId)
-		switch {
-		case errors.Is(err, discord.ErrMemberNotFound):
-		case err != nil:
+		if err == nil {
+			if hasPremium {
+				return renewDiscordPremiumDonator(database, user, cutoff)
+			}
+			removeRole = true
+		} else if !errors.Is(err, discord.ErrMemberNotFound) {
 			*premiumLookupAvailable = false
 			logrus.WithError(err).Warn("Discord premium lookup unavailable for this check")
-		case hasPremium:
-			return renewDiscordPremiumDonator(database, user, cutoff)
-		default:
-			removeRole = true
 		}
 	}
 
