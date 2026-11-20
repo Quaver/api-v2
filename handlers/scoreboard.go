@@ -112,9 +112,6 @@ func GetModifierScoresForMap(c *gin.Context) *APIError {
 	}
 
 	user := getAuthedUser(c)
-	if mods == 0 && (user == nil || !enums.HasUserGroup(user.UserGroups, enums.UserGroupDonator)) {
-		return APIErrorForbidden("You must be a donator to access this scoreboard.")
-	}
 
 	if !hasDonatorScoreboardAccess(dbMap, user) {
 		return APIErrorForbidden("You must be a donator to access this scoreboard.")

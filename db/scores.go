@@ -283,10 +283,6 @@ func GetCountryScoresForMap(md5 string, country string) ([]*Score, error) {
 
 // GetModifierScoresForMap Retrieves the modifier scores for a map
 func GetModifierScoresForMap(md5 string, mods int64) ([]*Score, error) {
-	if mods == 0 {
-		return GetAllScoresForMap(md5)
-	}
-
 	cached, err := getCachedScoreboard(scoreboardMods, md5, strconv.FormatInt(mods, 10))
 
 	if err != nil {
@@ -519,10 +515,6 @@ func GetUserPersonalBestScoreAll(userId int, md5 string) (*Score, error) {
 
 // GetUserPersonalBestScoreMods Retrieves a user's personal best modifier score on a given map
 func GetUserPersonalBestScoreMods(userId int, md5 string, mods int64) (*Score, error) {
-	if mods == 0 {
-		return GetUserPersonalBestScoreAll(userId, md5)
-	}
-
 	var score *Score
 
 	result := SQL.
@@ -571,9 +563,13 @@ func GetUserPersonalBestScoreRate(userId int, md5 string, mods int64) (*Score, e
 	return score, nil
 }
 
-// Builds the same metadata filter for scoreboard lists and personal bests.
+// Builds the same filter for scoreboard lists and personal bests.
 // alias is a SQL table alias supplied by the caller, never request input.
 func getScoreboardModsFilter(mods int64, alias string, rateOnly bool) clause.Expr {
+	if !rateOnly && mods == 0 {
+		return clause.Expr{SQL: alias + ".mods = 0"}
+	}
+
 	metadata := enums.GetScoreMods(enums.Mods(mods))
 	if rateOnly {
 		return clause.Expr{SQL: alias + ".speed_rate = ?", Vars: []interface{}{metadata.SpeedRate}}
