@@ -1,11 +1,15 @@
 package db
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/Quaver/api2/enums"
+	"github.com/Quaver/api2/internal/discord"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -39,6 +43,8 @@ type Order struct {
 }
 
 const DonatorFreeTrialDays int = 7
+
+var orderDiscordClient = discord.NewClient(&http.Client{})
 
 func (*Order) TableName() string {
 	return "orders"
@@ -125,7 +131,25 @@ func (order *Order) Finalize() error {
 		}
 	}
 
+	if order.ItemId == OrderItemDonator {
+		order.grantDiscordDonatorRole()
+	}
+
 	return nil
+}
+
+func (order *Order) grantDiscordDonatorRole() {
+	discordID := order.Receiver.DiscordId
+	if discordID == nil || !discord.ValidID(*discordID) {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := orderDiscordClient.AddDonatorRole(ctx, *discordID); err != nil && !errors.Is(err, discord.ErrMemberNotFound) {
+		logrus.WithError(err).WithField("user_id", order.ReceiverUserId).
+			Warn("Could not grant Discord donator role after order completion")
+	}
 }
 
 // FinalizeDonator Finalizes a donator item

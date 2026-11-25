@@ -65,7 +65,10 @@
     "store_payment_redirect_url": "https://quavergame.com/donate?status=success"
   },
   "discord": {
-    "bot_api": ""
+    "bot_token": "",
+    "guild_id": "",
+    "donator_role_id": "",
+    "premium_member_role_id": ""
   },
   "openai_api_key": "",
   "cache_server": {

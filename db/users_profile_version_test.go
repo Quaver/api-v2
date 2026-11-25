@@ -17,8 +17,9 @@ func TestGenerateUserProfileVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(first) != userProfileVersionBytes*2 {
-		t.Fatalf("expected profile version length %d, got %d", userProfileVersionBytes*2, len(first))
+	const expectedHexLength = 16
+	if len(first) != expectedHexLength {
+		t.Fatalf("expected profile version length %d, got %d", expectedHexLength, len(first))
 	}
 
 	if _, err := hex.DecodeString(first); err != nil {
